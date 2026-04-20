@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-#공통베이스모델 참조예정
 
 from apps.posts.models.category import PostCategory
 

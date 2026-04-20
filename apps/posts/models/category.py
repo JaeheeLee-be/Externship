@@ -1,5 +1,4 @@
 from django.db import models
-#공통베이스모델 참조예정
 
 class PostCategory(models.Model):
     name = models.CharField(max_length=20)
