@@ -27,10 +27,7 @@ class ExamQuestion(TimeStampModel):
     answer = models.JSONField(
         default=dict,
     )
-    point = models.SmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)],
-        default=1
-    )
+    point = models.SmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], default=1)
     explanation = models.TextField(default="")
 
     class Meta:
