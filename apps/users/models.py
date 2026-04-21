@@ -1,21 +1,23 @@
+from __future__ import annotations
+from typing import Any
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
 from apps.core.models import TimeStampModel
 
-
-class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password, **extra_fields):
+class CustomUserManager(BaseUserManager["User"]):
+    def create_user(self, email: str, password: str, **extra_fields: Any)-> User :
         if not email:
             raise ValueError("이메일은 필수항목입니다.")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user: User = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields["role"] = User.Role.ADMIN
+    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> User :
+        extra_fields["role"] = "ADMIN"
         extra_fields["is_active"] = True
         return self.create_user(email, password, **extra_fields)
 
@@ -33,6 +35,7 @@ class User(AbstractBaseUser, TimeStampModel):
         ADMIN = "ADMIN", "어드민"
         STUDENT = "STUDENT", "수강생"
 
+
     id = models.BigAutoField(primary_key=True)
     email = models.EmailField(null=False, unique=True)
     name = models.CharField(max_length=30, null=False)
@@ -41,7 +44,7 @@ class User(AbstractBaseUser, TimeStampModel):
     gender = models.CharField(max_length=6, null=True)
     birthday = models.DateField(null=True)
     profile_img_url = models.CharField(max_length=255, null=True, blank=True)
-    is_active = models.BooleanField(null=True, default=False)
+    is_active = models.BooleanField(default=False)
     role = models.CharField(choices=Role.choices, default=Role.USER)
 
     USERNAME_FIELD = "email"
@@ -75,7 +78,7 @@ class Withdrawal(TimeStampModel):
         LACK_OF_INTEREST = "lack_of_interest", "흥미 떨어짐"
         TOO_DIFFICULT = "too_difficult", "너무 어려움"
         FOUND_BETTER_SERVICE = "found_better_service", "더 좋은 서비스 찾음"
-        PRIVACY_CONCERNS = "privacy_concerns", "개인정보 우"
+        PRIVACY_CONCERNS = "privacy_concerns", "개인정보 우려"
         POOR_SERVICE_QUALITY = "poor_service_quality", "서비스 품질 불만"
         TECHNICAL_ISSUES = "technical_issue", "기술적 문제"
         LACK_OF_CONTENT = "lack_of_content", "콘텐츠 부족"
