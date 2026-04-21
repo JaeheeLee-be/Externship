@@ -8,12 +8,27 @@ from apps.posts.models import Post, PostCategory
 User = get_user_model()
 
 
-class PostCreateViewTest(APITestCase):
+_test_user_counter = 0
+
+
+def create_test_user(suffix: str) -> User:
+    global _test_user_counter
+    _test_user_counter += 1
+    return User.objects.create_user(
+        email=f"{suffix}@example.com",
+        password="pw1234",
+        name=f"{suffix} name",
+        nickname=suffix[:10],
+        phone_number=f"010{_test_user_counter:08d}",
+    )
+
+
+class PostListCreateViewCreateTest(APITestCase):
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = User.objects.create_user(username="author", password="pw1234")
+        self.user = create_test_user("author")
         self.category = PostCategory.objects.create(name="자유")
-        self.url = reverse("create_post")
+        self.url = reverse("post_list_create")
 
     def test_create_post_success(self) -> None:
         self.client.force_authenticate(user=self.user)
@@ -41,12 +56,52 @@ class PostCreateViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Post.objects.count(), 0)
 
+    def test_create_post_unauthenticated_unauthorized(self) -> None:
+        payload = {
+            "category": self.category.id,
+            "title": "비로그인 글",
+            "content": "내용입니다",
+        }
 
-class PostUpdateViewTest(APITestCase):
+        response = self.client.post(self.url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Post.objects.count(), 0)
+
+
+class PostListCreateViewListTest(APITestCase):
     def setUp(self) -> None:
         self.client = APIClient()
-        self.author = User.objects.create_user(username="author", password="pw1234")
-        self.other = User.objects.create_user(username="other", password="pw1234")
+        self.author = create_test_user("author")
+        self.category = PostCategory.objects.create(name="자유")
+        self.older_post = Post.objects.create(
+            author=self.author,
+            category=self.category,
+            title="첫 번째 글",
+            content="첫 번째 내용",
+        )
+        self.newer_post = Post.objects.create(
+            author=self.author,
+            category=self.category,
+            title="두 번째 글",
+            content="두 번째 내용",
+        )
+        self.url = reverse("post_list_create")
+
+    def test_list_posts_success(self) -> None:
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["id"], self.newer_post.id)
+        self.assertEqual(response.data[1]["id"], self.older_post.id)
+
+
+class PostDetailViewPatchTest(APITestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.author = create_test_user("author")
+        self.other = create_test_user("other")
         self.category = PostCategory.objects.create(name="자유")
         self.post = Post.objects.create(
             author=self.author,
@@ -54,7 +109,7 @@ class PostUpdateViewTest(APITestCase):
             title="원본 제목",
             content="원본 내용",
         )
-        self.url = reverse("update_post", kwargs={"post_id": self.post.id})
+        self.url = reverse("post_detail", kwargs={"post_id": self.post.id})
 
     def test_update_post_success(self) -> None:
         self.client.force_authenticate(user=self.author)
@@ -77,12 +132,57 @@ class PostUpdateViewTest(APITestCase):
         self.post.refresh_from_db()
         self.assertEqual(self.post.title, "원본 제목")
 
+    def test_update_post_unauthenticated_unauthorized(self) -> None:
+        payload = {"title": "비로그인 수정"}
 
-class PostDeleteViewTest(APITestCase):
+        response = self.client.patch(self.url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.title, "원본 제목")
+
+    def test_update_post_not_found(self) -> None:
+        self.client.force_authenticate(user=self.author)
+        url = reverse("post_detail", kwargs={"post_id": 99999})
+
+        response = self.client.patch(url, {"title": "없는 글"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class PostDetailViewTest(APITestCase):
     def setUp(self) -> None:
         self.client = APIClient()
-        self.author = User.objects.create_user(username="author", password="pw1234")
-        self.other = User.objects.create_user(username="other", password="pw1234")
+        self.author = create_test_user("author")
+        self.category = PostCategory.objects.create(name="자유")
+        self.post = Post.objects.create(
+            author=self.author,
+            category=self.category,
+            title="상세 글",
+            content="상세 내용",
+        )
+        self.url = reverse("post_detail", kwargs={"post_id": self.post.id})
+
+    def test_get_post_detail_success(self) -> None:
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.post.id)
+        self.assertEqual(response.data["title"], "상세 글")
+
+    def test_get_post_detail_not_found(self) -> None:
+        url = reverse("post_detail", kwargs={"post_id": 99999})
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class PostDetailViewDeleteTest(APITestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.author = create_test_user("author")
+        self.other = create_test_user("other")
         self.category = PostCategory.objects.create(name="자유")
         self.post = Post.objects.create(
             author=self.author,
@@ -90,7 +190,7 @@ class PostDeleteViewTest(APITestCase):
             title="삭제될 글",
             content="내용",
         )
-        self.url = reverse("delete_post", kwargs={"post_id": self.post.id})
+        self.url = reverse("post_detail", kwargs={"post_id": self.post.id})
 
     def test_delete_post_success(self) -> None:
         self.client.force_authenticate(user=self.author)
@@ -107,3 +207,17 @@ class PostDeleteViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Post.objects.count(), 1)
+
+    def test_delete_post_unauthenticated_unauthorized(self) -> None:
+        response = self.client.delete(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Post.objects.count(), 1)
+
+    def test_delete_post_not_found(self) -> None:
+        self.client.force_authenticate(user=self.author)
+        url = reverse("post_detail", kwargs={"post_id": 99999})
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
