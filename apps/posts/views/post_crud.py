@@ -1,12 +1,10 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.posts.models import Post
 from apps.posts.serializers.post_crud import (
     PostCreateRequestSerializer,
     PostCreateResponseSerializer,
@@ -15,13 +13,7 @@ from apps.posts.serializers.post_crud import (
     PostUpdateRequestSerializer,
     PostUpdateResponseSerializer,
 )
-
-
-def _get_post_or_404(post_id: int) -> Post:
-    try:
-        return Post.objects.get(id=post_id)
-    except Post.DoesNotExist:
-        raise NotFound("해당 게시글을 찾을 수 없습니다.")
+from apps.posts.services import post_crud as post_service
 
 
 class PostListCreateView(APIView):
@@ -33,7 +25,7 @@ class PostListCreateView(APIView):
         responses={200: PostDetailResponseSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
-        posts = Post.objects.all()
+        posts = post_service.list_posts()
         return Response(
             PostDetailResponseSerializer(posts, many=True).data,
             status=status.HTTP_200_OK,
@@ -48,7 +40,7 @@ class PostListCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = PostCreateRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        post = serializer.save(author=request.user)
+        post = post_service.create_post(author=request.user, validated_data=serializer.validated_data)
         return Response(
             {"detail": "게시글이 성공적으로 등록되었습니다.", "pk": post.id},
             status=status.HTTP_201_CREATED,
@@ -64,7 +56,7 @@ class PostDetailView(APIView):
         responses={200: PostDetailResponseSerializer},
     )
     def get(self, request: Request, post_id: int) -> Response:
-        post = _get_post_or_404(post_id)
+        post = post_service.get_post_or_404(post_id)
         return Response(
             PostDetailResponseSerializer(post).data,
             status=status.HTTP_200_OK,
@@ -77,15 +69,13 @@ class PostDetailView(APIView):
         responses={200: PostUpdateResponseSerializer},
     )
     def put(self, request: Request, post_id: int) -> Response:
-        post = _get_post_or_404(post_id)
-
-        if post.author != request.user:
-            raise PermissionDenied("권한이 없습니다.")
-
-        serializer = PostUpdateRequestSerializer(instance=post, data=request.data)
+        serializer = PostUpdateRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        updated_post = serializer.save()
-
+        updated_post = post_service.update_post(
+            post_id=post_id,
+            user=request.user,
+            validated_data=serializer.validated_data,
+        )
         return Response(
             PostUpdateResponseSerializer(updated_post).data,
             status=status.HTTP_200_OK,
@@ -97,12 +87,7 @@ class PostDetailView(APIView):
         responses={200: PostDeleteResponseSerializer},
     )
     def delete(self, request: Request, post_id: int) -> Response:
-        post = _get_post_or_404(post_id)
-
-        if post.author != request.user:
-            raise PermissionDenied("권한이 없습니다.")
-
-        post.delete()
+        post_service.delete_post(post_id=post_id, user=request.user)
         return Response(
             {"detail": "게시글이 삭제되었습니다."},
             status=status.HTTP_200_OK,
