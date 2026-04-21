@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator,MaxValueValidator
 from django.db import models
 
 from apps.core.models import TimeStampModel
@@ -13,7 +14,10 @@ class ExamDeployment(TimeStampModel):
 
     # cohort_id = models.ForeignKey(Cohort,on_delete=models.CASCADE)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
-    duration_time = models.SmallIntegerField(max_length=2)
+    duration_time = models.SmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(99)],
+        default=60
+    )
     access_code = models.CharField(max_length=64)
     open_at = models.DateTimeField(null=True, blank=True)
     close_at = models.DateTimeField(null=True, blank=True)

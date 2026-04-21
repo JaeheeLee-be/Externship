@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from apps.core.models import TimeStampModel
@@ -18,13 +19,19 @@ class ExamQuestion(TimeStampModel):
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     question = models.CharField(max_length=255)
     prompt = models.TextField(null=True, blank=True)
-    blank_count = models.SmallIntegerField(max_length=1, null=True, blank=True)
+    blank_count = models.SmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(9)]
+        , null=True, blank=True
+    )
     optional_json = models.TextField(null=True, blank=True)
     type = models.CharField(choices=QuestionType.choices, max_length=10)
     answer = models.JSONField(
         default=dict,
     )
-    point = models.SmallIntegerField(max_length=2)
+    point = models.SmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        default=1,
+    )
     explantation = models.TextField(default="")
 
     class Meta:
