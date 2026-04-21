@@ -29,7 +29,7 @@ class ExamQuestion(TimeStampModel):
     )
     point = models.SmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)],
-        default=1,
+        default=1
     )
     explanation = models.TextField(default="")
 
