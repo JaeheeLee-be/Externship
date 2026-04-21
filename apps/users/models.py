@@ -31,9 +31,6 @@ class User(AbstractBaseUser, TimeStampModel):
 
     class Role(models.TextChoices):
         USER = "USER", "일반유저"
-        TRAINIGASSISTANTS = "TA", "조교"
-        OPERATIONMANAGERS = "OM", "운영매니저"
-        LEARNINGCOACHS = "LC", "러닝코치"
         ADMIN = "ADMIN", "어드민"
         STUDENT = "STUDENT", "수강생"
 
