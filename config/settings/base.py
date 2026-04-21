@@ -4,6 +4,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from apps import core, users
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 if os.getenv("DJANGO_SETTINGS_MODULE") == "config.settings.local":
@@ -32,9 +34,15 @@ THIRD_PARTY_APPS = [
 ]
 
 # 추가한 도메인별 앱을 줄바꿈, 쉼표를 사용하여 나열.
-CUSTOM_APPS: list[str] = []
+CUSTOM_APPS: list[str] = [
+    "apps.users",
+    "apps.core",
+]
+
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
+
+AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
