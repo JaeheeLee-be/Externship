@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
@@ -6,8 +7,9 @@ from django.db import models
 
 from apps.core.models import TimeStampModel
 
+
 class CustomUserManager(BaseUserManager["User"]):
-    def create_user(self, email: str, password: str, **extra_fields: Any)-> User :
+    def create_user(self, email: str, password: str, **extra_fields: Any) -> User:
         if not email:
             raise ValueError("이메일은 필수항목입니다.")
         email = self.normalize_email(email)
@@ -16,7 +18,7 @@ class CustomUserManager(BaseUserManager["User"]):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> User :
+    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> User:
         extra_fields["role"] = "ADMIN"
         extra_fields["is_active"] = True
         return self.create_user(email, password, **extra_fields)
@@ -34,7 +36,6 @@ class User(AbstractBaseUser, TimeStampModel):
         LEARNINGCOACHS = "LC", "러닝코치"
         ADMIN = "ADMIN", "어드민"
         STUDENT = "STUDENT", "수강생"
-
 
     id = models.BigAutoField(primary_key=True)
     email = models.EmailField(null=False, unique=True)
