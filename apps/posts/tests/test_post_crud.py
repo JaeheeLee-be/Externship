@@ -5,7 +5,6 @@ from rest_framework.test import APIClient, APITestCase
 from apps.posts.models import Post, PostCategory
 from apps.users.models import User
 
-
 _test_user_counter = 0
 
 
