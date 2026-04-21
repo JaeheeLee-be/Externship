@@ -42,7 +42,7 @@ class User(AbstractBaseUser, TimeStampModel):
     birthday = models.DateField(null=True)
     profile_img_url = models.CharField(max_length=255, null=True, blank=True)
     is_active = models.BooleanField(null=True, default=False)
-    role = models.CharField(choices=Role.choices, default=Role.GENERAL)
+    role = models.CharField(choices=Role.choices, default=Role.USER)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name", "nickname", "phone_number"]
