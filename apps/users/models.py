@@ -1,43 +1,37 @@
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
 
 from apps.core.models import TimeStampModel
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password, name, nickname, phone_number, gender, birthday, **extra_fields):
+    def create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError("이메일은 필수항목입니다.")
         email = self.normalize_email(email)
-        user = self.model(
-            email=email,
-            name=name,
-            nickname=nickname,
-            phone_number=phone_number,
-            gender=gender,
-            birthday=birthday,
-            **extra_fields
-        )
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password, name, nickname, phone_number, gender, birthday, **extra_fields):
-        user = self.create_user(email, password, name, nickname, phone_number, gender, birthday, **extra_fields)
-        user.role = User.Role.ADMIN
-        user.is_active = True
-        user.save(using=self._db)
-        return user
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields["role"] = User.Role.ADMIN
+        extra_fields["is_active"] = True
+        return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, TimeStampModel):
     class Gender(models.TextChoices):
-        MALE = 'male', '남성'
-        FEMALE = 'female', '여성'
+        MALE = "male", "남성"
+        FEMALE = "female", "여성"
 
     class Role(models.TextChoices):
-        GENERAL = 'general', '일반수강생'
-        ADMIN = 'admin', '관리자'
+        USER = "USER", "일반유저"
+        TRAINIGASSISTANTS = "TA", "조교"
+        OPERATIONMANAGERS = "OM", "운영매니저"
+        LEARNINGCOACHS = "LC", "러닝코치"
+        ADMIN = "ADMIN", "어드민"
+        STUDENT = "STUDENT", "수강생"
 
     id = models.BigAutoField(primary_key=True)
     email = models.EmailField(null=False, unique=True)
@@ -50,8 +44,8 @@ class User(AbstractBaseUser, TimeStampModel):
     is_active = models.BooleanField(null=True, default=False)
     role = models.CharField(choices=Role.choices, default=Role.GENERAL)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'nickname', 'phone_number']
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["name", "nickname", "phone_number"]
 
     objects = CustomUserManager()
 
@@ -61,8 +55,8 @@ class User(AbstractBaseUser, TimeStampModel):
 
 class SocialUsers(TimeStampModel):
     class Provider(models.TextChoices):
-        KAKAO = 'kakao', '카카오'
-        NAVER = 'naver', '네이버'
+        KAKAO = "kakao", "카카오"
+        NAVER = "naver", "네이버"
 
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_users")
@@ -75,12 +69,20 @@ class SocialUsers(TimeStampModel):
 
 class Withdrawal(TimeStampModel):
     class Reason(models.TextChoices):
-        INCONVENIENT = 'inconvenient', '서비스 불편'
-        PERSONAL = 'personal', '개인 사유'
-        OTHER = 'other', '기타'
+        GRADUATION = "graduation", "졸업"
+        TRANSFER = "transfer", "다른 플랫폼 이동"
+        NO_LONGER_NEEDED = "no_longer_needed", "더 이상 필요없음"
+        LACK_OF_INTEREST = "lack_of_interest", "흥미 떨어짐"
+        TOO_DIFFICULT = "too_difficult", "너무 어려움"
+        FOUND_BETTER_SERVICE = "found_better_service", "더 좋은 서비스 찾음"
+        PRIVACY_CONCERNS = "privacy_concerns", "개인정보 우"
+        POOR_SERVICE_QUALITY = "poor_service_quality", "서비스 품질 불만"
+        TECHNICAL_ISSUES = "technical_issue", "기술적 문제"
+        LACK_OF_CONTENT = "lack_of_content", "콘텐츠 부족"
+        OTHER = "other", "기타"
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='withdrawals')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="withdrawals")
     reason = models.CharField(max_length=20, choices=Reason.choices)
     reason_detail = models.TextField()
     due_date = models.DateField()
@@ -91,12 +93,12 @@ class Withdrawal(TimeStampModel):
 
 class StudentEnrollmentRequests(TimeStampModel):
     class Status(models.TextChoices):
-        END = 'end', '종료됨'
-        ONGOING = 'ongoing', '진행중'
-        PENDING = 'pending', '대기중'
+        END = "end", "종료됨"
+        ONGOING = "ongoing", "진행중"
+        PENDING = "pending", "대기중"
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enrollment_requests', null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollment_requests", null=False)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, null=False)
     accepted_at = models.DateTimeField(null=True, blank=True)
 
@@ -106,7 +108,7 @@ class StudentEnrollmentRequests(TimeStampModel):
 
 class CohortStudents(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cohort_students', null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="cohort_students", null=False)
 
     class Meta:
         db_table = "cohort_students"
@@ -114,7 +116,7 @@ class CohortStudents(TimeStampModel):
 
 class OperationManagers(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='operation_managers', null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="operation_managers", null=False)
 
     class Meta:
         db_table = "operation_managers"
@@ -122,7 +124,7 @@ class OperationManagers(TimeStampModel):
 
 class LearningCoachs(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='learning_coachs', null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="learning_coachs", null=False)
 
     class Meta:
         db_table = "learning_coachs"
@@ -130,7 +132,7 @@ class LearningCoachs(TimeStampModel):
 
 class TrainigAssistants(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='training_assistants', null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="training_assistants", null=False)
 
     class Meta:
         db_table = "training_assistants"
