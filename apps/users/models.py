@@ -9,7 +9,7 @@ from apps.core.models import TimeStampModel
 
 
 class CustomUserManager(BaseUserManager["User"]):
-    def create_user(self, email: str, password: str, **extra_fields: Any) -> User:
+    def create_user(self, email: str, password: str, **extra_fields: Any) -> "User":
         if not email:
             raise ValueError("이메일은 필수항목입니다.")
         email = self.normalize_email(email)
@@ -18,7 +18,7 @@ class CustomUserManager(BaseUserManager["User"]):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> User:
+    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> "User":
         extra_fields["role"] = "ADMIN"
         extra_fields["is_active"] = True
         return self.create_user(email, password, **extra_fields)
@@ -62,7 +62,7 @@ class SocialUsers(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_users")
     provider = models.CharField(max_length=10, choices=Provider.choices)
-    provider_id = models.CharField(max_length=10)
+    provider_id = models.CharField(max_length=255)
 
     class Meta:
         db_table = "social_users"
