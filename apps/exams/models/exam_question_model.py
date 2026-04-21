@@ -31,7 +31,7 @@ class ExamQuestion(TimeStampModel):
         validators=[MinValueValidator(1), MaxValueValidator(10)],
         default=1,
     )
-    explantation = models.TextField(default="")
+    explanation = models.TextField(default="")
 
     class Meta:
         db_table = "exam_questions"
