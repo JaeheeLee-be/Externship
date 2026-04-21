@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.db import models
 
+from apps.core.models import TimeStampModel
 from apps.posts.models.category import PostCategory
 
 
-class Post(models.Model):
+class Post(TimeStampModel):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -20,8 +21,6 @@ class Post(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     is_visible = models.BooleanField(default=True)
     is_notice = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "post"

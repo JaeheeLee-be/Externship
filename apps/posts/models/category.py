@@ -1,11 +1,11 @@
 from django.db import models
 
+from apps.core.models import TimeStampModel
 
-class PostCategory(models.Model):
+
+class PostCategory(TimeStampModel):
     name = models.CharField(max_length=20)
     status = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "post_category"
