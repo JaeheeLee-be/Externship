@@ -10,7 +10,7 @@ class Answers(TimeStampModel):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
     question = models.ForeignKey(Questions, on_delete=models.CASCADE, null=False)
     content = models.TextField(null=False)
-    is_adopted = models.BooleanField(default=False, null=False)
+    is_adopted = models.BooleanField(default=False)
 
     class Meta:
         db_table = "answers"
