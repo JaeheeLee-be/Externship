@@ -1,11 +1,9 @@
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.posts.models import Post, PostCategory
-
-User = get_user_model()
+from apps.users.models import User
 
 
 _test_user_counter = 0
