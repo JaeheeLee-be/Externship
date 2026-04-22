@@ -7,7 +7,7 @@ from apps.core.models import TimeStampModel
 class PostComment(TimeStampModel):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
     post = models.ForeignKey("posts.Post", on_delete=models.CASCADE, related_name="comments")
-    content = models.CharField(max_length=500)
+    content = models.CharField(max_length=300)
 
     class Meta:
         db_table = "post_comment"
@@ -22,3 +22,4 @@ class PostCommentTag(TimeStampModel):
 
     class Meta:
         db_table = "post_comment_tags"
+        unique_together = (('comment', 'tagged_user'))
