@@ -18,7 +18,7 @@ class ExamDeployment(TimeStampModel):
     access_code = models.CharField(max_length=64, unique=True)
     open_at = models.DateTimeField()
     close_at = models.DateTimeField()
-    question_snapshot_json = models.JSONField(default=dict)
+    questions_snapshot_json = models.JSONField(default=dict)
     status = models.CharField(choices=ExamStatus.choices, max_length=10, default=ExamStatus.ON)
 
     class Meta:
