@@ -11,7 +11,7 @@ class ExamQuestion(TimeStampModel):
     class QuestionType(models.TextChoices):
         FILL_BLANK = "fill_blank", "빈칸채우기"
         ORDERING = "ordering", "순서정렬"
-        MULTIPLE_CHOICE = "multiple_choice","다지선다(복수선택)"
+        MULTIPLE_CHOICE = "multiple_choice", "다지선다(복수선택)"
         SINGLE_CHOICE = "single_choice", "다지선다(단일선택)"
         SHORT_ANSWER = "short_answer", "단답형"
         OX = "ox", "OX퀴즈"

@@ -15,11 +15,11 @@ class ExamDeployment(TimeStampModel):
     # cohort_id = models.ForeignKey(Cohort,on_delete=models.CASCADE)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     duration_time = models.SmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(99)], default=60)
-    access_code = models.CharField(max_length=64,unique=True)
+    access_code = models.CharField(max_length=64, unique=True)
     open_at = models.DateTimeField()
     close_at = models.DateTimeField()
     question_snapshot_json = models.JSONField(default=dict)
-    status = models.CharField(choices=ExamStatus.choices, max_length=10,default=ExamStatus.ON)
+    status = models.CharField(choices=ExamStatus.choices, max_length=10, default=ExamStatus.ON)
 
     class Meta:
         db_table = "exam_deployments"
