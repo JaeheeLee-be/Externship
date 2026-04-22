@@ -30,20 +30,20 @@ jobs:
         run: |
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d "{
-                 \"embeds\": [
+               -d '{
+                 "embeds": [
                    {
-                     \"title\": "🔔 PR 리뷰 요청",
-                     \"description\": "새로운 리뷰 요청이 있습니다!",
-                     \"color\": 5814783,
-                     \"fields\": [
+                     "title": "🔔 PR 리뷰 요청",
+                     "description": "새로운 리뷰 요청이 있습니다!",
+                     "color": 5814783,
+                     "fields": [
                        {
-                         \"name\": "Reviewers",
-                         \"value\": "'"${{ steps.map.outputs.mentions }}"'"
+                         "name": "Reviewers",
+                         "value": "'"${{ steps.map.outputs.mentions }}"'"
                        },
                        {
-                         \"name\": "PR Link",
-                         \"value\": "[#${{ github.event.pull_request.number }} ${{github.event.pull_request.title}}](${{ github.event.pull_request.html_url }})"
+                         "name": "PR Link",
+                         "value": "[#${{ github.event.pull_request.number }} ${{github.event.pull_request.title}}](${{ github.event.pull_request.html_url }})"
                        },
                        {
                          "name": "Repository",
@@ -53,8 +53,8 @@ jobs:
                      "footer": {
                        "text": "GitHub → Discord Notification"
                      },
-                     \"timestamp\": "${{ github.event.pull_request.updated_at }}"
+                     "timestamp": "${{ github.event.pull_request.updated_at }}"
                    }
                  ]
-               }" \
+               }' \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
