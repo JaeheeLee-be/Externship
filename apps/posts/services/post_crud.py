@@ -9,18 +9,18 @@ def list_posts() -> list[Post]:
     return list(Post.objects.all())
 
 
-def create_post(author:User, validated_data: dict[str, Any]) -> Post:
+def create_post(author: User, validated_data: dict[str, Any]) -> Post:
     return Post.objects.create(author=author, **validated_data)
 
 
-def get_post(post_id:int) -> Post:
+def get_post(post_id: int) -> Post:
     try:
         return Post.objects.get(pk=post_id)
     except Post.DoesNotExist:
         raise PostNotFoundError("해당 게시글을 찾을 수 없습니다.")
 
 
-def update_post(post_id:int, user:User, validated_data: dict[str, Any]) -> Post:
+def update_post(post_id: int, user: User, validated_data: dict[str, Any]) -> Post:
     post = get_post(post_id)
     if post.author != user:
         raise PostPermissionDeniedError("권한이 없습니다.")
@@ -31,7 +31,7 @@ def update_post(post_id:int, user:User, validated_data: dict[str, Any]) -> Post:
     return post
 
 
-def delete_post(post_id:int, user:User) -> None:
+def delete_post(post_id: int, user: User) -> None:
     post = get_post(post_id)
     if post.author != user:
         raise PostPermissionDeniedError("권한이 없습니다.")

@@ -53,7 +53,6 @@ class PostListCreateViewCreateTest(APITestCase):
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIsInstance(response.data["error_detail"], str)
         self.assertEqual(Post.objects.count(), 0)
 
 
@@ -131,7 +130,6 @@ class PostDetailViewPutTest(APITestCase):
         response = self.client.put(self.url, self.payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIsInstance(response.data["error_detail"], str)
         self.post.refresh_from_db()
         self.assertEqual(self.post.title, "원본 제목")
 

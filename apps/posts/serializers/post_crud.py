@@ -28,8 +28,8 @@ class PostUpdateRequestSerializer(serializers.ModelSerializer[Post]):
         fields = ["title", "content", "category_id"]
 
 
-class PostCreateResponseSerializer(serializers.Serializer[Post]):
-    detail = serializers.CharField()
+class PostCreateResponseSerializer(serializers.Serializer[dict[str, Any]]):
+    detail = serializers.CharField(default="게시글이 성공적으로 등록되었습니다.")
     pk = serializers.IntegerField()
 
 
@@ -39,8 +39,8 @@ class PostUpdateResponseSerializer(serializers.ModelSerializer[Post]):
         fields = ["id", "title", "content", "category_id"]
 
 
-class PostDeleteResponseSerializer(serializers.Serializer[Post]):
-    detail = serializers.CharField()
+class PostDeleteResponseSerializer(serializers.Serializer[dict[str, Any]]):
+    detail = serializers.CharField(default="게시글이 삭제되었습니다.")
 
 
 class ErrorResponseSerializer(serializers.Serializer[dict[str, Any]]):
@@ -66,6 +66,9 @@ class CategoryInPostSerializer(serializers.ModelSerializer[PostCategory]):
 class PostDetailResponseSerializer(serializers.ModelSerializer[Post]):
     author = AuthorSerializer(read_only=True)
     category = CategoryInPostSerializer(read_only=True)
+
+    # thumbnail_img_url → 일단 None 반환
+    # like_count, comment_count → 0 하드코딩 (다른 팀원 테이블 머지 후 annotate 예정)
     thumbnail_img_url = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
