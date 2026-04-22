@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,7 +13,7 @@ class AdminExamDeploymentCreateView(APIView):
     # TODO : user 팀 퍼미션 완성 후 교체
     permission_classes = []
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = ExamDeploymentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         deployment = create_deployment(serializer.validated_data)

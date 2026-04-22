@@ -36,11 +36,11 @@ class AdminExamDeploymentCreateViewTest(TestCase):
             "open_at": "2026-05-01T09:00:00Z",
             "close_at": "2026-05-01T11:00:00Z",
         }
-        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")
+        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")  # type: ignore
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["message"], "배포가 생성되었습니다.")
-        self.assertIn("id", response.data)
+        self.assertEqual(response.data["message"], "배포가 생성되었습니다.")  # type: ignore
+        self.assertIn("id", response.data)  # type: ignore
 
     def test_create_deployment_fail_when_exam_has_no_questions(self) -> None:
         data = {
@@ -50,7 +50,7 @@ class AdminExamDeploymentCreateViewTest(TestCase):
             "open_at": "2026-05-01T09:00:00Z",
             "close_at": "2026-05-01T11:00:00Z",
         }
-        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")
+        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")  # type: ignore
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -62,7 +62,7 @@ class AdminExamDeploymentCreateViewTest(TestCase):
             "open_at": "2026-05-01T11:00:00Z",
             "close_at": "2026-05-01T09:00:00Z",
         }
-        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")
+        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")  # type: ignore
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -70,7 +70,7 @@ class AdminExamDeploymentCreateViewTest(TestCase):
         data = {
             "exam": self.exam.id,
         }
-        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")
+        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")  # type: ignore
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -82,7 +82,7 @@ class AdminExamDeploymentCreateViewTest(TestCase):
             "open_at": "2026-05-01T09:00:00Z",
             "close_at": "2026-05-01T11:00:00Z",
         }
-        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")
+        response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")  # type: ignore
 
-        deployment = ExamDeployment.objects.get(id=response.data["id"])
+        deployment = ExamDeployment.objects.get(id=response.data["id"])  # type: ignore
         self.assertEqual(deployment.status, ExamDeployment.ExamStatus.OFF)

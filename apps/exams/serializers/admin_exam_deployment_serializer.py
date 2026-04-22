@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.exams.models.exam_deployment_model import ExamDeployment
 
 
-class ExamDeploymentCreateSerializer(serializers.ModelSerializer):
+class ExamDeploymentCreateSerializer(serializers.ModelSerializer[ExamDeployment]):
     class Meta:
         model = ExamDeployment
         fields = [
@@ -15,7 +15,7 @@ class ExamDeploymentCreateSerializer(serializers.ModelSerializer):
             "close_at",
         ]
 
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         if data["open_at"] >= data["close_at"]:
             raise serializers.ValidationError({"open_at": "시작 시간은 종료 시간보다 빠를 수 없습니다."})
 

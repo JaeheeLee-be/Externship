@@ -9,14 +9,14 @@ from apps.exams.models.exam_deployment_model import ExamDeployment
 BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 
-def create_access_code(length=8):
+def create_access_code(length: int = 8) -> str:
     while True:
         code = "".join(secrets.choice(BASE62) for _ in range(length))
         if not ExamDeployment.objects.filter(access_code=code).exists():
             return code
 
 
-def create_deployment(validated_data):
+def create_deployment(validated_data: dict) -> ExamDeployment:
     exam = validated_data["exam"]
     # TODO : cohort 추후 모델 생성 후 추가 현재 test를 위해 주석처리
     # cohort = validated_data["cohort"]
