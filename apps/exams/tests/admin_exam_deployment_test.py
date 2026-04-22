@@ -84,5 +84,5 @@ class AdminExamDeploymentCreateViewTest(TestCase):
         }
         response = self.client.post("/api/v1/exams/admin/deployments/", data, format="json")
 
-        deployment = ExamDeployment.objects.get(id=response.data["id"]) # type: ignore
+        deployment = ExamDeployment.objects.get(id=response.data["id"])  # type: ignore
         self.assertEqual(deployment.status, ExamDeployment.ExamStatus.OFF)
