@@ -83,3 +83,17 @@ class AdminExamQuestionCreateViewTest(APITestCase):
         }
         response = self.client.post(f"/api/v1/exams/admin/{self.exam.id}/questions/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_admin_check_update_question(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        question = ExamQuestion.objects.create(
+            exam=self.exam,
+            question="test_1",
+            answer={"answer": 1},
+            type=ExamQuestion.QuestionType.SHORT_ANSWER,
+            point=1,
+        )
+        data = {"exam": self.exam.id, "question": "test", "answer": {"answer": 1}, "type": "ox", "point": 5}
+        response = self.client.put(f"/api/v1/exams/admin/{self.exam.id}/questions/{question.id}/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ExamQuestion.objects.get(id=question.id).question, "test")

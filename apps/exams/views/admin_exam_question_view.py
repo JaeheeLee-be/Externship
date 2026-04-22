@@ -46,3 +46,21 @@ class QuestionCreateView(APIView):
             return Response({"detail": e.message}, status=e.status_code)
         # 응답할때는 전체를 다 보여주기
         return Response(QuestionSerializer(result).data, status=status.HTTP_201_CREATED)
+
+
+class QuestionDetailView(APIView):
+    permission_classes = [CustomPermissions]
+
+    # 수정
+    def put(self, request:Request, exam_id:int, question_id:int)->Response:
+        mod_data = request.data
+        serializer_class = SERIALIZER_MAP.get(str(mod_data.get("type","")), QuestionSerializer)
+        serializer = serializer_class(data=mod_data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            mod_question = QuestionService.update_question(exam_id, question_id, serializer.validated_data)
+        except (ServiceException, ValidationError) as e:
+            if isinstance(e, ValidationError):
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": e.message, "status": e.status_code})
+        return Response(QuestionSerializer(mod_question).data, status=status.HTTP_200_OK)

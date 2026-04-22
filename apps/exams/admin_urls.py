@@ -1,5 +1,9 @@
 from django.urls import path
 
+from apps.exams.views.admin_exam_question_view import (
+    QuestionCreateView,
+    QuestionDetailView,
+)
 from apps.exams.views.admin_exam_question_view import QuestionCreateView
 from apps.core.presigned_url.views import PresignedUrlView
 from apps.core.utils.permissions import IsRoleAdminUser
@@ -23,5 +27,6 @@ urlpatterns = [
 # urlpatterns = [path("deployments/", AdminExamDeploymentCreateView.as_view())]
 urlpatterns = [
     path("<int:exam_id>/questions/", QuestionCreateView.as_view()),
+    path("<int:exam_id>/questions/<int:question_id>/", QuestionDetailView.as_view()),
 ]
 urlpatterns = [path("deployments/", AdminExamDeploymentCreateView.as_view(), name="exam-deployment-create")]

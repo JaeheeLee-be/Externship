@@ -74,3 +74,28 @@ class QuestionService:
             raise ServiceException("유효하지 않은 문제 등록 데이터입니다.", status_code=status.HTTP_400_BAD_REQUEST)
         new_question = ExamQuestion.objects.create(exam_id=exam_id, **data)
         return new_question
+
+    @staticmethod
+    @transaction.atomic
+    def update_question(exam_id: int, question_id: int, serializer_data: Dict[str, Any]) -> ExamQuestion:
+        question = ExamQuestion.objects.select_for_update().filter(exam_id=exam_id, id=question_id).first()
+        if not question:
+            raise ServiceException("수정하려는 문제 정보를 찾을 수 없습니다.", status_code=status.HTTP_404_NOT_FOUND)
+            # 수정 데이터의 배점 검증
+        mod_point = serializer_data.get("point",1)
+        result = ExamQuestion.objects.filter(exam_id=exam_id).aggregate(total=Sum("point"))
+        total_points = result.get("total") or 0
+        if mod_point + total_points - question.point > 100:
+            raise ServiceException(
+                "해당 쪽지시험에 등록 가능한 문제 수 또는 총 배점을 초과하여 문제를 수정할 수 없습니다.",
+                status_code=status.HTTP_409_CONFLICT,
+            )
+            # 수정 데이터의 문제 유형 검증
+        mod_type = serializer_data.get("type", question.type)
+        if mod_type not in question_type_list:
+            raise ServiceException("유효하지 않은 문제 수정 데이터입니다.", status_code=status.HTTP_400_BAD_REQUEST)
+            # question.update(serializer.data)는 사용 불가능 각 데이터들을 key와 value로 나눠서 풀어줘야함
+        for k, v in serializer_data.items():
+            setattr(question, k, v)
+        question.save()
+        return question
