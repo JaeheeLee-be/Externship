@@ -1,5 +1,6 @@
 import json
 import secrets
+from typing import Any
 
 from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework.exceptions import ValidationError
@@ -16,7 +17,7 @@ def create_access_code(length: int = 8) -> str:
             return code
 
 
-def create_deployment(validated_data: dict) -> ExamDeployment:
+def create_deployment(validated_data: dict[str, Any]) -> ExamDeployment:
     exam = validated_data["exam"]
     # TODO : cohort 추후 모델 생성 후 추가 현재 test를 위해 주석처리
     # cohort = validated_data["cohort"]
