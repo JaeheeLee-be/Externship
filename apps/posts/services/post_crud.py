@@ -1,3 +1,5 @@
+from typing import Any
+
 from apps.posts.exceptions import PostNotFoundError, PostPermissionDeniedError
 from apps.posts.models import Post
 from apps.users.models import User
@@ -14,11 +16,11 @@ def list_posts() -> list[Post]:
     return list(Post.objects.all())
 
 
-def create_post(author: User, validated_data: dict) -> Post:
+def create_post(author: User, validated_data: dict[str, Any]) -> Post:
     return Post.objects.create(author=author, **validated_data)
 
 
-def update_post(post_id: int, user: User, validated_data: dict) -> Post:
+def update_post(post_id: int, user: User, validated_data: dict[str, Any]) -> Post:
     post = get_post(post_id)
     if post.author != user:
         raise PostPermissionDeniedError("권한이 없습니다.")

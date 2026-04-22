@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.posts.models import Post, PostCategory
@@ -41,11 +43,11 @@ class PostDeleteResponseSerializer(serializers.Serializer[Post]):
     detail = serializers.CharField()
 
 
-class ErrorResponseSerializer(serializers.Serializer):
+class ErrorResponseSerializer(serializers.Serializer[dict[str, Any]]):
     error_detail = serializers.CharField()
 
 
-class ValidationErrorResponseSerializer(serializers.Serializer):
+class ValidationErrorResponseSerializer(serializers.Serializer[dict[str, Any]]):
     error_detail = serializers.DictField()
 
 
