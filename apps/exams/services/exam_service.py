@@ -1,5 +1,6 @@
 from django.db.models import Count, Q, QuerySet
 
+from apps.exams.exceptions.exam_exception import SubjectNotFound
 from apps.exams.models import Exam
 
 
@@ -20,3 +21,13 @@ def get_exam_list(*, subject: int = None, search: str = None) -> QuerySet[Exam]:
     )
 
     return queryset
+
+
+def create_exam(*, subject: int, title: str, thumbnail_image_url: str = None) -> Exam:
+    if not Subject.objects.filter(id=subject).exists():
+        raise SubjectNotFound()
+    return Exam.objects.create(
+        subject_id=subject,
+        title=title,
+        thumbnail_image_url=thumbnail_image_url,
+    )

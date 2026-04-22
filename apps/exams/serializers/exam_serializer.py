@@ -33,7 +33,7 @@ class ExamListCreateSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            # "subject",
+            "subject",
             "thumbnail_image_url",
             "question_count",
             "submit_count",
