@@ -1,0 +1,18 @@
+from typing import Any
+
+from rest_framework.permissions import BasePermission
+from rest_framework.request import Request
+
+
+class IsAdminUser(BasePermission):
+    """ADMIN만 접근 가능"""
+
+    def has_permission(self, request: Request, view: Any) -> bool:
+        return bool(request.user.is_authenticated and request.user.role == "ADMIN")
+
+
+class IsStudentUser(BasePermission):
+    """STUDENT만 접근 가능"""
+
+    def has_permission(self, request: Request, view: Any) -> bool:
+        return bool(request.user.is_authenticated and request.user.role == "STUDENT")
