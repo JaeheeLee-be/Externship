@@ -13,7 +13,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/admin/qna/", include("apps.qna.urls.admin_urls")),
     path("api/v1/admin/exams/", include("apps.exams.admin_urls")),
     path("api/v1/accounts/", include("apps.users.urls", namespace="users")),
+    path("api/users/", include("apps.users.urls", namespace="users")),
+    path("api/vi/accounts", include("apps.users.urls", namespace="users")),
+    path("api/v1/accounts/", include("apps.users.urls.account_url")),
+    path("api/v1/exams/admin/", include("apps.exams.admin_urls")),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
