@@ -6,7 +6,8 @@ class ExamDeploymentCreateSerializer(serializers.ModelSerializer):
         model = ExamDeployment
         fields = [
             "exam",
-            "cohort",
+            # TODO : cohort 추후 모델 생성 후 추가 현재 test를 위해 주석처리
+            # "cohort",
             "duration_time",
             "open_at",
             "close_at"

@@ -1,4 +1,7 @@
+import json
 import secrets
+
+from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework.exceptions import ValidationError
 from apps.exams.models.exam_deployment_model import ExamDeployment
 
@@ -13,14 +16,15 @@ def create_access_code(length=8):
 
 def create_deployment(validated_data):
     exam = validated_data["exam"]
-    cohort = validated_data["cohort"]
+    # TODO : cohort 추후 모델 생성 후 추가 현재 test를 위해 주석처리
+    # cohort = validated_data["cohort"]
     duration_time = validated_data["duration_time"]
     open_at = validated_data["open_at"]
     close_at = validated_data["close_at"]
 
     access_code = create_access_code()
     questions = exam.examquestion_set.all()
-    snapshot = list(questions.values())
+    snapshot = json.loads(json.dumps(list(questions.values()), cls=DjangoJSONEncoder))
     if not snapshot:
         raise ValidationError(
             {
@@ -30,7 +34,8 @@ def create_deployment(validated_data):
 
     deployment = ExamDeployment.objects.create(
         exam=exam,
-        cohort=cohort,
+        # TODO : cohort 추후 모델 생성 후 추가 현재 test를 위해 주석처리
+        # cohort=cohort,
         duration_time=duration_time,
         open_at=open_at,
         close_at=close_at,
