@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from apps.exams.models.exam_deployment_model import ExamDeployment
+
 
 class ExamDeploymentCreateSerializer(serializers.ModelSerializer):
     class Meta:
