@@ -9,11 +9,12 @@ from .exam_model import Exam
 class ExamQuestion(TimeStampModel):
 
     class QuestionType(models.TextChoices):
-        BLANK = "blank", "빈칸채우기"
-        SORT = "sort", "순서정렬"
-        CHOICE = "choice", "다지선다"
-        WORD = "word", "단답형"
-        QUIZ = "quiz", "OX퀴즈"
+        FILL_BLANK = "fill_blank", "빈칸채우기"
+        ORDERING = "ordering", "순서정렬"
+        MULTIPLE_CHOICE = "multiple_choice","다지선다(복수선택)"
+        SINGLE_CHOICE = "single_choice", "다지선다(단일선택)"
+        SHORT_ANSWER = "short_answer", "단답형"
+        OX = "ox", "OX퀴즈"
 
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     question = models.CharField(max_length=255)
@@ -22,7 +23,7 @@ class ExamQuestion(TimeStampModel):
         validators=[MinValueValidator(1), MaxValueValidator(9)], null=True, blank=True
     )
     optional_json = models.TextField(null=True, blank=True)
-    type = models.CharField(choices=QuestionType.choices, max_length=10)
+    type = models.CharField(choices=QuestionType.choices, max_length=20)
     answer = models.JSONField(
         default=dict,
     )
