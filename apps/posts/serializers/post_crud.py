@@ -41,6 +41,14 @@ class PostDeleteResponseSerializer(serializers.Serializer[Post]):
     detail = serializers.CharField()
 
 
+class ErrorResponseSerializer(serializers.Serializer):
+    error_detail = serializers.CharField()
+
+
+class ValidationErrorResponseSerializer(serializers.Serializer):
+    error_detail = serializers.DictField()
+
+
 class AuthorSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
