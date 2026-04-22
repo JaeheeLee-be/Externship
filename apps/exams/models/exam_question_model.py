@@ -12,7 +12,6 @@ class ExamQuestion(TimeStampModel):
         BLANK = "blank", "빈칸채우기"
         SORT = "sort", "순서정렬"
         CHOICE = "choice", "다지선다"
-        SENTENCE = "sentence", "주관식"
         WORD = "word", "단답형"
         QUIZ = "quiz", "OX퀴즈"
 
@@ -27,10 +26,7 @@ class ExamQuestion(TimeStampModel):
     answer = models.JSONField(
         default=dict,
     )
-    point = models.SmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)],
-        default=1,
-    )
+    point = models.SmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], default=1)
     explanation = models.TextField(default="")
 
     class Meta:
