@@ -12,7 +12,6 @@ class ExamQuestion(TimeStampModel):
         BLANK = "blank", "빈칸채우기"
         SORT = "sort", "순서정렬"
         CHOICE = "choice", "다지선다"
-        SENTENCE = "sentence", "주관식"
         WORD = "word", "단답형"
         QUIZ = "quiz", "OX퀴즈"
 
