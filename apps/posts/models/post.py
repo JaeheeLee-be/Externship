@@ -6,16 +6,8 @@ from apps.posts.models.category import PostCategory
 
 
 class Post(TimeStampModel):
-    author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="posts",
-    )
-    category = models.ForeignKey(
-        PostCategory,
-        on_delete=models.PROTECT,
-        related_name="posts",
-    )
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")
+    category = models.ForeignKey(PostCategory, on_delete=models.PROTECT, related_name="posts")
     title = models.CharField(max_length=50)
     content = models.TextField()
     view_count = models.PositiveIntegerField(default=0)
