@@ -1,37 +1,35 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.qna.models.question_models import Questions
 from apps.qna.serializers.answer_serializers import (
     AnswerRequestSerializer,
     AnswerResponseSerializer,
 )
-from apps.qna.services.answer_services import answer_create
+from apps.qna.services.answer_services import AnswerService
 
 
 class AnswerView(APIView):
     permission_classes = [IsAuthenticated]
     # TODO: 유저에서 staff 로그인에 관한 permission 구현 후 permission_classes 추가 -> 403
+    service = AnswerService()
 
     def post(self, request: Request, question_id: int) -> Response:
-        question = get_object_or_404(Questions, pk=question_id)
+        question = self.service.get_question(question_id)
         serializer = AnswerRequestSerializer(
             data=request.data,
         )
         if not serializer.is_valid():
-            return Response({"error_detail": "유효하지 않은 답변 등록 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(serializer.errors)
 
-        author_id = request.user.id
-        assert author_id is not None
+        assert request.user.id is not None
 
-        answer = answer_create(
-            content=serializer.validated_data["content"],
-            img_urls=serializer.validated_data["img_urls"],
+        answer = self.service.answer_create(
             question_id=question.id,
-            author_id=author_id,
+            user=request.user,
+            **serializer.validated_data,
         )
         return Response(AnswerResponseSerializer(answer).data, status=status.HTTP_201_CREATED)

@@ -3,31 +3,31 @@ from django.db import models
 
 from apps.core.models import TimeStampModel
 
-from .question_models import Questions
+from .question_models import Question
 
 
-class Answers(TimeStampModel):
+class Answer(TimeStampModel):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
-    question = models.ForeignKey(Questions, on_delete=models.CASCADE, null=False)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, null=False)
     content = models.TextField(null=False)
     is_adopted = models.BooleanField(default=False)
 
     class Meta:
-        db_table = "answers"
+        db_table = "answer"
 
 
-class AnswerImages(TimeStampModel):
-    answer = models.ForeignKey(Answers, on_delete=models.CASCADE, null=False)
+class AnswerImage(TimeStampModel):
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, null=False)
     img_url = models.CharField(max_length=255, null=False)
 
     class Meta:
-        db_table = "answer_images"
+        db_table = "answer_image"
 
 
-class AnswerComments(TimeStampModel):
+class AnswerComment(TimeStampModel):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
-    answer = models.ForeignKey(Answers, on_delete=models.CASCADE, null=False)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, null=False)
     content = models.TextField(null=False)
 
     class Meta:
-        db_table = "answer_comments"
+        db_table = "answer_comment"

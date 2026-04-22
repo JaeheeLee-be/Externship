@@ -1,22 +1,23 @@
 from rest_framework import serializers
 
-from apps.qna.models.answer_models import Answers
+from apps.qna.models.answer_models import Answer
 
 
-class AnswerRequestSerializer(serializers.Serializer[Answers]):
+class AnswerRequestSerializer(serializers.Serializer[Answer]):
     content = serializers.CharField(required=True)
     img_urls = serializers.ListField(
         child=serializers.CharField(),
-        required=True,
+        required=False,
+        default=list,
     )
 
 
-class AnswerResponseSerializer(serializers.ModelSerializer[Answers]):
+class AnswerResponseSerializer(serializers.ModelSerializer[Answer]):
     answer_id = serializers.IntegerField(source="id")
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
     class Meta:
-        model = Answers
+        model = Answer
         fields = (
             "answer_id",
             "question_id",
