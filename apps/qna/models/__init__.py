@@ -1,2 +1,2 @@
-from .answer_models import AnswerComments, AnswerImages, Answers
-from .question_models import QuestionCategories, QuestionImages, Questions
+from .answer_models import Answer, AnswerComment, AnswerImage
+from .question_models import Question, QuestionCategorie, QuestionImage
