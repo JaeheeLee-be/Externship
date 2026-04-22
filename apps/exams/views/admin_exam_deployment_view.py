@@ -16,10 +16,4 @@ class AdminExamDeploymentCreateView(APIView):
         serializer = ExamDeploymentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         deployment = create_deployment(serializer.validated_data)
-        return Response(
-            {
-                "message": "배포가 생성되었습니다.",
-                "id": deployment.id
-            },
-            status=status.HTTP_201_CREATED
-        )
+        return Response({"message": "배포가 생성되었습니다.", "id": deployment.id}, status=status.HTTP_201_CREATED)

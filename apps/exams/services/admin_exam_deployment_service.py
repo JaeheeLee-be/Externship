@@ -8,6 +8,7 @@ from apps.exams.models.exam_deployment_model import ExamDeployment
 
 BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
+
 def create_access_code(length=8):
     while True:
         code = "".join(secrets.choice(BASE62) for _ in range(length))
@@ -27,11 +28,7 @@ def create_deployment(validated_data):
     questions = exam.examquestion_set.all()
     snapshot = json.loads(json.dumps(list(questions.values()), cls=DjangoJSONEncoder))
     if not snapshot:
-        raise ValidationError(
-            {
-                "detail": "문제가 등록되지 않은 시험은 배포할 수 없습니다."
-            }
-        )
+        raise ValidationError({"detail": "문제가 등록되지 않은 시험은 배포할 수 없습니다."})
 
     deployment = ExamDeployment.objects.create(
         exam=exam,
@@ -42,7 +39,7 @@ def create_deployment(validated_data):
         close_at=close_at,
         questions_snapshot_json=snapshot,
         access_code=access_code,
-        status=ExamDeployment.ExamStatus.OFF
+        status=ExamDeployment.ExamStatus.OFF,
     )
 
     return deployment
