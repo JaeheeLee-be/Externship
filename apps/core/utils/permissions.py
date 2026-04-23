@@ -12,7 +12,7 @@ class IsRoleAdminUser(BasePermission):
 
 
 class IsStudentUser(BasePermission):
-    """STUDENT만 접근 가능"""
+    """STUDENT&ADMIN만 접근 가능"""
 
     def has_permission(self, request: Request, view: Any) -> bool:
-        return bool(request.user.is_authenticated and request.user.role == "STUDENT")
+        return bool(request.user.is_authenticated and request.user.role in {"STUDENT", "ADMIN"})
