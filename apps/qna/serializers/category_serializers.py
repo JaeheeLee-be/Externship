@@ -4,14 +4,16 @@ from rest_framework import serializers
 
 from apps.qna.models.question_models import QuestionCategory
 
+
 # 카테고리 depth 계산 함수
-def get_category_depth(category: QuestionCategory) -> int :
+def get_category_depth(category: QuestionCategory) -> int:
     depth = 1
     current_depth = category.parent
     while current_depth:
         depth += 1
         current_depth = current_depth.parent
     return depth
+
 
 # 어드민 카테고리 생성
 class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
@@ -35,9 +37,7 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
         # 대분류는 부모를 가질 수 없음
         if category_type == "large":
             if parent_id is not None:
-                raise serializers.ValidationError(
-                    "대분류는 parent_id를 가질 수 없습니다."
-                )
+                raise serializers.ValidationError("대분류는 parent_id를 가질 수 없습니다.")
 
         # 중/소분류는 부모가 필요함
         if category_type in ["middle", "small"]:
@@ -61,13 +61,12 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
 
         # 같은 부모 아래 동일 이름 중복 방지
         if QuestionCategory.objects.filter(parent=parent, name=name).exists():
-            raise serializers.ValidationError(
-                "동일한 이름의 카테고리가 이미 존재합니다."
-            )
+            raise serializers.ValidationError("동일한 이름의 카테고리가 이미 존재합니다.")
 
         # service에서 그대로 사용할 수 있게 parent 객체를 주입
         attrs["parent"] = parent
         return attrs
+
 
 # 카테고리 생성 응답
 class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[QuestionCategory]):

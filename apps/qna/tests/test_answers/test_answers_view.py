@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from apps.qna.models.question_models import Question, QuestionCategorie
+from apps.qna.models.question_models import Question, QuestionCategory
 from apps.users.models import User
 
 
@@ -10,7 +10,7 @@ class BaseTestCase(APITestCase):
     """다른 test class 여서도 동일하게 사용가능하게 구현"""
 
     user: User
-    category: QuestionCategorie
+    category: QuestionCategory
     question: Question
 
     @classmethod
@@ -27,7 +27,7 @@ class BaseTestCase(APITestCase):
             role="USER",
             password="testpassword",
         )
-        cls.category = QuestionCategorie.objects.create(name="python")
+        cls.category = QuestionCategory.objects.create(name="python")
         cls.question = Question.objects.create(
             author=cls.user,
             category=cls.category,

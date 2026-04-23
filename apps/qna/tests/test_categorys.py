@@ -25,7 +25,6 @@ class AdminCategoryCreateAPITest(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-
     # 대분류 카테고리 생성 성공 테스트
     def test_create_large_category_success(self) -> None:
         payload = {
@@ -52,7 +51,6 @@ class AdminCategoryCreateAPITest(APITestCase):
         self.assertIsNone(response.data["parent_id"])
         self.assertIn("created_at", response.data)
 
-
     # 중분류 생성 성공 테스트
     # - 부모는 반드시 대분류여야 함
     def test_create_middle_category_success(self) -> None:
@@ -75,7 +73,6 @@ class AdminCategoryCreateAPITest(APITestCase):
 
         self.assertEqual(response.data["category_type"], "middle")
         self.assertEqual(response.data["parent_id"], parent.id)
-
 
     # 소분류 생성 성공 테스트
     # - 부모는 반드시 중분류여야 함
@@ -100,7 +97,6 @@ class AdminCategoryCreateAPITest(APITestCase):
         self.assertEqual(response.data["category_type"], "small")
         self.assertEqual(response.data["parent_id"], middle.id)
 
-
     # 이름이 공백이면 실패
     def test_fail_when_name_is_blank(self) -> None:
         payload = {
@@ -113,7 +109,6 @@ class AdminCategoryCreateAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("name", response.data)
-
 
     # 중분류에 부모 없을때
     def test_fail_when_middle_has_no_parent(self) -> None:
@@ -133,7 +128,6 @@ class AdminCategoryCreateAPITest(APITestCase):
             "부모 카테고리를 찾을 수 없습니다.",
         )
 
-
     # 존재 하지 않는 parent_id
     def test_fail_when_parent_not_found(self) -> None:
         payload = {
@@ -150,7 +144,6 @@ class AdminCategoryCreateAPITest(APITestCase):
             str(response.data["non_field_errors"][0]),
             "부모 카테고리를 찾을 수 없습니다.",
         )
-
 
     # 소분류인데 부모가 대분류일 경우
     def test_fail_when_small_parent_depth_invalid(self) -> None:
@@ -172,7 +165,6 @@ class AdminCategoryCreateAPITest(APITestCase):
             "소분류의 부모는 중분류여야 합니다.",
         )
 
-
     # 중복된 카테고리
     def test_fail_when_duplicate_name(self) -> None:
 
@@ -193,7 +185,6 @@ class AdminCategoryCreateAPITest(APITestCase):
             str(response.data["non_field_errors"][0]),
             "동일한 이름의 카테고리가 이미 존재합니다.",
         )
-
 
     # 로그인 안됐을때 요청
     def test_fail_when_not_authenticated(self) -> None:

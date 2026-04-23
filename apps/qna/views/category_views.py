@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.qna.serializers.category_serializers import (
-    AdminCategoryCreateSerializer,
     AdminCategoryCreateResponseSerializer,
+    AdminCategoryCreateSerializer,
 )
 from apps.qna.services.category_services import CategoryService
 

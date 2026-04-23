@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import include, path
 
 from apps.qna.views import answer_views
 
@@ -9,6 +9,5 @@ urlpatterns = [
         answer_views.AnswerView.as_view(),
         name="question_answers",
     ),
-
     path("admin/qna/", include("apps.qna.urls.admin_urls")),
 ]
