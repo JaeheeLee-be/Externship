@@ -171,7 +171,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam:list"),
             {
-                "subject_id": 2,
+                "subject_id": self.subject_python.id,
                 "title": "new_exam",
             },
             format="json",
@@ -186,7 +186,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam:list"),
             {
-                "subject_id": 2,
+                "subject_id": self.subject_python.id,
                 "title": "new_exam",
             },
             format="json",
@@ -199,7 +199,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam:list"),
             {
-                "subject_id": 2,
+                "subject_id": self.subject_python.id,
                 "title": "new_exam",
             },
             format="json",

@@ -28,12 +28,12 @@ class ExamListCreateView(APIView):
         description="쪽지 시험 목록을 출력합니다. filter(subject), search가 포함돼 있습니다.",
         parameters=[
             OpenApiParameter(
-                name="subject",
+                name="subject_id",
                 type=int,
                 description="subject의 아이디를 넣어주시면 필터링됩니다.",
             ),
             OpenApiParameter(
-                name="search",
+                name="search_keyword",
                 type=str,
                 description="exam의 title과 subject의 title을 동시에 검색하며 유사, 일치를 찾습니다",
             ),

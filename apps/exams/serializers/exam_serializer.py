@@ -6,10 +6,7 @@ from rest_framework import serializers
 from apps.exams.exceptions.exam_exception import ExamTitleConflict
 from apps.exams.models import Exam
 
-class ExamBaseSerializer(serializers.ModelSerializer):
-    pass # 중복사항 넣기위해 제작했으나 없으면 추후 삭제 예정
-
-class ExamListCreateSerializer(ExamBaseSerializer):
+class ExamListCreateSerializer(serializers.ModelSerializer):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
     subject_name = serializers.SerializerMethodField()
@@ -32,7 +29,7 @@ class ExamListCreateSerializer(ExamBaseSerializer):
         ]
         read_only_fields = "__all__"
 
-class ExamCreateSerializer(ExamBaseSerializer):
+class ExamCreateSerializer(serializers.ModelSerializer):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
 
