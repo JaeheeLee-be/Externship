@@ -1,8 +1,6 @@
 import secrets
 import uuid
-from typing import Any
 
-from celery import shared_task  # type:ignore
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -10,20 +8,6 @@ from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
 from apps.users.serializers.purpose_enum import AuthPurpose
-
-
-@shared_task(bind=True, max_retries=3)  # type:ignore
-def send_email_async(self: Any, email: str, subject: str, message: str) -> None:
-    try:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-    except Exception as e:
-        raise self.retry(exc=e, countdown=10)
 
 
 class EmailVerification:
@@ -52,7 +36,17 @@ class EmailVerification:
         subject = f"[오즈코딩스쿨] 이메일 인증 코드를 확인해 주세요"
         message = f"인증 코드 : {code} 3분 이내에 입력해 주세요"
 
-        send_email_async(email, subject, message)
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+        except Exception:
+            raise ValidationError("이메일 발송 실패 이메일 주소를 확인바랍니다")
 
     @classmethod
     def verification_code(cls, email: str, code: str) -> str:
