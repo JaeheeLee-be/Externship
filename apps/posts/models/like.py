@@ -1,6 +1,5 @@
-from django.db import models
-
 from django.conf import settings
+from django.db import models
 
 
 class Like(models.Model):
@@ -30,7 +29,6 @@ class Like(models.Model):
                 name="unique_user_post_like",
             )
         ]
-
 
     def __str__(self) -> str:
         status = "liked" if self.is_liked else "unliked"
