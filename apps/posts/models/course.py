@@ -10,4 +10,4 @@ class Course(TimeStampModel):
     thumbnail_img_url = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        db_table = 'courses'
+        db_table = "courses"

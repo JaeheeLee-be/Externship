@@ -6,7 +6,7 @@ from .course import Course
 
 
 class Subject(TimeStampModel):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subjects')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="subjects")
     title = models.CharField(max_length=30)
     number_of_days = models.PositiveSmallIntegerField()
     number_of_hours = models.PositiveSmallIntegerField()
@@ -14,5 +14,5 @@ class Subject(TimeStampModel):
     status = models.BooleanField(default=True)
 
     class Meta:
-        db_table = 'subjects'
-        unique_together = (('course', 'title'),)
+        db_table = "subjects"
+        unique_together = (("course", "title"),)
