@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
-from apps.exams.serializers.exam_serializer import ExamListCreateSerializer, ExamCreateSerializer
-from apps.exams.services.exam_service import create_exam, get_exam_list
+from apps.exams.serializers.admin_exam_serializer import ExamListCreateSerializer, ExamCreateSerializer
+from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 
 
 class ExamListCreateView(APIView):
