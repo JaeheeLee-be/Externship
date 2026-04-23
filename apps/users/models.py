@@ -101,7 +101,7 @@ class StudentEnrollmentRequests(TimeStampModel):
 
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollment_requests", null=False)
-    # cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)  # TODO: Cohort 앱 확인 후 수정
+    # cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, null=False)
     accepted_at = models.DateTimeField(null=True, blank=True)
 
@@ -112,6 +112,7 @@ class StudentEnrollmentRequests(TimeStampModel):
 class CohortStudents(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="cohort_students", null=False)
+    # cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)
 
     class Meta:
         db_table = "cohort_students"
@@ -120,6 +121,7 @@ class CohortStudents(TimeStampModel):
 class OperationManagers(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="operation_managers", null=False)
+    # course = models.ForeignKey("posts.Course", on_delete=models.CASCADE, null=False)
 
     class Meta:
         db_table = "operation_managers"
@@ -128,6 +130,7 @@ class OperationManagers(TimeStampModel):
 class LearningCoachs(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="learning_coachs", null=False)
+    # course = models.ForeignKey("posts.Course", on_delete=models.CASCADE, null=False)
 
     class Meta:
         db_table = "learning_coachs"
@@ -136,6 +139,8 @@ class LearningCoachs(TimeStampModel):
 class TrainigAssistants(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="training_assistants", null=False)
+    # cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)
+
 
     class Meta:
         db_table = "training_assistants"
