@@ -13,5 +13,5 @@ class Exam(TimeStampModel):
         db_table = "exams"
         ordering = ["-created_at", "title"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title

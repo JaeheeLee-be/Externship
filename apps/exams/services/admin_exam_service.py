@@ -56,5 +56,5 @@ def create_exam(subject_id: int, title: str, thumbnail_image_url: Optional[str] 
     return Exam.objects.create(
         subject_id=subject_id,
         title=title,
-        thumbnail_image_url=thumbnail_image_url,
+        thumbnail_image_url=thumbnail_image_url if thumbnail_image_url else "default_img_url",
     )

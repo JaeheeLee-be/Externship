@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -22,7 +24,7 @@ from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message=None, code=None) -> None:
+    def permission_denied(self, request: Request, message=None, code=None) -> NoReturn:
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         if request.method == "POST":
