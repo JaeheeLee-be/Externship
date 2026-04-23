@@ -48,13 +48,13 @@ class TestExamBaseModel(ExamBaseTestCase):
     def test_exam_title_unique_exception(self):
         with self.assertRaises(IntegrityError):
             Exam.objects.create(
-                subject=1,
+                subject=self.subject_html,
                 title="test_exam",
             )
 
     def test_exam_create(self):
         exam = Exam.objects.create(
-            subject=2,
+            subject=self.subject_python,
             title="new_exam",
         )
         self.assertEqual(exam.title, "new_exam")
@@ -186,7 +186,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam:list"),
             {
-                "subject": 2,
+                "subject_id": 2,
                 "title": "new_exam",
             },
             format="json",
@@ -199,7 +199,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam:list"),
             {
-                "subject": 2,
+                "subject_id": 2,
                 "title": "new_exam",
             },
             format="json",
@@ -214,7 +214,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam:list"),
             {
-                "subject": 9999999999999999,
+                "subject_id": 9999999999999999,
                 "title": "new_exam",
             },
             format="json",
