@@ -95,13 +95,13 @@ class Withdrawal(TimeStampModel):
 class StudentEnrollmentRequests(TimeStampModel):
     class Status(models.TextChoices):
         PENDING = "pending", "대기중"
-        ACCEPTED = 'accepted', '승인됨'
-        REJECTED = 'rejected', '거절됨'
-        CANCELED = 'canceled', '취소됨'
+        ACCEPTED = "accepted", "승인됨"
+        REJECTED = "rejected", "거절됨"
+        CANCELED = "canceled", "취소됨"
 
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollment_requests", null=False)
-    cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)  # TODO: Cohort 앱 확인 후 수정
+    # cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)  # TODO: Cohort 앱 확인 후 수정
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, null=False)
     accepted_at = models.DateTimeField(null=True, blank=True)
 
