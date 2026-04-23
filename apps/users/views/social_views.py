@@ -93,7 +93,7 @@ class KakaoCallbackView(APIView):
 
         try:
             # 카카오 유저 정보 조회
-            user_info = KakaoOAuthService.get_user_info_by_code(code, settings.KAKAO_REDIRECT_URI)
+            user_info = KakaoOAuthService.get_user_info_by_code(code, settings.KAKAO_REDIRECT_URI or "")
 
             # 로그인 or 바로 회원가입
             result = SocialAuthService.login_or_register(

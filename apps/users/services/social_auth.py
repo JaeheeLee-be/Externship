@@ -51,10 +51,10 @@ class SocialAuthService:
 
         # 신규 유저
         user = User(
-            email=email,
-            name=name,
-            nickname=nickname,
-            phone_number=phone_number,
+            email=email or "",
+            name=name or "",
+            nickname=nickname or "",
+            phone_number=phone_number or "",
             gender=gender,
             birthday=birthday,
             profile_img_url=profile_img_url,

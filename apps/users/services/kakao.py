@@ -13,7 +13,6 @@ from django.conf import settings
 
 @dataclass
 class KakaoUserInfo:
-    provide : str
     provider_id: str
     nickname: Optional[str]
     profile_img_url: Optional[str]

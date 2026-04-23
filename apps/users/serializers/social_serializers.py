@@ -6,9 +6,10 @@ API 명세서를 보면 Request body가 없고, 302 리다이렉트 + HttpOnly �
 # KakaoRegisterSerializer : 카카오 회원가입 완료 시 프론트가 POST로 보내는 데이터 검증
 
 from rest_framework import serializers
+from typing import Any
 
 
-class KakaoRegisterSerializer(serializers.Serializer):
+class KakaoRegisterSerializer(serializers.Serializer[Any]):
     """카카오 소셜 회원가입 완료 요청 검증"""
 
     social_token = serializers.CharField()
