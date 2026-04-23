@@ -9,5 +9,4 @@ urlpatterns = [
         answer_views.AnswerView.as_view(),
         name="question_answers",
     ),
-    path("admin/qna/", include("apps.qna.urls.admin_urls")),
 ]
