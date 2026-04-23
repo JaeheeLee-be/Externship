@@ -1,17 +1,10 @@
 from django.urls import path
 
-from apps.users.views.social_views import (
-    KakaoCallbackView,
-    KakaoLoginView,
-    NaverCallbackView,
-    NaverLoginView,
-)
+from apps.users.views.social_views import SocialCallbackView, SocialLoginView
 
-app_name = "users"  # ← 이게 있어야 해요
+app_name = "users"
 
 urlpatterns = [
-    path("social-login/kakao", KakaoLoginView.as_view(), name="kakao-login"),
-    path("social-login/kakao/callback", KakaoCallbackView.as_view(), name="kakao-callback"),
-    path("social-login/naver", NaverLoginView.as_view(), name="naver-login"),
-    path("social-login/naver/callback", NaverCallbackView.as_view(), name="naver-callback"),
+    path("social-login/<str:provider>", SocialLoginView.as_view(), name="social-login"),
+    path("social-login/<str:provider>/callback", SocialCallbackView.as_view(), name="social-callback"),
 ]

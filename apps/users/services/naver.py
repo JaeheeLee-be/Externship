@@ -25,15 +25,27 @@ class NaverUserInfo:
 class NaverOAuthService:
     """네이버 OAuth 2.0 서비스"""
 
+    AUTH_URL = "https://nid.naver.com/oauth2.0/authorize"
     TOKEN_URL = "https://nid.naver.com/oauth2.0/token"
     USER_INFO_URL = "https://openapi.naver.com/v1/nid/me"
+
+    @classmethod
+    def get_auth_url(cls, state: str | None = None) -> str:
+        """네이버 OAuth 인증 페이지 URL 반환"""
+        return (
+            f"{cls.AUTH_URL}"
+            f"?client_id={settings.NAVER_CLIENT_ID}"
+            f"&redirect_uri={settings.NAVER_REDIRECT_URI}"
+            "&response_type=code"
+            f"&state={state}"
+        )
 
     @classmethod
     def get_access_token(cls, code: str, state: str) -> str:
         """인가 코드로 네이버 액세스 토큰 발급"""
         response = requests.post(
             cls.TOKEN_URL,
-            params={
+            data={
                 "grant_type": "authorization_code",
                 "client_id": settings.NAVER_CLIENT_ID,
                 "client_secret": settings.NAVER_CLIENT_SECRET,
@@ -41,15 +53,23 @@ class NaverOAuthService:
                 "code": code,
                 "state": state,
             },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=10,
         )
         response.raise_for_status()
         data = response.json()
-        return str(data["access_token"])
+
+        if "error" in data:
+            raise ValueError(f"네이버 토큰 발급 오루: {data.get('error_description', data['error'])}")
+
+        access_token = data.get("access_token")
+        if not access_token:
+            raise ValueError("네이버 응답에 access_token이 없습니다.")
+
+        return str(access_token)
 
     @classmethod
     def get_user_info(cls, access_token: str) -> NaverUserInfo:
-        """네이버 액세스 토큰으로 사용자 정보 조회"""
         response = requests.get(
             cls.USER_INFO_URL,
             headers={"Authorization": f"Bearer {access_token}"},
@@ -60,15 +80,13 @@ class NaverOAuthService:
 
         user_data = data.get("response", {})
 
-        # 전화번호 : "010-1234-5678" → "01012345678"로 변환
+        # 전화번호 : 010-1234-5678 -> 01012345678
         raw_phone = user_data.get("mobile", "")
         phone_number = raw_phone.replace("-", "") if raw_phone else None
 
-        # 성별 : "M" → "male" / "F" → "female" 로 변환
-        gender_map = {"M": "male", "F": "female"}
-        gender = gender_map.get(user_data.get("gender", ""))
+        gender = user_data.get("gender") or None
 
-        # 생년월일 : birthyear="2000", birthday="12-31" → "2000-12-31"
+        # 생년 월일: birthyear = 2000 , birthday = 12-31 -> 2000-12-31
         birthyear = user_data.get("birthyear", "")
         birthday_mmdd = user_data.get("birthday", "")
         if birthyear and birthday_mmdd:
