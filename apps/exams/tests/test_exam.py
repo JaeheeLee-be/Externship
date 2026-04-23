@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
 
 from apps.exams.models import Exam
-from apps.posts.models import Subject, Course
+from apps.posts.models import Course, Subject
 
 User = get_user_model()
 
