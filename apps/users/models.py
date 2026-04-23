@@ -141,6 +141,5 @@ class TrainigAssistants(TimeStampModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="training_assistants", null=False)
     # cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)
 
-
     class Meta:
         db_table = "training_assistants"
