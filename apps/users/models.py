@@ -70,17 +70,17 @@ class SocialUsers(TimeStampModel):
 
 class Withdrawal(TimeStampModel):
     class Reason(models.TextChoices):
-        GRADUATION = "graduation", "졸업"
-        TRANSFER = "transfer", "다른 플랫폼 이동"
-        NO_LONGER_NEEDED = "no_longer_needed", "더 이상 필요없음"
-        LACK_OF_INTEREST = "lack_of_interest", "흥미 떨어짐"
-        TOO_DIFFICULT = "too_difficult", "너무 어려움"
-        FOUND_BETTER_SERVICE = "found_better_service", "더 좋은 서비스 찾음"
-        PRIVACY_CONCERNS = "privacy_concerns", "개인정보 우려"
-        POOR_SERVICE_QUALITY = "poor_service_quality", "서비스 품질 불만"
-        TECHNICAL_ISSUES = "technical_issue", "기술적 문제"
-        LACK_OF_CONTENT = "lack_of_content", "콘텐츠 부족"
-        OTHER = "other", "기타"
+        GRADUATION = "GRADUATION", "졸업"
+        TRANSFER = "TRANSFER", "다른 플랫폼 이동"
+        NO_LONGER_NEEDED = "NO_LONGER_NEEDED", "더 이상 필요없음"
+        LACK_OF_INTEREST = "LACK_OF_INTEREST", "흥미 떨어짐"
+        TOO_DIFFICULT = "TOO_DIFFICULT", "너무 어려움"
+        FOUND_BETTER_SERVICE = "FOUND_BETTER_SERVICE", "더 좋은 서비스 찾음"
+        PRIVACY_CONCERNS = "PRIVACY_CONCERNS", "개인정보 우려"
+        POOR_SERVICE_QUALITY = "POOR_SERVICE_QUALITY", "서비스 품질 불만"
+        TECHNICAL_ISSUES = "TECHNICAL_ISSUES", "기술적 문제"
+        LACK_OF_CONTENT = "LACK_OF_CONTENT", "콘텐츠 부족"
+        OTHER = "OTHER", "기타"
 
     id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, related_name="withdrawal")

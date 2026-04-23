@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from botocore.config import Config
+from celery.schedules import crontab  # type: ignore[import-untyped]
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -235,3 +236,9 @@ AWS_S3_CONFIG = Config(s3={"addressing_style": "virtual"})
 
 # FRONTEND_REDIRECT_URI
 FRONTEND_REDIRECT_URI = os.getenv("FRONTEND_REDIRECT_URI")
+CELERY_BEAT_SCHEDULE = {
+    "delete-expired-withdrawn-users": {
+        "task": "apps.users.tasks.delete_expired_withdrawn_users",
+        "schedule": crontab(hour=0, minute=0),  # 매일 자정
+    },
+}

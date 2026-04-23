@@ -51,7 +51,7 @@ class WithdrawalViewTest(APITestCase):
         """정상 탈퇴 - 204 반환, Withdrawal 생성, is_active=False"""
         response = self.client.delete(
             self.url,
-            data={"reason": "other", "reason_detail": "그냥요"},
+            data={"reason": "OTHER", "reason_detail": "그냥요"},
             content_type="application/json",
             **self.auth,
         )
@@ -62,7 +62,7 @@ class WithdrawalViewTest(APITestCase):
         self.assertFalse(self.user.is_active)
 
         withdrawal = Withdrawal.objects.get(user=self.user)
-        self.assertEqual(withdrawal.reason, "other")
+        self.assertEqual(withdrawal.reason, "OTHER")
         self.assertEqual(withdrawal.reason_detail, "그냥요")
         self.assertEqual(withdrawal.due_date, date.today() + timedelta(weeks=2))
 
@@ -70,7 +70,7 @@ class WithdrawalViewTest(APITestCase):
         """reason_detail 없이 탈퇴 - 204 반환, reason_detail 빈 문자열로 저장"""
         response = self.client.delete(
             self.url,
-            data={"reason": "graduation"},
+            data={"reason": "GRADUATION"},
             content_type="application/json",
             **self.auth,
         )
@@ -88,7 +88,7 @@ class WithdrawalViewTest(APITestCase):
         """비인증 요청 - 401 반환"""
         response = self.client.delete(
             self.url,
-            data={"reason": "other"},
+            data={"reason": "OTHER"},
             content_type="application/json",
         )
 
@@ -98,7 +98,7 @@ class WithdrawalViewTest(APITestCase):
         """잘못된 reason 값 - 400 반환"""
         response = self.client.delete(
             self.url,
-            data={"reason": "invalid_reason"},
+            data={"reason": "INVALID_REASON"},
             content_type="application/json",
             **self.auth,
         )
@@ -121,7 +121,7 @@ class WithdrawalViewTest(APITestCase):
         # 첫 번째 탈퇴
         self.client.delete(
             self.url,
-            data={"reason": "other"},
+            data={"reason": "OTHER"},
             content_type="application/json",
             **self.auth,
         )
@@ -133,7 +133,7 @@ class WithdrawalViewTest(APITestCase):
 
         response = self.client.delete(
             self.url,
-            data={"reason": "other"},
+            data={"reason": "OTHER"},
             content_type="application/json",
             **auth,
         )
@@ -151,7 +151,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(APITestCase):
         user = create_user(email="expired@oz.com", phone_number="01011111111")
         Withdrawal.objects.create(
             user=user,
-            reason="other",
+            reason="OTHER",
             reason_detail="",
             due_date=date.today() - timedelta(days=1),  # 어제 = 만료됨
         )
@@ -168,7 +168,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(APITestCase):
         user = create_user(email="alive@oz.com", phone_number="01022222222")
         Withdrawal.objects.create(
             user=user,
-            reason="other",
+            reason="OTHER",
             reason_detail="",
             due_date=date.today() + timedelta(days=1),  # 내일 = 미만료
         )
@@ -185,7 +185,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(APITestCase):
         user = create_user(email="history@oz.com", phone_number="01033333333")
         withdrawal = Withdrawal.objects.create(
             user=user,
-            reason="graduation",
+            reason="GRADUATION",
             reason_detail="",
             due_date=date.today() - timedelta(days=1),
         )
@@ -194,7 +194,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(APITestCase):
 
         withdrawal.refresh_from_db()
         self.assertIsNone(withdrawal.user)  # user는 NULL
-        self.assertEqual(withdrawal.reason, "graduation")  # 이력은 보존
+        self.assertEqual(withdrawal.reason, "GRADUATION")  # 이력은 보존
 
     def test_skip_already_null_user(self) -> None:
         """user가 이미 NULL인 Withdrawal은 건너뜀"""
@@ -202,7 +202,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(APITestCase):
 
         Withdrawal.objects.create(
             user=None,
-            reason="other",
+            reason="OTHER",
             reason_detail="",
             due_date=date.today() - timedelta(days=1),
         )
