@@ -1,6 +1,9 @@
 from django.db import models
-from .course import Course
+
 from apps.core.models import TimeStampModel
+
+from .course import Course
+
 
 class Subject(TimeStampModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subjects')

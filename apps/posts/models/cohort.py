@@ -1,11 +1,14 @@
 from django.db import models
-from .course import Course
+
 from apps.core.models import TimeStampModel
 
+from .course import Course
+
+
 class StatusChoices(models.TextChoices):
-    PENDING = 'PENDING'
-    IN_PROGRESS = 'IN_PROGRESS'
-    COMPLETED = 'COMPLETED'
+    SUBMITTED = 'SUBMITTED', '대기'
+    ACCEPTED = 'ACCEPTED', '승인'
+    REJECTED = 'REJECTED', '거절'
 
 class Cohort(TimeStampModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='cohorts')
@@ -15,9 +18,9 @@ class Cohort(TimeStampModel):
     end_date = models.DateField()
 
     status = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=StatusChoices.choices,
-        default=StatusChoices.PENDING
+        default=StatusChoices.SUBMITTED
     )
 
     class Meta:
