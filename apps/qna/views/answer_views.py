@@ -97,7 +97,7 @@ class AnswerDetail(APIView):
         serializer = AnswerRequestSerializer(
             data=request.data,
         )
-        if request.user.id != answer.author.id:
+        if request.user.id != answer.author_id:
             raise PermissionDenied("본인이 작성한 답변만 수정할 수 있습니다.")
 
         if not serializer.is_valid():
