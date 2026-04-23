@@ -2,10 +2,10 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.qna.models.question_models import QuestionCategories
+from apps.qna.models.question_models import QuestionCategory
 
 # 카테고리 depth 계산 함수
-def get_category_depth(category: QuestionCategories) -> int :
+def get_category_depth(category: QuestionCategory) -> int :
     depth = 1
     current_depth = category.parent
     while current_depth:
@@ -45,8 +45,8 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
                 raise serializers.ValidationError("부모 카테고리를 찾을 수 없습니다.")
 
             try:
-                parent = QuestionCategories.objects.get(id=parent_id)
-            except QuestionCategories.DoesNotExist:
+                parent = QuestionCategory.objects.get(id=parent_id)
+            except QuestionCategory.DoesNotExist:
                 raise serializers.ValidationError("부모 카테고리를 찾을 수 없습니다.")
 
             parent_depth = get_category_depth(parent)
@@ -60,7 +60,7 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
                 raise serializers.ValidationError("소분류의 부모는 중분류여야 합니다.")
 
         # 같은 부모 아래 동일 이름 중복 방지
-        if QuestionCategories.objects.filter(parent=parent, name=name).exists():
+        if QuestionCategory.objects.filter(parent=parent, name=name).exists():
             raise serializers.ValidationError(
                 "동일한 이름의 카테고리가 이미 존재합니다."
             )
@@ -70,13 +70,13 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
         return attrs
 
 # 카테고리 생성 응답
-class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[QuestionCategories]):
+class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[QuestionCategory]):
     category_id = serializers.IntegerField(source="id")
     parent_id = serializers.IntegerField(source="parent.id", allow_null=True)
     category_type = serializers.SerializerMethodField()
 
     class Meta:
-        model = QuestionCategories
+        model = QuestionCategory
         fields = [
             "category_id",
             "name",
@@ -85,10 +85,12 @@ class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[Question
             "created_at",
         ]
 
-    def get_parent_id(self, obj: QuestionCategories) -> int | None:
-        return obj.parent_id
+    def get_parent_id(self, obj: QuestionCategory) -> int | None:
+        if obj.parent is None:
+            return None
+        return int(obj.parent.id)
 
-    def get_category_type(self, obj: QuestionCategories) -> str | None:
+    def get_category_type(self, obj: QuestionCategory) -> str | None:
         depth = 1
         current = obj.parent
         while current:

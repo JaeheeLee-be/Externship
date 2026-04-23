@@ -1,11 +1,6 @@
-
-from django.urls import path
+from django.urls import path, include
 
 from apps.qna.views import answer_views
-
-
-
-from apps.qna.views.category_views import AdminCategoryCreateAPIView
 
 urlpatterns = [
     # 답변
@@ -15,5 +10,5 @@ urlpatterns = [
         name="question_answers",
     ),
 
-
+    path("admin/qna/", include("apps.qna.urls.admin_urls")),
 ]
