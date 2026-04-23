@@ -1,6 +1,5 @@
-from unittest.mock import patch
-
 from typing import Any
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
@@ -8,7 +7,6 @@ from rest_framework.test import APIClient
 
 from apps.users.services.kakao import KakaoUserInfo
 from apps.users.services.naver import NaverUserInfo
-
 
 # ── 공통 픽스처 ──────────────────────────────────────────────
 

@@ -75,7 +75,6 @@ from django.test import TestCase
 from apps.users.models import SocialUsers, User
 from apps.users.services.social_auth import SocialAuthService
 
-
 # ── 공통 픽스처 ──────────────────────────────────────────────
 
 

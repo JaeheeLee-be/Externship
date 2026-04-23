@@ -19,7 +19,6 @@ from apps.users.services.kakao import KakaoOAuthService
 from apps.users.services.naver import NaverOAuthService
 from apps.users.services.social_auth import SocialAuthService
 
-
 # ────공통──────────────────────────────────────────────────────
 
 
