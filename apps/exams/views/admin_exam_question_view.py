@@ -52,9 +52,9 @@ class QuestionDetailView(APIView):
     permission_classes = [CustomPermissions]
 
     # 수정
-    def put(self, request:Request, exam_id:int, question_id:int)->Response:
+    def put(self, request: Request, exam_id: int, question_id: int) -> Response:
         mod_data = request.data
-        serializer_class = SERIALIZER_MAP.get(str(mod_data.get("type","")), QuestionSerializer)
+        serializer_class = SERIALIZER_MAP.get(str(mod_data.get("type", "")), QuestionSerializer)
         serializer = serializer_class(data=mod_data)
         try:
             serializer.is_valid(raise_exception=True)

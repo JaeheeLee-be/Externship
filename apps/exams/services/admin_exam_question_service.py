@@ -82,7 +82,7 @@ class QuestionService:
         if not question:
             raise ServiceException("수정하려는 문제 정보를 찾을 수 없습니다.", status_code=status.HTTP_404_NOT_FOUND)
             # 수정 데이터의 배점 검증
-        mod_point = serializer_data.get("point",1)
+        mod_point = serializer_data.get("point", 1)
         result = ExamQuestion.objects.filter(exam_id=exam_id).aggregate(total=Sum("point"))
         total_points = result.get("total") or 0
         if mod_point + total_points - question.point > 100:
