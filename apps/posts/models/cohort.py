@@ -1,12 +1,13 @@
 from django.db import models
 from .course import Course
+from apps.core.models import TimeStampModel
 
 class StatusChoices(models.TextChoices):
     PENDING = 'PENDING'
     IN_PROGRESS = 'IN_PROGRESS'
     COMPLETED = 'COMPLETED'
 
-class Cohort(models.Model):
+class Cohort(TimeStampModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='cohorts')
     number = models.PositiveSmallIntegerField()
     max_student = models.PositiveSmallIntegerField()
@@ -18,9 +19,6 @@ class Cohort(models.Model):
         choices=StatusChoices.choices,
         default=StatusChoices.PENDING
     )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'cohorts'
