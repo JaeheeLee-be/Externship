@@ -6,6 +6,7 @@ from rest_framework import serializers
 from apps.exams.exceptions.exam_exception import ExamTitleConflict
 from apps.exams.models import Exam
 
+
 class ExamListSerializer(serializers.ModelSerializer):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
@@ -38,10 +39,10 @@ class ExamListSerializer(serializers.ModelSerializer):
             "detail_url",
         ]
 
+
 class ExamCreateSerializer(serializers.ModelSerializer):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
-
 
     def validate_title(self, value):
         queryset = Exam.objects.filter(title=value)
@@ -63,11 +64,10 @@ class ExamCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exam
-        fields =[
+        fields = [
             "id",
             "title",
             "subject_id",
             "thumbnail_image_url",
         ]
         read_only_fields = ["id"]
-

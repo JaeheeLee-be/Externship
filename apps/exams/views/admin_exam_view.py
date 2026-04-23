@@ -7,7 +7,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
-from apps.exams.serializers.admin_exam_serializer import ExamListSerializer, ExamCreateSerializer
+from apps.exams.serializers.admin_exam_serializer import (
+    ExamCreateSerializer,
+    ExamListSerializer,
+)
 from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 
 
@@ -17,7 +20,9 @@ class ExamListCreateView(APIView):
 
     def permission_denied(self, request, message=None, code=None):
         if not request.user.is_authenticated:
-            return Response({"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
+            )
         if request.method == "POST":
             return Response({"error_detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         return Response({"error_detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
@@ -41,7 +46,7 @@ class ExamListCreateView(APIView):
                 name="sort",
                 type=str,
                 description="id, title, subject__title, question_count, "
-                            "submit_count, created_at, updated_at 값 중 선택 가능",
+                "submit_count, created_at, updated_at 값 중 선택 가능",
             ),
             OpenApiParameter(
                 name="order",
@@ -93,6 +98,4 @@ class ExamListCreateView(APIView):
         except Exception:
             return Response({"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(
-            ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED
-        )
+        return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)

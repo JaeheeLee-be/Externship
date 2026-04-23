@@ -1,22 +1,23 @@
 from django.db.models import Count, Q, QuerySet
 
 from apps.exams.exceptions.exam_exception import SubjectNotFound
+from apps.exams.models import Exam
 from apps.posts.models import Subject
 
-from apps.exams.models import Exam
-
-
 ALLOWED_SORT_FIELDS = {
-        "id",
-        "title",
-        "subject__title",
-        "question_count",
-        "submit_count",
-        "created_at",
-        "updated_at",
-    }
+    "id",
+    "title",
+    "subject__title",
+    "question_count",
+    "submit_count",
+    "created_at",
+    "updated_at",
+}
 
-def get_exam_list(*, subject_id: int = None, search_keyword: str = None, sort: str = None, order: str = None) -> QuerySet[Exam]:
+
+def get_exam_list(
+    *, subject_id: int = None, search_keyword: str = None, sort: str = None, order: str = None
+) -> QuerySet[Exam]:
     queryset = Exam.objects.all().order_by(
         "-created_at",
         "title",
@@ -33,7 +34,7 @@ def get_exam_list(*, subject_id: int = None, search_keyword: str = None, sort: s
     )
 
     if sort and sort in ALLOWED_SORT_FIELDS:
-        ordering = f'-{sort}' if order == "desc" else sort
+        ordering = f"-{sort}" if order == "desc" else sort
         queryset = queryset.order_by(ordering)
 
     return queryset
