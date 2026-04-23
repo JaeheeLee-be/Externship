@@ -23,7 +23,7 @@ def make_kakao_user_info(**kwargs: Any) -> KakaoUserInfo:
         "birthday": "1990-01-01",
     }
     defaults.update(kwargs)
-    return KakaoUserInfo(**defaults)  # type: ignore[arg-type]
+    return KakaoUserInfo(**defaults)
 
 
 def make_naver_user_info(**kwargs: Any) -> NaverUserInfo:
@@ -38,7 +38,7 @@ def make_naver_user_info(**kwargs: Any) -> NaverUserInfo:
         "birthday": "1992-03-15",
     }
     defaults.update(kwargs)
-    return NaverUserInfo(**defaults)  # type: ignore[arg-type]
+    return NaverUserInfo(**defaults)
 
 
 #  카카오
