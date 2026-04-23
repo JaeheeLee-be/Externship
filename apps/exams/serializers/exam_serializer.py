@@ -27,7 +27,16 @@ class ExamListCreateSerializer(serializers.ModelSerializer):
             "updated_at",
             "detail_url",
         ]
-        read_only_fields = "__all__"
+        read_only_fields = [
+            "id",
+            "title",
+            "subject_name",
+            "question_count",
+            "submit_count",
+            "created_at",
+            "updated_at",
+            "detail_url",
+        ]
 
 class ExamCreateSerializer(serializers.ModelSerializer):
     subject_id = serializers.IntegerField()
