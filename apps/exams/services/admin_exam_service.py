@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.db.models import Count, Q, QuerySet
 
 from apps.exams.exceptions.exam_exception import SubjectNotFound
@@ -16,7 +18,11 @@ ALLOWED_SORT_FIELDS = {
 
 
 def get_exam_list(
-    *, subject_id: int = None, search_keyword: str = None, sort: str = None, order: str = None
+    *,
+    subject_id: Optional[int] = None,
+    search_keyword: Optional[str] = None,
+    sort: Optional[str] = None,
+    order: Optional[str] = None,
 ) -> QuerySet[Exam]:
     queryset = (
         Exam.objects.all()
@@ -44,7 +50,7 @@ def get_exam_list(
     return queryset
 
 
-def create_exam(subject_id: int, title: str, thumbnail_image_url: str = None) -> Exam:
+def create_exam(subject_id: int, title: str, thumbnail_image_url: Optional[str] = None) -> Exam:
     if not Subject.objects.filter(id=subject_id).exists():
         raise SubjectNotFound()
     return Exam.objects.create(

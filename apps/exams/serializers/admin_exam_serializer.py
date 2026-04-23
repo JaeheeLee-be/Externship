@@ -14,7 +14,7 @@ class ExamListSerializer(serializers.ModelSerializer):
     # TODO: 디테일 제작 후 주석 해제
     # detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
 
-    def get_subject_name(self, obj):
+    def get_subject_name(self, obj) -> str:
         return obj.subject.title
 
     class Meta:
@@ -45,7 +45,7 @@ class ExamCreateSerializer(serializers.ModelSerializer):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
 
-    def validate_title(self, value):
+    def validate_title(self, value: str) -> str:
         queryset = Exam.objects.filter(title=value)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
@@ -53,7 +53,7 @@ class ExamCreateSerializer(serializers.ModelSerializer):
             raise ExamTitleConflict()
         return value
 
-    def validate_thumbnail_image_url(self, value):
+    def validate_thumbnail_image_url(self, value: str) -> str:
         if value == "default_img_url":
             return value
         path = urlparse(value).path

@@ -17,7 +17,7 @@ from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request, message=None, code=None):
+    def permission_denied(self, request, message=None, code=None) -> Response:
         if not request.user.is_authenticated:
             return Response(
                 {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
@@ -59,7 +59,7 @@ class ExamListCreateView(APIView):
             403: OpenApiResponse(description="쪽지시험 목록 조회 권한이 없습니다."),
         },
     )
-    def get(self, request):
+    def get(self, request) -> Response:
         queryset = get_exam_list(
             subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
             search_keyword=request.query_params.get("search_keyword"),
@@ -85,7 +85,7 @@ class ExamListCreateView(APIView):
             409: OpenApiResponse(description="동일한 이름의 시험이 이미 존재합니다."),
         },
     )
-    def post(self, request):
+    def post(self, request) -> Response:
         try:
             serializer = ExamCreateSerializer(data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
