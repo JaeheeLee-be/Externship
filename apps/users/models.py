@@ -85,7 +85,7 @@ class Withdrawal(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, related_name="withdrawal")
     reason = models.CharField(max_length=20, choices=Reason.choices)
-    reason_detail = models.TextField()
+    reason_detail = models.TextField(blank=True, default="")
     due_date = models.DateField()
 
     class Meta:
