@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
 
-class IsAdminUser(BasePermission):
+class IsRoleAdminUser(BasePermission):
     """ADMIN만 접근 가능"""
 
     def has_permission(self, request: Request, view: Any) -> bool:
