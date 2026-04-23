@@ -26,12 +26,12 @@ class CustomUserManager(BaseUserManager["User"]):
 
 class User(AbstractBaseUser, TimeStampModel):
     class Gender(models.TextChoices):
-        MALE = "male", "남성"
-        FEMALE = "female", "여성"
+        MALE = "M", "남성"
+        FEMALE = "F", "여성"
 
     class Role(models.TextChoices):
         USER = "USER", "일반유저"
-        ADMIN = "ADMIN", "어드민"
+        ADMIN = "ADMIN", "관리자"
         STUDENT = "STUDENT", "수강생"
 
     id = models.BigAutoField(primary_key=True)
@@ -39,7 +39,7 @@ class User(AbstractBaseUser, TimeStampModel):
     name = models.CharField(max_length=30, null=False)
     nickname = models.CharField(max_length=10, null=False, unique=True)
     phone_number = models.CharField(max_length=20, null=False, unique=True)
-    gender = models.CharField(max_length=6, null=True)
+    gender = models.CharField(choices=Gender.choices, max_length=6, null=True)
     birthday = models.DateField(null=True)
     profile_img_url = models.CharField(max_length=255, null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -94,12 +94,14 @@ class Withdrawal(TimeStampModel):
 
 class StudentEnrollmentRequests(TimeStampModel):
     class Status(models.TextChoices):
-        END = "end", "종료됨"
-        ONGOING = "ongoing", "진행중"
         PENDING = "pending", "대기중"
+        ACCEPTED = 'accepted', '승인됨'
+        REJECTED = 'rejected', '거절됨'
+        CANCELED = 'canceled', '취소됨'
 
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollment_requests", null=False)
+    cohort = models.ForeignKey("posts.Cohort", on_delete=models.CASCADE, null=False)  # TODO: Cohort 앱 확인 후 수정
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, null=False)
     accepted_at = models.DateTimeField(null=True, blank=True)
 
