@@ -6,13 +6,35 @@ from rest_framework import serializers
 from apps.exams.exceptions.exam_exception import ExamTitleConflict
 from apps.exams.models import Exam
 
+class ExamBaseSerializer(serializers.ModelSerializer):
+    pass # 중복사항 넣기위해 제작했으나 없으면 추후 삭제 예정
 
-class ExamListCreateSerializer(serializers.ModelSerializer):
+class ExamListCreateSerializer(ExamBaseSerializer):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
-    detail_url = serializers.HyperlinkedIdentityField(view_name="exam_detail", lookup_field="pk")
+    subject_name = serializers.SerializerMethodField()
+    detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
+
+    def get_subject_name(self, obj):
+        return obj.subject.title
+
+    class Meta:
+        model = Exam
+        fields = [
+            "id",
+            "title",
+            "subject_name",
+            "question_count",
+            "submit_count",
+            "created_at",
+            "updated_at",
+            "detail_url",
+        ]
+        read_only_fields = "__all__"
+
+class ExamCreateSerializer(ExamBaseSerializer):
+    subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
-    subject = serializers.IntegerField()
 
 
     def validate_title(self, value):
@@ -35,15 +57,11 @@ class ExamListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exam
-        fields = [
+        fields =[
             "id",
             "title",
-            "subject",
+            "subject_id",
             "thumbnail_image_url",
-            "question_count",
-            "submit_count",
-            "created_at",
-            "updated_at",
-            "detail_url",
         ]
-        read_only_fields = ["id", "question_count", "submit_count", "created_at", "updated_at", "detail_url"]
+        read_only_fields = ["id"]
+
