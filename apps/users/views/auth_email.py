@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.serializers.auth_email import (
-    EmailRequestSerializers,
-    EmailVerifySerializers,
+    EmailRequestSerializer,
+    EmailVerifySerializer,
 )
 from apps.users.services.auth_email import EmailVerification
 
@@ -20,7 +20,7 @@ class EmailSendView(APIView):
         tags=["Accounts (이메일 인증)"],
         summary="이메일 인증 코드 발송 API",
         description="회원가입, 비밀번호 찾기, 계정 복구 등 용도(purpose)에 맞는 6자리 이메일 인증 코드를 발송합니다.",
-        request=EmailRequestSerializers,
+        request=EmailRequestSerializer,
         responses={
             200: OpenApiResponse(
                 description="발송 성공",
@@ -42,7 +42,7 @@ class EmailSendView(APIView):
         },
     )
     def post(self, request: Request) -> Response:
-        serializers = EmailRequestSerializers(data=request.data)
+        serializers = EmailRequestSerializer(data=request.data)
         if serializers.is_valid():
             email = serializers.validated_data["email"]
             purpose = serializers.validated_data["purpose"]
@@ -64,7 +64,7 @@ class EmailVerificationView(APIView):
         tags=["Accounts (이메일 인증)"],
         summary="이메일 인증 코드 검증 API",
         description="사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 32바이트 email_token을 반환합니다.",
-        request=EmailVerifySerializers,
+        request=EmailVerifySerializer,
         responses={
             200: OpenApiResponse(
                 description="검증 성공",
@@ -90,7 +90,7 @@ class EmailVerificationView(APIView):
         },
     )
     def post(self, request: Request) -> Response:
-        serializers = EmailVerifySerializers(data=request.data)
+        serializers = EmailVerifySerializer(data=request.data)
         if serializers.is_valid():
             email = serializers.validated_data["email"]
             code = serializers.validated_data["code"]
