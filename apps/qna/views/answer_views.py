@@ -8,8 +8,9 @@ from rest_framework.views import APIView
 from apps.qna.serializers.answer_serializers import (
     AnswerRequestSerializer,
     AnswerResponseSerializer,
+    AnswerAcceptResponseSerializer,
 )
-from apps.qna.services.answer_services import AnswerService
+from apps.qna.services.answer_services import AnswerService,AnswerAcceptService
 
 
 class AnswerView(APIView):
@@ -33,3 +34,13 @@ class AnswerView(APIView):
             **serializer.validated_data,
         )
         return Response(AnswerResponseSerializer(answer).data, status=status.HTTP_201_CREATED)
+
+class AnswerAcceptView(APIView):
+    permission_classes = [IsAuthenticated]
+    service = AnswerAcceptService()
+    def post(self,request:Request,answer_id:int)->Response:
+        answer = self.service.answer_accept(
+            user=request.user,
+            answer_id=answer_id,
+        )
+        return Response(AnswerAcceptResponseSerializer(answer).data, status=status.HTTP_200_OK)
