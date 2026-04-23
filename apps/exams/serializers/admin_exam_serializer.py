@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.exams.exceptions.exam_exception import ExamTitleConflict
 from apps.exams.models import Exam
 
-class ExamListCreateSerializer(serializers.ModelSerializer):
+class ExamListSerializer(serializers.ModelSerializer):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
     subject_name = serializers.SerializerMethodField()

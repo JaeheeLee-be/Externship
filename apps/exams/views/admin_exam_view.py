@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
-from apps.exams.serializers.admin_exam_serializer import ExamListCreateSerializer, ExamCreateSerializer
+from apps.exams.serializers.admin_exam_serializer import ExamListSerializer, ExamCreateSerializer
 from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 
 
@@ -50,7 +50,7 @@ class ExamListCreateView(APIView):
             ),
         ],
         responses={
-            200: ExamListCreateSerializer,
+            200: ExamListSerializer,
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 목록 조회 권한이 없습니다."),
         },
@@ -64,7 +64,7 @@ class ExamListCreateView(APIView):
         )
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = ExamListCreateSerializer(page, many=True, context={"request": request})
+        serializer = ExamListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
