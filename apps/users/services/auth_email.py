@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
+from apps.users.serializers.purpose_enum import AuthPurpose
 
 
 @shared_task(bind=True, max_retries=3)  # type:ignore
@@ -27,23 +28,20 @@ def send_email_async(self: Any, email: str, subject: str, message: str) -> None:
 
 class EmailVerification:
     @classmethod
-    def send_verification_email(cls, email: str, purpose: str) -> None:
+    def send_verification_email(cls, email: str, purpose: AuthPurpose) -> None:
         """
-        Base64 코드 생성 후 redis 코드 3분 저장한 뒤 이메일 발송
+        Base62 코드 생성 후 redis 코드 3분 저장한 뒤 이메일 발송
 
         :param email: 유저 이메일
         :param purpose: [signup, find_password, recovery] 중 하나
-        :return: 이메일 발송 성공시 True 실패시 False
+        :raises ValidationError: Redis 캐시 저장 실패 시 발생
         """
 
         # Base62 코드 생성
         code = Base62.uuid_encode(uuid.uuid4(), length=6)
         # Redis 저장
         cache_key = f"email_code_{email}"
-        cache_data = {
-            "code": code,
-            "purpose": purpose,
-        }
+        cache_data = {"code": code, "purpose": purpose.value}  # type: ignore[misc]
         # cache 저장 설정
         try:
             cache.set(cache_key, cache_data, timeout=180)

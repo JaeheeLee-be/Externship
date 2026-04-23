@@ -13,14 +13,12 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
         self.email = "test_user@ozcoding.com"
         self.purpose = "signup"
 
-        # urls.py에 설정된 name에 맞게 reverse 주소를 가져옵니다.
-        # (만약 urls.py에서 name이 다르게 설정되어 있다면 그에 맞게 수정해주세요)
         self.send_url = reverse("users:send-email")
         self.verify_url = reverse("users:verify-email")
 
     def test_send_email_success(self) -> None:
         """이메일 발송 성공 테스트"""
-        data = {"email": self.email, "purpose": self.purpose}  # 💡 View와 Serializer가 요구하는 purpose 추가!
+        data = {"email": self.email, "purpose": self.purpose}
 
         response = self.client.post(self.send_url, data)
 
@@ -54,7 +52,7 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
         """인증 코드 검증 성공 테스트"""
         valid_code = "aB3dE5"
 
-        # 1. 테스트를 위해 캐시에 미리 인증 코드를 강제로 세팅합니다.
+        # 1. 테스트를 위해 캐시에 미리 인증 코드를 강제로 세팅
         cache_key = f"email_code_{self.email}"
         cache.set(cache_key, {"code": valid_code, "purpose": self.purpose}, timeout=300)
 
@@ -93,3 +91,28 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
 
         # 3. 실패했으므로 재시도를 위해 캐시가 삭제되지 않고 남아있어야 함
         self.assertIsNotNone(cache.get(cache_key))
+
+    def test_verify_email_expired_code(self) -> None:
+        """인증 시간이 만료된(캐시에 없는) 경우 실패 테스트"""
+        #  캐시에 아무것도 세팅하지 않음으로써 '만료된 상황'
+        data = {"email": self.email, "code": "123456"}
+
+        response = self.client.post(self.verify_url, data)
+
+        # 400 에러 및 적절한 에러 메시지가 나오는지 확인
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # 에러 메시지에 '만료'나 '요청' 등의 키워드가 포함되어 있는지 확인 (실제 뷰 로직에 맞춰 수정하세요)
+        self.assertIn("code", response.data["error_detail"])
+
+    def test_send_email_invalid_purpose(self) -> None:
+        """유효하지 않은 purpose 값 발송 실패 테스트"""
+        # 'hack'이라는 허용되지 않은 purpose 전송
+        data = {"email": self.email, "purpose": "hack"}
+
+        response = self.client.post(self.send_url, data)
+
+        # 400 에러와 함께 purpose 필드에 대한 에러가 났는지 확인
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("purpose", response.data["error_detail"])
+        self.assertEqual(len(mail.outbox), 0)  # 메일 발송 안됨
