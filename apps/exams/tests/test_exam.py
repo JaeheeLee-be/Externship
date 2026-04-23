@@ -2,9 +2,9 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
-from apps.posts.models import Subject
 
 from apps.exams.models import Exam
+from apps.posts.models import Subject
 
 User = get_user_model()
 
@@ -43,6 +43,7 @@ class ExamBaseTestCase(APITestCase):
             title="test_exam2",
         )
 
+
 # 모델 테스트
 class TestExamBaseModel(ExamBaseTestCase):
     def test_exam_title_unique_exception(self):
@@ -70,7 +71,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_get_exam_list_as_admin(self):
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get(reverse("exam:list"))
+        response = self.client.get(reverse("exam-list"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
@@ -79,13 +80,13 @@ class TestExamBaseAPI(ExamBaseTestCase):
 
     def test_get_exam_list_as_user(self):
         self.client.force_authenticate(user=self.user)
-        response = self.client.get(reverse("exam:list"))
+        response = self.client.get(reverse("exam-list"))
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error_detail"], "쪽지시험 목록 조회 권한이 없습니다.")
 
     def test_get_exam_list_unauthorized(self):
-        response = self.client.get(reverse("exam:list"))
+        response = self.client.get(reverse("exam-list"))
 
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
@@ -94,7 +95,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_get_exam_list_with_subject(self):
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get(reverse("exam:list"), {"subject_id": 1})
+        response = self.client.get(reverse("exam-list"), {"subject_id": 1})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
@@ -104,7 +105,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_get_exam_list_with_subject_not_found(self):
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get(reverse("exam:list"), {"subject_id": 3})
+        response = self.client.get(reverse("exam-list"), {"subject_id": 3})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
@@ -112,7 +113,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     # 쪽지시험 목록 조회: 검색
     def test_get_exam_list_with_search_title(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(reverse("exam:list"), {"search_keyword": "exam"})
+        response = self.client.get(reverse("exam-list"), {"search_keyword": "exam"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
@@ -121,7 +122,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
 
     def test_get_exam_list_with_search_subject(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(reverse("exam:list"), {"search_keyword": "html"})
+        response = self.client.get(reverse("exam-list"), {"search_keyword": "html"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
@@ -130,7 +131,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
 
     def test_get_exam_list_with_search_not_found(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(reverse("exam:list"), {"search_keyword": "not_found"})
+        response = self.client.get(reverse("exam-list"), {"search_keyword": "not_found"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
@@ -138,7 +139,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     # 쪽지시험 목록 조회: sort
     def test_get_exam_list_with_sort(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(reverse("exam:list"), {"sort": "created_at"})
+        response = self.client.get(reverse("exam-list"), {"sort": "created_at"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
@@ -148,7 +149,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     # 쪽지시험 목록 조회: order
     def test_get_exam_list_with_order(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(reverse("exam:list"), {"order": "desc"})
+        response = self.client.get(reverse("exam-list"), {"order": "desc"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
@@ -158,7 +159,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     # 쪽지시험 목록 조회: sort + order
     def test_get_exam_list_with_sort_and_order(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(reverse("exam:list"), {"sort": "subject__title", "order": "asc"})
+        response = self.client.get(reverse("exam-list"), {"sort": "subject__title", "order": "asc"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
@@ -169,7 +170,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_exam_create_as_admin(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(
-            reverse("exam:list"),
+            reverse("exam-list"),
             {
                 "subject_id": self.subject_python.id,
                 "title": "new_exam",
@@ -184,7 +185,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_exam_create_as_user(self):
         self.client.force_authenticate(user=self.user)
         response = self.client.post(
-            reverse("exam:list"),
+            reverse("exam-list"),
             {
                 "subject_id": self.subject_python.id,
                 "title": "new_exam",
@@ -197,7 +198,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
 
     def test_exam_create_unauthorized(self):
         response = self.client.post(
-            reverse("exam:list"),
+            reverse("exam-list"),
             {
                 "subject_id": self.subject_python.id,
                 "title": "new_exam",
@@ -212,7 +213,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_exam_create_not_found_subject(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(
-            reverse("exam:list"),
+            reverse("exam-list"),
             {
                 "subject_id": 9999999999999999,
                 "title": "new_exam",
@@ -222,4 +223,3 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
         self.assertEqual(Exam.objects.count(), 2)
-
