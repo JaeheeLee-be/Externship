@@ -176,3 +176,80 @@ class AnswerAcceptViewTestCase(BaseTestCase):
         response = self.client.post(url, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class AnswerUpdateTestCase(BaseTestCase):
+    """
+    PUT /api/v1/qna/answers/{answer_id}
+    질문수정 API
+    """
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+    def test_answer_update(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        self.answer = Answer.objects.create(
+            author=self.user,
+            question=self.question,
+            content="testcontent",
+        )
+        url = reverse("answers_detail", kwargs={"answer_id": self.answer.id})
+        response = self.client.put(url, {"content": "updated content", "img_urls": ["updated imageurl"]}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("answer_id", response.data)
+        self.assertIn("updated_at", response.data)
+
+    def test_answer_update_unauthenticated(self) -> None:
+        self.answer = Answer.objects.create(
+            author=self.user,
+            question=self.question,
+            content="testcontent",
+        )
+        url = reverse("answers_detail", kwargs={"answer_id": self.answer.id})
+        response = self.client.put(url, {"content": "updated content", "img_urls": ["updated imageurl"]}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_answer_update_invalid(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        self.answer = Answer.objects.create(
+            author=self.user,
+            question=self.question,
+            content="testcontent",
+        )
+        url = reverse("answers_detail", kwargs={"answer_id": self.answer.id})
+        response = self.client.put(url, {"img_urls": []}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_answer_update_not_found(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answers_detail", kwargs={"answer_id": 10000})
+        response = self.client.put(url, {"content": "updated content", "img_urls": []}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_answer_update_forbidden(self) -> None:
+        self.new_user = User.objects.create_user(
+            name="test2",
+            email="test2@test.com",
+            nickname="test2",
+            phone_number="01022222222",
+            gender="Male",
+            birthday="2000-01-01",
+            is_active=True,
+            role="USER",
+            password="testpassword",
+        )
+        self.answer = Answer.objects.create(
+            author=self.user,
+            question=self.question,
+            content="testcontent",
+        )
+        self.client.force_authenticate(user=self.new_user)
+        url = reverse("answers_detail", kwargs={"answer_id": self.answer.id})
+        response = self.client.put(url, {"content": "updated content", "img_urls": []}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

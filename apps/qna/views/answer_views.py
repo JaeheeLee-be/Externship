@@ -19,8 +19,9 @@ from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
+    AnswerUpdateSerializer,
 )
-from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
+from apps.qna.services.answer_services import AnswerAcceptService, AnswerService,AnswerDetailService
 
 
 class AnswerPresignedUrlView(PresignedUrlView):
@@ -61,6 +62,7 @@ class AnswerView(APIView):
         return Response(AnswerResponseSerializer(answer).data, status=status.HTTP_201_CREATED)
 
 
+
 class AnswerAcceptView(APIView):
     """
     POST /api/v1/qna/answers/{answer_id}/accept
@@ -85,3 +87,25 @@ class AnswerAcceptView(APIView):
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(AnswerAcceptResponseSerializer(answer).data, status=status.HTTP_200_OK)
+
+class AnswerDetail(APIView):
+    permission_classes = [IsStudentUser]
+    answer_service = AnswerDetailService()
+
+    def put(self, request: Request, answer_id: int) -> Response:
+        answer = self.answer_service.get_answer(answer_id)
+        serializer = AnswerRequestSerializer(
+            data=request.data,
+        )
+        if request.user.id != answer.author.id:
+            raise PermissionDenied("본인이 작성한 답변만 수정할 수 있습니다.")
+
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+
+        updated_answer = self.answer_service.update(
+            answer,
+            **serializer.validated_data,
+        )
+        return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
+

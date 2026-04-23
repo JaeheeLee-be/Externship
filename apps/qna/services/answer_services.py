@@ -50,4 +50,21 @@ class AnswerAcceptService:
                 raise ConflictException()
             answer.is_adopted = True
             answer.save()
+
+class AnswerDetailService:
+    def get_answer(self, answer_id: int) -> Answer:
+        try:
+            return Answer.objects.get(pk=answer_id)
+        except Answer.DoesNotExist:
+            raise NotFound("해당 답변을 찾을 수 없습니다.")
+
+    def update(self, answer: Answer, **validated_data: Any) -> Answer:
+        with transaction.atomic():
+            answer.content = validated_data["content"]
+            answer.save()
+
+            answer.answerimage_set.all().delete()
+            AnswerImage.objects.bulk_create(
+                [AnswerImage(img_url=img, answer=answer) for img in validated_data.get("img_urls", [])]
+            )
         return answer
