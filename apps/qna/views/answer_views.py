@@ -38,11 +38,15 @@ class AnswerView(APIView):
 
 
 class AnswerAcceptView(APIView):
+    """
+    POST /api/v1/qna/answers/{answer_id}/accept
+    답변 채택에 관한 view
+    """
     permission_classes = [IsAuthenticated]
     service = AnswerAcceptService()
 
     def post(self, request: Request, answer_id: int) -> Response:
-        assert isinstance(request.user, User)
+        assert isinstance(request.user, User) # mypy 통과를 위한 코드
         answer = self.service.answer_accept(
             user=request.user,
             answer_id=answer_id,

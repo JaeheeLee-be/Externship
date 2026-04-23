@@ -30,6 +30,9 @@ class AnswerService:
 
 
 class AnswerAcceptService:
+    """
+    답변 채택 로직
+    """
     def get_answer(self, answer_id: int) -> Answer:
         try:
             return Answer.objects.get(pk=answer_id)
@@ -37,6 +40,7 @@ class AnswerAcceptService:
             raise NotFound("해당 답변을 찾을 수 없습니다.")
 
     def answer_accept(self, user: User, answer_id: int) -> Answer:
+        """질문을 작성한 작성자만 채택이 가능 하며 이미 채택된 답글이 있으면 에러 발생"""
         answer = self.get_answer(answer_id)
 
         if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
