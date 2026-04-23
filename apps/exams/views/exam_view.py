@@ -6,13 +6,21 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.exams.serializers.exam_serializer import ExamListCreateSerializer
+from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
+from apps.exams.serializers.exam_serializer import ExamListCreateSerializer, ExamCreateSerializer
 from apps.exams.services.exam_service import create_exam, get_exam_list
 
 
 class ExamListCreateView(APIView):
     if not settings.DEBUG:
         permission_classes = [IsAdminUser]
+
+    def permission_denied(self, request, message=None, code=None):
+        if not request.user.is_authenticated:
+            return Response({"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        if request.method == "POST":
+            return Response({"error_detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error_detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 
     @extend_schema(
         tags=["exams"],
@@ -29,6 +37,17 @@ class ExamListCreateView(APIView):
                 type=str,
                 description="exam의 title과 subject의 title을 동시에 검색하며 유사, 일치를 찾습니다",
             ),
+            OpenApiParameter(
+                name="sort",
+                type=str,
+                description="id, title, subject__title, question_count, "
+                            "submit_count, created_at, updated_at 값 중 선택 가능",
+            ),
+            OpenApiParameter(
+                name="order",
+                type=str,
+                description="asc, desc 값 중 선택 가능",
+            ),
         ],
         responses={
             200: ExamListCreateSerializer,
@@ -38,8 +57,10 @@ class ExamListCreateView(APIView):
     )
     def get(self, request):
         queryset = get_exam_list(
-            subject=int(request.query_params["subject"]) if request.query_params.get("subject") else None,
-            search=request.query_params.get("search"),
+            subject_id=int(request.query_params["subject"]) if request.query_params.get("subject") else None,
+            search_keyword=request.query_params.get("search"),
+            sort=request.query_params.get("sort"),
+            order=request.query_params.get("order"),
         )
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -50,9 +71,9 @@ class ExamListCreateView(APIView):
         tags=["exams"],
         summary="쪽지 시험 생성",
         description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp만 가능합니다.",
-        request=ExamListCreateSerializer,
+        request=ExamCreateSerializer,
         responses={
-            201: ExamListCreateSerializer,
+            201: ExamCreateSerializer,
             400: OpenApiResponse(description="유효하지 않은 시험 생성 요청입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 생성 권한이 없습니다."),
@@ -61,9 +82,17 @@ class ExamListCreateView(APIView):
         },
     )
     def post(self, request):
-        serializer = ExamListCreateSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        exam = create_exam(**serializer.validated_data)
+        try:
+            serializer = ExamCreateSerializer(data=request.data, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            exam = create_exam(**serializer.validated_data)
+        except ExamTitleConflict:
+            return Response({"error_detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+        except SubjectNotFound:
+            return Response({"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception:
+            return Response({"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(
-            ExamListCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED
+            ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED
         )
