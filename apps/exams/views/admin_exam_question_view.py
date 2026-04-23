@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
@@ -26,9 +27,19 @@ SERIALIZER_MAP = {
     "ORDERING": ChoiceAndSortSerializer,
 }
 
-
+@extend_schema(
+    tags=["exams_question"],
+    summary="쪽지시험 문제 생성",
+    description="""
+        쪽지시험 문제를 생성,
+         각 문제 유형별 serializer 적용하여 필수 데이터만 입력,
+         하나의 쪽지시험에는 최대 20개의 문제등록가능,
+        문제들의 배점의 합은 100점
+    """
+)
 class QuestionCreateView(APIView):
     permission_classes = [CustomPermissions]
+    serializer_class = QuestionSerializer
 
     # 생성
     def post(self, request: Request, exam_id: int) -> Response:
@@ -46,7 +57,14 @@ class QuestionCreateView(APIView):
         # 응답할때는 전체를 다 보여주기
         return Response(QuestionSerializer(result).data, status=status.HTTP_201_CREATED)
 
-
+@extend_schema(
+    tags=["exams_question"],
+    summary="쪽지시험 문제 단일 삭제 및 수정",
+    description="""
+        쪽지시험 문제 삭제 및 수정,
+        수정후 총 배점 100점 검증 포함
+    """
+)
 class QuestionDetailView(APIView):
     permission_classes = [CustomPermissions]
 
