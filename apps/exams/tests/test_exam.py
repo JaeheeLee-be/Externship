@@ -5,8 +5,7 @@ from rest_framework.test import APIClient, APITestCase
 
 from apps.exams.models import Exam
 from apps.posts.models import Course, Subject
-
-User = get_user_model()
+from apps.users.models import User
 
 
 class ExamBaseTestCase(APITestCase):

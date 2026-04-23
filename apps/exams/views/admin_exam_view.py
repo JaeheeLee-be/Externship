@@ -1,7 +1,8 @@
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotAuthenticated, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,14 +18,12 @@ from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request, message=None, code=None) -> Response:
+    def permission_denied(self, request: Request, message=None, code=None) -> None:
         if not request.user.is_authenticated:
-            return Response(
-                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         if request.method == "POST":
-            return Response({"error_detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-        return Response({"error_detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied("쪽지시험 생성 권한이 없습니다.")
+        raise PermissionDenied("쪽지시험 목록 조회 권한이 없습니다.")
 
     @extend_schema(
         tags=["exams"],
@@ -59,16 +58,21 @@ class ExamListCreateView(APIView):
             403: OpenApiResponse(description="쪽지시험 목록 조회 권한이 없습니다."),
         },
     )
-    def get(self, request) -> Response:
-        queryset = get_exam_list(
-            subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
-            search_keyword=request.query_params.get("search_keyword"),
-            sort=request.query_params.get("sort"),
-            order=request.query_params.get("order"),
-        )
-        paginator = PageNumberPagination()
-        page = paginator.paginate_queryset(queryset, request)
-        serializer = ExamListSerializer(page, many=True, context={"request": request})
+    def get(self, request: Request) -> Response:
+        try:
+            queryset = get_exam_list(
+                subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
+                search_keyword=request.query_params.get("search_keyword"),
+                sort=request.query_params.get("sort"),
+                order=request.query_params.get("order"),
+            )
+            paginator = PageNumberPagination()
+            page = paginator.paginate_queryset(queryset, request)
+            serializer = ExamListSerializer(page, many=True, context={"request": request})
+        except NotAuthenticated:
+            return Response({"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        except PermissionDenied:
+            return Response({"error_detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
@@ -85,11 +89,15 @@ class ExamListCreateView(APIView):
             409: OpenApiResponse(description="동일한 이름의 시험이 이미 존재합니다."),
         },
     )
-    def post(self, request) -> Response:
+    def post(self, request: Request) -> Response:
         try:
             serializer = ExamCreateSerializer(data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
             exam = create_exam(**serializer.validated_data)
+        except NotAuthenticated:
+            return Response({"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        except PermissionDenied:
+            return Response({"error_detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         except ExamTitleConflict:
             return Response({"error_detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
         except SubjectNotFound:

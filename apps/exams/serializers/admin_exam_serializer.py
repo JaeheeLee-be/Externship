@@ -1,4 +1,5 @@
 import os
+from typing import cast
 from urllib.parse import urlparse
 
 from rest_framework import serializers
@@ -7,15 +8,15 @@ from apps.exams.exceptions.exam_exception import ExamTitleConflict
 from apps.exams.models import Exam
 
 
-class ExamListSerializer(serializers.ModelSerializer):
+class ExamListSerializer(serializers.ModelSerializer[Exam]):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
     subject_name = serializers.SerializerMethodField()
     # TODO: 디테일 제작 후 주석 해제
     # detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
 
-    def get_subject_name(self, obj) -> str:
-        return obj.subject.title
+    def get_subject_name(self, obj: Exam) -> str:
+        return str(obj.subject.title)
 
     class Meta:
         model = Exam
@@ -41,14 +42,14 @@ class ExamListSerializer(serializers.ModelSerializer):
         ]
 
 
-class ExamCreateSerializer(serializers.ModelSerializer):
+class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
 
     def validate_title(self, value: str) -> str:
         queryset = Exam.objects.filter(title=value)
         if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
+            queryset = queryset.exclude(pk=cast(Exam, self.instance).pk)
         if queryset.exists():
             raise ExamTitleConflict()
         return value
