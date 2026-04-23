@@ -1,5 +1,3 @@
-from typing import List
-
 from rest_framework import serializers
 
 from apps.exams.models.exam_question_model import ExamQuestion
@@ -8,7 +6,18 @@ from apps.exams.models.exam_question_model import ExamQuestion
 class QuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
     class Meta:
         model = ExamQuestion
-        fields = "__all__"
+        fields = [
+            "id",
+            "exam",
+            "type",
+            "question",
+            "prompt",
+            "options_json",
+            "blank_count",
+            "answer",
+            "point",
+            "explanation",
+        ]
 
     def validate_point(self, value: int) -> int:
         if value < 0:
@@ -19,7 +28,7 @@ class QuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
 class BlankSerializer(QuestionSerializer):
     class Meta:
         model = ExamQuestion
-        fields: List[str] = [
+        fields = [
             "id",
             "exam",
             "type",
