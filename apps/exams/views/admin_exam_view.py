@@ -24,7 +24,7 @@ from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message=None, code=None) -> NoReturn:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         if request.method == "POST":
