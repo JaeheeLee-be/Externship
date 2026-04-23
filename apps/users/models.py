@@ -42,7 +42,7 @@ class User(AbstractBaseUser, TimeStampModel):
     gender = models.CharField(max_length=6, null=True)
     birthday = models.DateField(null=True)
     profile_img_url = models.CharField(max_length=255, null=True, blank=True)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     role = models.CharField(choices=Role.choices, default=Role.USER)
 
     USERNAME_FIELD = "email"
@@ -83,7 +83,7 @@ class Withdrawal(TimeStampModel):
         OTHER = "other", "기타"
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="withdrawals")
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, related_name="withdrawal")
     reason = models.CharField(max_length=20, choices=Reason.choices)
     reason_detail = models.TextField()
     due_date = models.DateField()
