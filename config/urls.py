@@ -10,9 +10,8 @@ from drf_spectacular.views import (
 urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/posts/", include("apps.posts.urls")),
     path("api/v1/", include("apps.qna.urls.urls")),
-    path("api/v1/accounts/", include("apps.users.urls.account_url")),
+    path("api/users/", include("apps.users.urls", namespace="users")),
 ]
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
