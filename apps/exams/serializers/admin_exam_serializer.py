@@ -11,7 +11,8 @@ class ExamListSerializer(serializers.ModelSerializer):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
     subject_name = serializers.SerializerMethodField()
-    detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
+    # TODO: 디테일 제작 후 주석 해제
+    # detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
 
     def get_subject_name(self, obj):
         return obj.subject.title
@@ -26,7 +27,7 @@ class ExamListSerializer(serializers.ModelSerializer):
             "submit_count",
             "created_at",
             "updated_at",
-            "detail_url",
+            # "detail_url", 디테일 만든 후 주석 해제
         ]
         read_only_fields = [
             "id",
@@ -36,7 +37,7 @@ class ExamListSerializer(serializers.ModelSerializer):
             "submit_count",
             "created_at",
             "updated_at",
-            "detail_url",
+            # "detail_url", 디테일 만든 후 주석 해제
         ]
 
 

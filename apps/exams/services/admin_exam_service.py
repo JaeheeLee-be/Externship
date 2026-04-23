@@ -18,7 +18,7 @@ ALLOWED_SORT_FIELDS = {
 def get_exam_list(
     *, subject_id: int = None, search_keyword: str = None, sort: str = None, order: str = None
 ) -> QuerySet[Exam]:
-    queryset = Exam.objects.all().order_by(
+    queryset = Exam.objects.all().select_related("subject").order_by(
         "-created_at",
         "title",
     )

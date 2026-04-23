@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
 
 from apps.exams.models import Exam
-from apps.posts.models import Subject
+from apps.posts.models import Subject, Course
 
 User = get_user_model()
 
@@ -32,8 +32,22 @@ class ExamBaseTestCase(APITestCase):
             is_active=True,
             role="ADMIN",
         )
-        cls.subject_html = Subject.objects.create(title="html")
-        cls.subject_python = Subject.objects.create(title="python")
+        cls.course = Course.objects.create(
+            name="웹 개발",
+            tag="WEB",
+        )
+        cls.subject_html = Subject.objects.create(
+            course=cls.course,
+            title="html",
+            number_of_days=30,
+            number_of_hours=60,
+        )
+        cls.subject_python = Subject.objects.create(
+            course=cls.course,
+            title="python",
+            number_of_days=30,
+            number_of_hours=60,
+        )
         cls.exam1 = Exam.objects.create(
             subject=cls.subject_html,
             title="test_exam",
@@ -95,7 +109,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_get_exam_list_with_subject(self):
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get(reverse("exam-list"), {"subject_id": 1})
+        response = self.client.get(reverse("exam-list"), {"subject_id": self.subject_html.id})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
@@ -105,7 +119,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
     def test_get_exam_list_with_subject_not_found(self):
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get(reverse("exam-list"), {"subject_id": 3})
+        response = self.client.get(reverse("exam-list"), {"subject_id": self.subject_python.id + 9999})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
@@ -179,7 +193,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["title"], "new_exam")
-        self.assertEqual(response.data["subject_id"], 2)
+        self.assertEqual(response.data["subject_id"], self.subject_python.id)
         self.assertEqual(Exam.objects.count(), 3)
 
     def test_exam_create_as_user(self):
@@ -215,7 +229,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.post(
             reverse("exam-list"),
             {
-                "subject_id": 9999999999999999,
+                "subject_id": self.subject_html.id + 9999,
                 "title": "new_exam",
             },
             format="json",
