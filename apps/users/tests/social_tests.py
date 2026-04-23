@@ -12,6 +12,7 @@ from apps.users.services.naver import NaverUserInfo
 
 # ── 공통 픽스처 ──────────────────────────────────────────────
 
+
 def make_kakao_user_info(**kwargs: Any) -> KakaoUserInfo:
     defaults: dict[str, Any] = {
         "provider_id": "kakao_123",
@@ -43,6 +44,7 @@ def make_naver_user_info(**kwargs: Any) -> NaverUserInfo:
 
 
 #  카카오
+
 
 class KakaoLoginViewTest(TestCase):
     def setUp(self) -> None:
@@ -117,6 +119,7 @@ class KakaoCallbackViewTest(TestCase):
     def test_kakao_api_error_redirects_to_fail(self, mock_kakao: object) -> None:
         """카카오 API 오류 시 실패 페이지로 리다이렉트"""
         import requests as req
+
         mock_kakao.side_effect = req.RequestException("카카오 서버 오류")  # type: ignore[attr-defined]
 
         response = self.client.get(self.url, {"code": "bad_code"})
@@ -126,6 +129,7 @@ class KakaoCallbackViewTest(TestCase):
 
 
 #  네이버
+
 
 class NaverLoginViewTest(TestCase):
     def setUp(self) -> None:
@@ -207,6 +211,7 @@ class NaverCallbackViewTest(TestCase):
     def test_naver_api_error_redirects_to_fail(self, mock_naver: object) -> None:
         """네이버 API 오류 시 실패 페이지로 리다이렉트"""
         import requests as req
+
         mock_naver.side_effect = req.RequestException("네이버 서버 오류")  # type: ignore[attr-defined]
 
         response = self.client.get(self.url, {"code": "bad_code", "state": "somestate"})

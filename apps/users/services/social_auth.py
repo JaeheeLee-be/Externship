@@ -24,15 +24,15 @@ class SocialAuthService:
 
     @staticmethod
     def login_or_register(
-            provider: str,
-            provider_id: str,
-            email: Optional[str],
-            name: Optional[str],
-            nickname: Optional[str],
-            profile_img_url: Optional[str],
-            phone_number: Optional[str],
-            gender: Optional[str],
-            birthday: Optional[str],
+        provider: str,
+        provider_id: str,
+        email: Optional[str],
+        name: Optional[str],
+        nickname: Optional[str],
+        profile_img_url: Optional[str],
+        phone_number: Optional[str],
+        gender: Optional[str],
+        birthday: Optional[str],
     ) -> dict[str, Any]:
         """
         카카오/네이버 소셜 유저 로그인/회원가입
@@ -40,9 +40,7 @@ class SocialAuthService:
         - 신규 유저 : 필수 항목 받아와서 바로 회원가입 후 JWT 반환
         """
         social_user = (
-            SocialUsers.objects.filter(provider=provider, provider_id=provider_id)
-            .select_related("user")
-            .first()
+            SocialUsers.objects.filter(provider=provider, provider_id=provider_id).select_related("user").first()
         )
 
         if social_user:

@@ -66,6 +66,8 @@ class SocialUsers(TimeStampModel):
 
     class Meta:
         db_table = "social_users"
+
+
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
@@ -75,6 +77,7 @@ from apps.users.services.social_auth import SocialAuthService
 
 
 # ── 공통 픽스처 ──────────────────────────────────────────────
+
 
 def make_user(**kwargs: object) -> User:
     defaults: dict[str, object] = {
@@ -100,6 +103,7 @@ def make_social_user(user: User, provider: str, provider_id: str) -> SocialUsers
 
 
 #  카카오 API 파싱
+
 
 class KakaoGetUserInfoTest(TestCase):
 
@@ -155,6 +159,7 @@ class KakaoGetUserInfoTest(TestCase):
 
 #  네이버 API 파싱
 
+
 class NaverGetUserInfoTest(TestCase):
 
     @patch("apps.users.services.naver.requests.get")
@@ -183,8 +188,8 @@ class NaverGetUserInfoTest(TestCase):
         self.assertEqual(user_info.email, "naver@example.com")
         self.assertEqual(user_info.name, "김네이버")
         self.assertEqual(user_info.phone_number, "01012345678")  # 하이픈 제거 확인
-        self.assertEqual(user_info.gender, "female")             # F → female 변환 확인
-        self.assertEqual(user_info.birthday, "1992-03-15")       # YYYY-MM-DD 조합 확인
+        self.assertEqual(user_info.gender, "female")  # F → female 변환 확인
+        self.assertEqual(user_info.birthday, "1992-03-15")  # YYYY-MM-DD 조합 확인
 
     @patch("apps.users.services.naver.requests.get")
     def test_gender_male_conversion(self, mock_get: MagicMock) -> None:
@@ -218,6 +223,7 @@ class NaverGetUserInfoTest(TestCase):
 
 #  SocialAuthService (카카오 + 네이버 공통)
 
+
 class KakaoLoginOrRegisterTest(TestCase):
 
     def test_existing_user_returns_jwt(self) -> None:
@@ -226,10 +232,15 @@ class KakaoLoginOrRegisterTest(TestCase):
         make_social_user(user, provider="kakao", provider_id="kakao_123")
 
         result = SocialAuthService.login_or_register(
-            provider="kakao", provider_id="kakao_123",
-            email="kakao@example.com", name="카카오유저",
-            nickname="카카오닉네임", profile_img_url=None,
-            phone_number="01099999999", gender="male", birthday="1990-01-01",
+            provider="kakao",
+            provider_id="kakao_123",
+            email="kakao@example.com",
+            name="카카오유저",
+            nickname="카카오닉네임",
+            profile_img_url=None,
+            phone_number="01099999999",
+            gender="male",
+            birthday="1990-01-01",
         )
 
         self.assertFalse(result["is_new_user"])
@@ -239,10 +250,15 @@ class KakaoLoginOrRegisterTest(TestCase):
     def test_new_user_creates_user_and_social(self) -> None:
         """신규 카카오 유저: User + SocialUsers 생성 후 is_new_user=True + JWT 반환"""
         result = SocialAuthService.login_or_register(
-            provider="kakao", provider_id="kakao_new_456",
-            email="newkakao@example.com", name="신규유저",
-            nickname="신규닉네임", profile_img_url=None,
-            phone_number="01011112222", gender="female", birthday="1995-05-05",
+            provider="kakao",
+            provider_id="kakao_new_456",
+            email="newkakao@example.com",
+            name="신규유저",
+            nickname="신규닉네임",
+            profile_img_url=None,
+            phone_number="01011112222",
+            gender="female",
+            birthday="1995-05-05",
         )
 
         self.assertTrue(result["is_new_user"])
@@ -250,9 +266,7 @@ class KakaoLoginOrRegisterTest(TestCase):
 
         user = User.objects.get(email="newkakao@example.com")
         self.assertEqual(user.name, "신규유저")
-        self.assertTrue(
-            SocialUsers.objects.filter(provider="kakao", provider_id="kakao_new_456").exists()
-        )
+        self.assertTrue(SocialUsers.objects.filter(provider="kakao", provider_id="kakao_new_456").exists())
 
     def test_existing_user_no_duplicate_created(self) -> None:
         """기존 카카오 유저 재로그인 시 중복 생성 안 됨"""
@@ -260,10 +274,15 @@ class KakaoLoginOrRegisterTest(TestCase):
         make_social_user(user, provider="kakao", provider_id="kakao_123")
 
         SocialAuthService.login_or_register(
-            provider="kakao", provider_id="kakao_123",
-            email="kakao@example.com", name="카카오유저",
-            nickname="카카오닉네임", profile_img_url=None,
-            phone_number="01099999999", gender="male", birthday="1990-01-01",
+            provider="kakao",
+            provider_id="kakao_123",
+            email="kakao@example.com",
+            name="카카오유저",
+            nickname="카카오닉네임",
+            profile_img_url=None,
+            phone_number="01099999999",
+            gender="male",
+            birthday="1990-01-01",
         )
 
         self.assertEqual(User.objects.count(), 1)
@@ -278,10 +297,15 @@ class NaverLoginOrRegisterTest(TestCase):
         make_social_user(user, provider="naver", provider_id="naver_123")
 
         result = SocialAuthService.login_or_register(
-            provider="naver", provider_id="naver_123",
-            email="naver@example.com", name="네이버유저",
-            nickname="네이버닉네임", profile_img_url=None,
-            phone_number="01088888888", gender="female", birthday="1992-03-15",
+            provider="naver",
+            provider_id="naver_123",
+            email="naver@example.com",
+            name="네이버유저",
+            nickname="네이버닉네임",
+            profile_img_url=None,
+            phone_number="01088888888",
+            gender="female",
+            birthday="1992-03-15",
         )
 
         self.assertFalse(result["is_new_user"])
@@ -291,10 +315,15 @@ class NaverLoginOrRegisterTest(TestCase):
     def test_new_user_creates_user_and_social(self) -> None:
         """신규 네이버 유저: User + SocialUsers 생성 후 is_new_user=True + JWT 반환"""
         result = SocialAuthService.login_or_register(
-            provider="naver", provider_id="naver_new_789",
-            email="newnaver@example.com", name="신규네이버",
-            nickname="신규네이버닉", profile_img_url=None,
-            phone_number="01033334444", gender="male", birthday="2000-12-31",
+            provider="naver",
+            provider_id="naver_new_789",
+            email="newnaver@example.com",
+            name="신규네이버",
+            nickname="신규네이버닉",
+            profile_img_url=None,
+            phone_number="01033334444",
+            gender="male",
+            birthday="2000-12-31",
         )
 
         self.assertTrue(result["is_new_user"])
@@ -302,9 +331,7 @@ class NaverLoginOrRegisterTest(TestCase):
 
         user = User.objects.get(email="newnaver@example.com")
         self.assertEqual(user.name, "신규네이버")
-        self.assertTrue(
-            SocialUsers.objects.filter(provider="naver", provider_id="naver_new_789").exists()
-        )
+        self.assertTrue(SocialUsers.objects.filter(provider="naver", provider_id="naver_new_789").exists())
 
     def test_existing_user_no_duplicate_created(self) -> None:
         """기존 네이버 유저 재로그인 시 중복 생성 안 됨"""
@@ -312,10 +339,15 @@ class NaverLoginOrRegisterTest(TestCase):
         make_social_user(user, provider="naver", provider_id="naver_123")
 
         SocialAuthService.login_or_register(
-            provider="naver", provider_id="naver_123",
-            email="naver@example.com", name="네이버유저",
-            nickname="네이버닉네임", profile_img_url=None,
-            phone_number="01088888888", gender="female", birthday="1992-03-15",
+            provider="naver",
+            provider_id="naver_123",
+            email="naver@example.com",
+            name="네이버유저",
+            nickname="네이버닉네임",
+            profile_img_url=None,
+            phone_number="01088888888",
+            gender="female",
+            birthday="1992-03-15",
         )
 
         self.assertEqual(User.objects.count(), 1)

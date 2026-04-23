@@ -92,4 +92,3 @@ class NaverOAuthService:
         """인가 코드로 네이버 사용자 정보 조회"""
         access_token = cls.get_access_token(code, state)
         return cls.get_user_info(access_token)
-

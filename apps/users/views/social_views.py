@@ -20,16 +20,16 @@ from apps.users.services.naver import NaverOAuthService
 from apps.users.services.social_auth import SocialAuthService
 
 
-
 # ────공통──────────────────────────────────────────────────────
+
 
 def _set_refresh_cookie(response: HttpResponseBase, refresh_token: str) -> None:
     """refresh 토큰을 HttpOnly 쿠키에 설정"""
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        httponly=True,        # JS에서 접근 불가
-        secure=True,          # HTTPS에서만 전송
+        httponly=True,  # JS에서 접근 불가
+        secure=True,  # HTTPS에서만 전송
         samesite="Lax",
         max_age=60 * 60 * 24 * 7,  # 7일
     )
@@ -41,8 +41,8 @@ def _get_frontend_url(path: str) -> str:
     return f"{base}{path}"
 
 
-
 # ────카카오──────────────────────────────────────────────────────
+
 
 @extend_schema(tags=["소셜 로그인"])
 class KakaoLoginView(APIView):
@@ -120,6 +120,7 @@ class KakaoCallbackView(APIView):
 
 # ────네이버──────────────────────────────────────────────────────
 
+
 @extend_schema(tags=["소셜 로그인"])
 class NaverLoginView(APIView):
     """네이버 OAuth 인증 페이지로 302 리다이렉트 (state 포함)"""
@@ -177,15 +178,15 @@ class NaverCallbackView(APIView):
 
             # 로그인 or 바로 회원가입
             result = SocialAuthService.login_or_register(
-                provider = "naver",
-                provider_id = user_info.provider_id,
-                email = user_info.email,
-                name = user_info.name,
-                nickname = user_info.nickname,
-                profile_img_url = user_info.profile_img_url,
-                phone_number = user_info.phone_number,
-                gender = user_info.gender,
-                birthday = user_info.birthday,
+                provider="naver",
+                provider_id=user_info.provider_id,
+                email=user_info.email,
+                name=user_info.name,
+                nickname=user_info.nickname,
+                profile_img_url=user_info.profile_img_url,
+                phone_number=user_info.phone_number,
+                gender=user_info.gender,
+                birthday=user_info.birthday,
             )
 
         except requests.RequestException:
