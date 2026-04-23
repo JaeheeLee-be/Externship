@@ -1,6 +1,10 @@
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import ValidationError, NotAuthenticated, PermissionDenied
+from rest_framework.exceptions import (
+    NotAuthenticated,
+    PermissionDenied,
+    ValidationError,
+)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -70,7 +74,9 @@ class ExamListCreateView(APIView):
             page = paginator.paginate_queryset(queryset, request)
             serializer = ExamListSerializer(page, many=True, context={"request": request})
         except NotAuthenticated:
-            return Response({"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except PermissionDenied:
             return Response({"error_detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         return paginator.get_paginated_response(serializer.data)
@@ -95,7 +101,9 @@ class ExamListCreateView(APIView):
             serializer.is_valid(raise_exception=True)
             exam = create_exam(**serializer.validated_data)
         except NotAuthenticated:
-            return Response({"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
+            )
         except PermissionDenied:
             return Response({"error_detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         except ExamTitleConflict:
