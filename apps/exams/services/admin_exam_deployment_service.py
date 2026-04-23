@@ -1,18 +1,17 @@
 import json
-import secrets
+import uuid
 from typing import Any
 
 from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework.exceptions import ValidationError
 
+from apps.core.utils.base62 import Base62
 from apps.exams.models.exam_deployment_model import ExamDeployment
-
-BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 
 def create_access_code(length: int = 8) -> str:
     while True:
-        code = "".join(secrets.choice(BASE62) for _ in range(length))
+        code = Base62.uuid_encode(uuid.uuid4(), length=length)
         if not ExamDeployment.objects.filter(access_code=code).exists():
             return code
 
