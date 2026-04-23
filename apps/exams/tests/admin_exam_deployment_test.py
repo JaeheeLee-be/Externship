@@ -7,6 +7,7 @@ from apps.exams.models.exam_deployment_model import ExamDeployment
 from apps.exams.models.exam_model import Exam
 from apps.exams.models.exam_question_model import ExamQuestion
 
+
 class AdminExamDeploymentCreateViewTest(TestCase):
     url: str
     exam: Exam
