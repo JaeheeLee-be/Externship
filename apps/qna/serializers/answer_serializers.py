@@ -25,9 +25,12 @@ class AnswerResponseSerializer(serializers.ModelSerializer[Answer]):
             "created_at",
         )
 
+
 class AnswerAcceptResponseSerializer(serializers.ModelSerializer[Answer]):
     """답변 채택 응답 serializer"""
+
     answer_id = serializers.IntegerField(source="id")
+
     class Meta:
         model = Answer
         fields = (

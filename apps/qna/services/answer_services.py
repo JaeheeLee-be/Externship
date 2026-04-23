@@ -2,7 +2,7 @@ from typing import Any
 
 from django.db import transaction
 from rest_framework.exceptions import NotFound, PermissionDenied
-from rest_framework.status import HTTP_409_CONFLICT
+from apps.core.utils.exceptions import ConflictException
 
 from apps.qna.models.answer_models import Answer, AnswerImage
 from apps.qna.models.question_models import Question
@@ -28,6 +28,7 @@ class AnswerService:
             )
         return answer
 
+
 class AnswerAcceptService:
     def get_answer(self, answer_id: int) -> Answer:
         try:
@@ -38,8 +39,8 @@ class AnswerAcceptService:
     def answer_accept(self, user: User, answer_id: int) -> Answer:
         answer = self.get_answer(answer_id)
 
-        if Answer.objects.filter(question_id = answer.question_id,is_adopted=True).exists():
-            raise HTTP_409_CONFLICT
+        if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
+            raise ConflictException()
         if answer.question.author_id != user.id:
             raise PermissionDenied("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
         answer.is_adopted = True

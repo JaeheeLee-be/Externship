@@ -4,13 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.users.models import User
 
 from apps.qna.serializers.answer_serializers import (
+    AnswerAcceptResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
-    AnswerAcceptResponseSerializer,
 )
-from apps.qna.services.answer_services import AnswerService,AnswerAcceptService
+from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
 
 
 class AnswerView(APIView):
@@ -35,10 +36,13 @@ class AnswerView(APIView):
         )
         return Response(AnswerResponseSerializer(answer).data, status=status.HTTP_201_CREATED)
 
+
 class AnswerAcceptView(APIView):
     permission_classes = [IsAuthenticated]
     service = AnswerAcceptService()
-    def post(self,request:Request,answer_id:int)->Response:
+
+    def post(self, request: Request, answer_id: int) -> Response:
+        assert isinstance(request.user, User)
         answer = self.service.answer_accept(
             user=request.user,
             answer_id=answer_id,
