@@ -41,7 +41,6 @@ class QuestionCreateView(APIView):
             result = QuestionService.create_question(exam_id, serializer.validated_data)
         except (ServiceException, ValidationError) as e:
             if isinstance(e, ValidationError):
-                print(f"DEBUG - Serializer Errors: {serializer.errors}")  # 이 줄을 추
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response({"detail": e.message}, status=e.status_code)
         # 응답할때는 전체를 다 보여주기
