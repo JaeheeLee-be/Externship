@@ -40,7 +40,7 @@ class PostListView(APIView):
 
 
 class PostCreateView(APIView):
-    permission_classes = [IsAuthenticated]  # 쓰기는?
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=["posts"],
