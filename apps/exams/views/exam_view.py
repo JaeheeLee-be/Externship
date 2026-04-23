@@ -63,11 +63,7 @@ class ExamListCreateView(APIView):
     def post(self, request):
         serializer = ExamListCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        exam = create_exam(
-            subject=int(serializer.validated_data["subject"]),
-            title=serializer.validated_data["title"],
-            thumbnail_image_url=serializer.validated_data["thumbnail_image_url"],
-        )
+        exam = create_exam(**serializer.validated_data)
         return Response(
             ExamListCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED
         )

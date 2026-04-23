@@ -11,6 +11,9 @@ class ExamListCreateSerializer(serializers.ModelSerializer):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
     detail_url = serializers.HyperlinkedIdentityField(view_name="exam_detail", lookup_field="pk")
+    thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
+    subject = serializers.IntegerField()
+
 
     def validate_title(self, value):
         queryset = Exam.objects.filter(title=value)
@@ -21,6 +24,8 @@ class ExamListCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_thumbnail_image_url(self, value):
+        if value == "default_img_url":
+            return value
         path = urlparse(value).path
         ext = os.path.splitext(path)[-1].lstrip(".").lower()
         allowed = ["jpg", "jpeg", "png", "webp"]
