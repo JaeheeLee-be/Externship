@@ -64,8 +64,8 @@ class KakaoGetUserInfoTest(TestCase):
         self.assertEqual(user_info.nickname, "카카오닉네임")
         self.assertEqual(user_info.email, "kakao@example.com")
         self.assertEqual(user_info.name, "홍길동")
-        self.assertEqual(user_info.phone_number, "+82 10-1234-5678")
-        self.assertEqual(user_info.gender, "male")
+        self.assertEqual(user_info.phone_number, "01012345678")  # 정규화 확인
+        self.assertEqual(user_info.gender, "M")  # male → M 변환 확인
         self.assertEqual(user_info.birthday, "1990-01-01")
 
     @patch("apps.users.services.kakao.requests.get")
@@ -117,12 +117,12 @@ class NaverGetUserInfoTest(TestCase):
         self.assertEqual(user_info.email, "naver@example.com")
         self.assertEqual(user_info.name, "김네이버")
         self.assertEqual(user_info.phone_number, "01012345678")  # 하이픈 제거 확인
-        self.assertEqual(user_info.gender, "female")  # F → female 변환 확인
+        self.assertEqual(user_info.gender, "F")  # 네이버는 변환 없이 그대로
         self.assertEqual(user_info.birthday, "1992-03-15")  # YYYY-MM-DD 조합 확인
 
     @patch("apps.users.services.naver.requests.get")
-    def test_gender_male_conversion(self, mock_get: MagicMock) -> None:
-        """성별 M → male 변환 확인"""
+    def test_gender_male_as_m(self, mock_get: MagicMock) -> None:
+        """성별 M 그대로 반환 확인"""
         from apps.users.services.naver import NaverOAuthService
 
         mock_get.return_value.raise_for_status = MagicMock()
@@ -131,7 +131,7 @@ class NaverGetUserInfoTest(TestCase):
         }
 
         user_info = NaverOAuthService.get_user_info("fake_token")
-        self.assertEqual(user_info.gender, "male")
+        self.assertEqual(user_info.gender, "M")
 
     @patch("apps.users.services.naver.requests.get")
     def test_birthday_none_when_missing(self, mock_get: MagicMock) -> None:
@@ -168,7 +168,7 @@ class KakaoLoginOrRegisterTest(TestCase):
             nickname="카카오닉네임",
             profile_img_url=None,
             phone_number="01099999999",
-            gender="male",
+            gender="M",
             birthday="1990-01-01",
         )
 
@@ -186,7 +186,7 @@ class KakaoLoginOrRegisterTest(TestCase):
             nickname="신규닉네임",
             profile_img_url=None,
             phone_number="01011112222",
-            gender="female",
+            gender="F",
             birthday="1995-05-05",
         )
 
@@ -210,7 +210,7 @@ class KakaoLoginOrRegisterTest(TestCase):
             nickname="카카오닉네임",
             profile_img_url=None,
             phone_number="01099999999",
-            gender="male",
+            gender="M",
             birthday="1990-01-01",
         )
 
@@ -233,7 +233,7 @@ class NaverLoginOrRegisterTest(TestCase):
             nickname="네이버닉네임",
             profile_img_url=None,
             phone_number="01088888888",
-            gender="female",
+            gender="F",
             birthday="1992-03-15",
         )
 
@@ -251,7 +251,7 @@ class NaverLoginOrRegisterTest(TestCase):
             nickname="신규네이버닉",
             profile_img_url=None,
             phone_number="01033334444",
-            gender="male",
+            gender="M",
             birthday="2000-12-31",
         )
 
@@ -275,7 +275,7 @@ class NaverLoginOrRegisterTest(TestCase):
             nickname="네이버닉네임",
             profile_img_url=None,
             phone_number="01088888888",
-            gender="female",
+            gender="F",
             birthday="1992-03-15",
         )
 
