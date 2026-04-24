@@ -10,7 +10,7 @@ from apps.core.utils.base62 import Base62
 from apps.users.serializers.purpose_enum import AuthPurpose
 
 
-class EmailVerification:
+class EmailVerificationService:
     @classmethod
     def send_verification_email(cls, email: str, purpose: AuthPurpose) -> None:
         """

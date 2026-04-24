@@ -6,12 +6,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.serializers.auth_email import (
+from apps.users.serializers.auth_email_serializer import (
     EmailRequestSerializer,
     EmailVerifySerializer,
 )
 from apps.users.serializers.purpose_enum import AuthPurpose
-from apps.users.services.auth_email import EmailVerification
+from apps.users.services.auth_email_service import EmailVerificationService
 
 
 class EmailSendView(APIView):
@@ -53,7 +53,7 @@ class EmailSendView(APIView):
 
         # service
         try:
-            EmailVerification.send_verification_email(email, purpose)
+            EmailVerificationService.send_verification_email(email, purpose)
             return Response({"detail": "이메일 인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"error_detail": {"email": [e.detail]}}, status=status.HTTP_400_BAD_REQUEST)
@@ -100,7 +100,7 @@ class EmailVerificationView(APIView):
 
         # service token 발급
         try:
-            email_token = EmailVerification.verification_code(email, code)
+            email_token = EmailVerificationService.verification_code(email, code)
 
             return Response(
                 {
