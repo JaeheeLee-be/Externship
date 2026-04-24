@@ -1,3 +1,12 @@
+"""
+사용법:
+
+from apps.core.utils.s3_urls import s3
+위에서처럼 임포트해서 쓰세요
+s3.create_upload_urls()을 사용해서 presigned_url과 img_url을 생성하세요
+파라미터에 대한 설명은 create_upload_urls() 내부에 있습니다
+"""
+
 import uuid
 from pathlib import Path
 
@@ -90,3 +99,6 @@ class S3Handler:
         img_url = f"https://{self.bucket}.s3.{self.region}.amazonaws.com/{key}"
 
         return img_url
+
+
+s3 = S3Handler()
