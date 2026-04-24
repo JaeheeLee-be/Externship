@@ -34,7 +34,7 @@ class WithdrawalView(APIView):
             ),
             401: inline_serializer(
                 name="WithdrawalUnauthorized",
-                fields={"detail": serializers.CharField()},
+                fields={"error_detail": serializers.CharField()},
             ),
         },
     )

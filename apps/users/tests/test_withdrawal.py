@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -35,8 +36,12 @@ def get_auth_header(user: User) -> dict[str, Any]:
 class WithdrawalViewTest(APITestCase):
     """DELETE /api/v1/accounts/me 회원 탈퇴 API 테스트"""
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.url = reverse("users:account-withdrawal")
+
     def setUp(self) -> None:
-        self.url = reverse("users:withdrawal")
         self.user = create_user()
         self.auth = get_auth_header(self.user)
 
@@ -123,22 +128,19 @@ class WithdrawalViewTest(APITestCase):
             **self.auth,
         )
 
-        # is_active=False 이므로 새 토큰 발급 후 재탈퇴 시도
-        self.user.is_active = True
-        self.user.save(update_fields=["is_active"])
-        auth = get_auth_header(self.user)
+        # 인증을 강제로 유지한 채 재탈퇴 시도
+        self.client.force_authenticate(user=self.user)
 
         response = self.client.delete(
             self.url,
             data={"reason": "OTHER"},
             content_type="application/json",
-            **auth,
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteExpiredWithdrawnUsersTaskTest(APITestCase):
+class DeleteExpiredWithdrawnUsersTaskTest(TestCase):
     """Celery 태스크 - 만료된 탈퇴 유저 영구 삭제 테스트"""
 
     def test_delete_expired_user(self) -> None:

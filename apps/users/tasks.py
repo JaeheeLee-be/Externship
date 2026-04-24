@@ -11,7 +11,6 @@ from apps.users.models import Withdrawal
 def delete_expired_withdrawn_users() -> int:
     expired_withdrawals = Withdrawal.objects.filter(
         due_date__lte=date.today(),
-        user__isnull=False,
     ).select_related("user")
 
     count = 0
