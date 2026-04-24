@@ -102,13 +102,13 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"))
 
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.data["detail"], "쪽지시험 목록 조회 권한이 없습니다.")
+        self.assertEqual(response.data["error_detail"], "쪽지시험 목록 조회 권한이 없습니다.")
 
     def test_get_exam_list_unauthorized(self) -> None:
         response = self.client.get(reverse("exam-list"))
 
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.data["detail"], "자격 인증 데이터가 제공되지 않았습니다.")
+        self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
 
     # 쪽지시험 목록 조회: 필터
     def test_get_exam_list_with_subject(self) -> None:
@@ -213,7 +213,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.data["detail"], "쪽지시험 생성 권한이 없습니다.")
+        self.assertEqual(response.data["error_detail"], "쪽지시험 생성 권한이 없습니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_exam_create_unauthorized(self) -> None:
@@ -226,7 +226,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.data["detail"], "자격 인증 데이터가 제공되지 않았습니다.")
+        self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     # 쪽지시험 생성: 없는 subject 생성
@@ -241,7 +241,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["detail"], "해당 과목 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     # 쪽지시험 생성: 동일한 이름의 시험 생성
@@ -256,7 +256,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.data["detail"], "동일한 이름의 시험이 이미 존재합니다.")
+        self.assertEqual(response.data["error_detail"], "동일한 이름의 시험이 이미 존재합니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     # 쪽지시험 생성: 유효하지 않은 요청
@@ -272,5 +272,5 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["detail"], "유효하지 않은 시험 생성 요청입니다.")
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
