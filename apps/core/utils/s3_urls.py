@@ -68,7 +68,7 @@ class S3Handler:
         return suffix, content_type
 
     # 키: 파일명을 포함한 저장경로. ex) uploads/images/questions/uuid.png
-    def _key(self, path: str, suffix: str, add_name: str | None) -> str:
+    def _key(self, path: str, suffix: str, add_name: str | None = None) -> str:
         key = path.rstrip("/") + "/" + self._image_uuid(add_name) + suffix
 
         return key
@@ -81,7 +81,7 @@ class S3Handler:
         return str(uuid.uuid4()) + add
 
     # 업로드용 presigned url 생성 함수
-    def _upload_presigned_url(self, key: str, content_type: str, expire: int) -> str:
+    def _upload_presigned_url(self, key: str, content_type: str, expire: int = 600) -> str:
         presigned_url = self.s3.generate_presigned_url(
             ClientMethod="put_object",
             Params={
