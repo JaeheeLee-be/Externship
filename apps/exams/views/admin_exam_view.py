@@ -23,6 +23,12 @@ from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 
 class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
+    
+    def handle_exception(self, exc: Exception) -> Response:
+        response = super().handle_exception(exc)
+        if "detail" in response.data:
+            response.data["error_detail"] = response.data.pop("detail")
+        return response
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:
@@ -96,10 +102,10 @@ class ExamListCreateView(APIView):
             serializer.is_valid(raise_exception=True)
             exam = create_exam(**serializer.validated_data)
         except ExamTitleConflict:
-            return Response({"detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+            return Response({"error_detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
         except SubjectNotFound:
-            return Response({"detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except ValidationError:
-            return Response({"detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)
