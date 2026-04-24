@@ -18,6 +18,12 @@ class SocialAuthError(Exception):
 
 _UserInfo = Union[KakaoUserInfo, NaverUserInfo]
 
+# provider → OAuthService 매핑 (get_auth_url에서 if/elif 대신 사용)
+_OAUTH_SERVICES: dict[str, Any] = {
+    "kakao": KakaoOAuthService,
+    "naver": NaverOAuthService,
+}
+
 
 class SocialAuthService:
     """
@@ -25,19 +31,20 @@ class SocialAuthService:
 
     공개 인터페이스
     ─────────────────────────────────────────────────────────────────
-    get_auth_url(provider)                   → OAuth 인증 페이지 URL 반환
-    login_or_register(provider, code, state) → 로그인 또는 회원가입 후 JWT 반환
+    get_auth_url(provider)              → OAuth 인증 페이지 URL 반환
+    process_user(provider, code, state) → 로그인 또는 회원가입 후 JWT 반환
 
-    login_or_register 내부 처리 순서
+    process_user 내부 처리 순서
     ─────────────────────────────────────────────────────────────────
     1. provider API 호출 → 소셜 유저 정보 획득         (_get_user_info)
        - kakao: settings.KAKAO_REDIRECT_URI (고정 설정값, 서비스 내부에서 직접 읽음)
        - naver: state (요청마다 달라지는 동적 값, Naver 콜백 쿼리에서 추출해 전달)
-    2. 기존 소셜 유저 확인                             (_process_user)
+    2. 기존 소셜 유저 확인                             (_login_and_register)
        └─ 존재하면 → JWT 발급 후 반환  (is_new_user=False)
-    3. 동일 이메일의 일반 이메일 유저 확인
+    3. 이메일 정보 없으면 → SocialAuthError("이메일 정보를 가져올 수 없습니다.")
+    4. 동일 이메일의 일반 이메일 유저 확인
        └─ 존재하면 → SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
-    4. 신규 유저 → User + SocialUsers 생성 후 JWT 발급 (is_new_user=True)
+    5. 신규 유저 → User + SocialUsers 생성 후 JWT 발급 (is_new_user=True)
     ─────────────────────────────────────────────────────────────────
     """
 
@@ -46,39 +53,27 @@ class SocialAuthService:
     @classmethod
     def get_auth_url(cls, provider: str) -> str:
         """
-        provider에 맞는 OAuth 인증 페이지 URL을 반환한다.
-
-        Raises:
-            SocialAuthError: 지원하지 않는 provider
+        provider에 맞는 OAuth 인증 페이지 URL을 반환.
+        provider 분기는 _OAUTH_SERVICES dict로 처리,
+        provider별 세부 로직(redirect_uri, state 등)은 _get_user_info에서 담당.
         """
-        if provider == "kakao":
-            return KakaoOAuthService.get_auth_url()
-
-        if provider == "naver":
-            return NaverOAuthService.get_auth_url()
-
-        raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+        service = _OAUTH_SERVICES.get(provider)
+        if service is None:
+            raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+        return service.get_auth_url()
 
     @classmethod
     def process_user(cls, provider: str, code: str, state: str = "") -> dict[str, Any]:
         """
-        OAuth 인가 코드를 받아 로그인 또는 회원가입을 처리한 뒤 JWT를 반환한다.
-
-        Args:
+        OAuth 인가 코드를 받아 로그인 또는 회원가입을 처리한 뒤 JWT를 반환.
             provider : 'kakao' 또는 'naver'
             code     : OAuth 인가 코드
             state    : Naver 콜백 쿼리의 state 값 (Naver 전용 동적 값, kakao는 사용 안 함)
-
-        Returns:
             {
                 "is_new_user": bool,
                 "access" : str,   # JWT access token
                 "refresh": str,   # JWT refresh token
             }
-
-        Raises:
-            SocialAuthError: 지원하지 않는 provider, 인증 실패,
-                             또는 일반 이메일로 가입된 유저가 소셜 로그인 시도 시
         """
         user_info = cls._get_user_info(provider, code, state)
         return cls._login_and_register(provider, user_info)
@@ -88,14 +83,11 @@ class SocialAuthService:
     @classmethod
     def _get_user_info(cls, provider: str, code: str, state: str = "") -> _UserInfo:
         """
-        provider에 맞는 OAuth API를 호출해 소셜 유저 정보를 반환한다.
+        provider에 맞는 OAuth API를 호출해 소셜 유저 정보를 반환.
 
         kakao: redirect_uri는 고정 설정값이므로 settings에서 직접 읽는다.
         naver: redirect_uri는 NaverOAuthService 내부에서 settings를 읽고,
                state는 요청마다 달라지는 동적 값(Naver 콜백 쿼리 파라미터)이므로 인자로 받는다.
-
-        Raises:
-            SocialAuthError: 지원하지 않는 provider
         """
         if provider == "kakao":
             redirect_uri: str = getattr(settings, "KAKAO_REDIRECT_URI", "")
@@ -112,8 +104,9 @@ class SocialAuthService:
     def _login_and_register(cls, provider: str, user_info: _UserInfo) -> dict[str, Any]:
         """
         1. 기존 소셜 유저  → 바로 로그인
-        2. 일반 이메일 유저 → SocialAuthError
-        3. 신규 유저       → 회원가입 후 로그인
+        2. 이메일 정보 없음 → SocialAuthError
+        3. 일반 이메일 유저 → SocialAuthError
+        4. 신규 유저       → 회원가입 후 로그인
         """
         # 1. 기존 소셜 유저 확인
         try:
@@ -125,11 +118,15 @@ class SocialAuthService:
         except SocialUsers.DoesNotExist:
             pass
 
-        # 2. 동일 이메일의 일반 이메일 가입 유저 확인
-        if user_info.email and User.objects.filter(email=user_info.email).exists():
+        # 2. 이메일 정보 없는 소셜 유저는 회원가입 차단
+        if not user_info.email:
+            raise SocialAuthError("이메일 정보를 가져올 수 없습니다.")
+
+        # 3. 동일 이메일의 일반 이메일 가입 유저 확인
+        if User.objects.filter(email=user_info.email).exists():
             raise SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
 
-        # 3. 신규 유저 생성
+        # 4. 신규 유저 생성
         user = cls._create_social_user(user_info)
         SocialUsers.objects.create(
             user=user,
