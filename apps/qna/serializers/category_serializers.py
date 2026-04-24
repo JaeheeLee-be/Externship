@@ -17,14 +17,34 @@ def get_category_depth(category: QuestionCategory) -> int:
 
 # 어드민 카테고리 생성
 class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
-    category_type = serializers.ChoiceField(choices=["large", "middle", "small"])
-    name = serializers.CharField(max_length=15)
+    category_type = serializers.ChoiceField(
+        choices=["large", "middle", "small"],
+        error_messages={
+            "required": "카테고리 종류와 이름은 필수 입력값입니다.",
+            "invalid_choice": "카테고리 종류와 이름은 필수 입력값입니다.",
+        },
+    )
+    name = serializers.CharField(
+        max_length=15,
+        error_messages={
+            "required": "카테고리 종류와 이름은 필수 입력값입니다.",
+            "blank": "카테고리 종류와 이름은 필수 입력값입니다.",
+        },
+    )
     parent_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def get_error_detail(self) -> str:
+        first_error = next(iter(self.errors.values()))
+
+        if isinstance(first_error, list):
+            return str(first_error[0])
+
+        return str(first_error)
 
     def validate_name(self, value: str) -> str:
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("카테고리 이름은 필수 기입해야 합니다.")
+            raise serializers.ValidationError("카테고리 종류와 이름은 필수 입력값입니다.")
         return value
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -63,7 +83,6 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
         if QuestionCategory.objects.filter(parent=parent, name=name).exists():
             raise serializers.ValidationError("동일한 이름의 카테고리가 이미 존재합니다.")
 
-        # service에서 그대로 사용할 수 있게 parent 객체를 주입
         attrs["parent"] = parent
         return attrs
 
@@ -84,17 +103,8 @@ class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[Question
             "created_at",
         ]
 
-    def get_parent_id(self, obj: QuestionCategory) -> int | None:
-        if obj.parent is None:
-            return None
-        return int(obj.parent.id)
-
     def get_category_type(self, obj: QuestionCategory) -> str | None:
-        depth = 1
-        current = obj.parent
-        while current:
-            depth += 1
-            current = current.parent
+        depth = get_category_depth(obj)
 
         mapping = {
             1: "large",

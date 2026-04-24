@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.qna.admin.category_views import AdminCategoryCreateAPIView
+from apps.qna.views.admin_category_views import AdminCategoryCreateAPIView
 
 urlpatterns = [
     # 어드민 카테고리

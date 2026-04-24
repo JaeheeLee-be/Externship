@@ -1,6 +1,5 @@
 from apps.qna.models.question_models import QuestionCategory
 
-
 class CategoryService:
 
     # 카테고리 생성

@@ -17,6 +17,7 @@ class AdminCategoryCreateAPITest(APITestCase):
         cls.user = User.objects.create_user(
             email="testadmin@example.com",
             password="test1234",
+            role="ADMIN",
         )
         cls.url = "/api/v1/admin/qna/categories/"
 
@@ -108,11 +109,14 @@ class AdminCategoryCreateAPITest(APITestCase):
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("name", response.data)
+        self.assertEqual(
+            response.data["error_detail"],
+            "카테고리 종류와 이름은 필수 입력값입니다.",
+        )
 
     # 중분류에 부모 없을때
+    # 중분류에 부모 없을때
     def test_fail_when_middle_has_no_parent(self) -> None:
-
         payload = {
             "category_type": "middle",
             "name": "프레임워크",
@@ -121,10 +125,9 @@ class AdminCategoryCreateAPITest(APITestCase):
 
         response = self.client.post(self.url, payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("non_field_errors", response.data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
-            str(response.data["non_field_errors"][0]),
+            response.data["error_detail"],
             "부모 카테고리를 찾을 수 없습니다.",
         )
 
@@ -138,16 +141,14 @@ class AdminCategoryCreateAPITest(APITestCase):
 
         response = self.client.post(self.url, payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("non_field_errors", response.data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
-            str(response.data["non_field_errors"][0]),
+            response.data["error_detail"],
             "부모 카테고리를 찾을 수 없습니다.",
         )
 
     # 소분류인데 부모가 대분류일 경우
     def test_fail_when_small_parent_depth_invalid(self) -> None:
-
         large = QuestionCategory.objects.create(name="백엔드", parent=None)
 
         payload = {
@@ -159,15 +160,13 @@ class AdminCategoryCreateAPITest(APITestCase):
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("non_field_errors", response.data)
         self.assertEqual(
-            str(response.data["non_field_errors"][0]),
+            response.data["error_detail"],
             "소분류의 부모는 중분류여야 합니다.",
         )
 
     # 중복된 카테고리
     def test_fail_when_duplicate_name(self) -> None:
-
         parent = QuestionCategory.objects.create(name="백엔드", parent=None)
         QuestionCategory.objects.create(name="프레임워크", parent=parent)
 
@@ -179,10 +178,9 @@ class AdminCategoryCreateAPITest(APITestCase):
 
         response = self.client.post(self.url, payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("non_field_errors", response.data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(
-            str(response.data["non_field_errors"][0]),
+            response.data["error_detail"],
             "동일한 이름의 카테고리가 이미 존재합니다.",
         )
 
