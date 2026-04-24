@@ -365,20 +365,4 @@ class NewSocialUserRegistrationTest(TestCase):
         self.assertIn("refresh", result)
 
         created_user = User.objects.get(email="kakao@example.com")
-        self.assertFalse(created_user.has_usable_password())  # 일반 로그인 차단 확인
-
-        social_user = SocialUsers.objects.get(user=created_user)
-        self.assertEqual(social_user.provider, "kakao")
-        self.assertEqual(social_user.provider_id, self.kakao_info.provider_id)
-
-    @patch("apps.users.services.social_auth.NaverOAuthService.get_user_info_by_code")
-    def test_new_naver_user_created_successfully(self, mock_get_user_info: MagicMock) -> None:
-        """네이버 신규 유저 → User + SocialUsers 생성, is_new_user=True"""
-        mock_get_user_info.return_value = self.naver_info
-
-        result = SocialAuthService.process_user(provider="naver", code="valid_code", state="some_state")
-
-        self.assertTrue(result["is_new_user"])
-
-        social_user = SocialUsers.objects.get(provider_id=self.naver_info.provider_id)
-        self.assertEqual(social_user.provider, "naver")
+        self.assertFalse

@@ -11,7 +11,8 @@ from apps.users.services.naver import NaverOAuthService, NaverUserInfo
 from apps.users.utils.social_exceptions import (
     EmailAlreadyRegisteredError,
     EmailNotProvidedError,
-    SocialAuthError,
+    MissingAuthCodeError,
+    OAuthCallbackError,
     UnsupportedProviderError,
 )
 
@@ -62,18 +63,29 @@ class SocialAuthService:
         return str(service.get_auth_url())
 
     @classmethod
-    def process_user(cls, provider: str, code: str, state: str = "") -> dict[str, Any]:
+    def process_user(
+        cls,
+        provider: str,
+        code: str,
+        state: str = "",
+        error: str | None = None,
+    ) -> dict[str, Any]:
         """
         OAuth 인가 코드를 받아 로그인 또는 회원가입을 처리한 뒤 JWT를 반환.
             provider : 'kakao' 또는 'naver'
             code     : OAuth 인가 코드
             state    : Naver 콜백 쿼리의 state 값 (Naver 전용 동적 값, kakao는 사용 안 함)
+            error    : OAuth provider가 반환한 에러 값 (있으면 즉시 OAuthCallbackError 발생)
             {
                 "is_new_user": bool,
                 "access" : str,   # JWT access token
                 "refresh": str,   # JWT refresh token
             }
         """
+        if error:
+            raise OAuthCallbackError(error)
+        if not code:
+            raise MissingAuthCodeError()
         user_info = cls._get_user_info(provider, code, state)
         return cls._login_and_register(provider, user_info)
 
@@ -140,10 +152,10 @@ class SocialAuthService:
     def _create_social_user(cls, user_info: _UserInfo) -> User:
         """소셜 전용 User 생성. 비밀번호를 unusable로 설정해 일반 로그인을 차단한다."""
         user = User(
-            email=user_info.email,
-            name=user_info.name,
-            nickname=user_info.nickname,
-            phone_number=user_info.phone_number,
+            email=user_info.email or "",
+            name=user_info.name or "",
+            nickname=user_info.nickname or "",
+            phone_number=user_info.phone_number or "",
             profile_img_url=user_info.profile_img_url,
             gender=user_info.gender,
             birthday=user_info.birthday,

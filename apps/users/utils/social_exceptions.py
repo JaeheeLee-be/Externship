@@ -14,6 +14,20 @@ class UnsupportedProviderError(SocialAuthError):
         super().__init__("지원하지 않는 소셜 로그인 제공자입니다.")
 
 
+class OAuthCallbackError(SocialAuthError):
+    """OAuth provider가 에러를 반환한 경우 (ex. 사용자 접근 거부)"""
+
+    def __init__(self, error: str) -> None:
+        super().__init__(error)
+
+
+class MissingAuthCodeError(SocialAuthError):
+    """OAuth 인가 코드(code)가 없는 경우"""
+
+    def __init__(self) -> None:
+        super().__init__("인가 코드(code)가 없습니다.")
+
+
 class EmailNotProvidedError(SocialAuthError):
     """소셜 provider로부터 이메일 정보를 받지 못한 경우"""
 
@@ -26,3 +40,10 @@ class EmailAlreadyRegisteredError(SocialAuthError):
 
     def __init__(self) -> None:
         super().__init__("일반 이메일로 회원 가입한 유저 입니다")
+
+
+class InternalServerError(SocialAuthError):
+    """예상치 못한 서버 오류"""
+
+    def __init__(self) -> None:
+        super().__init__("서버 오류가 발생했습니다.")
