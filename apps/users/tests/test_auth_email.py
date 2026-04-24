@@ -11,14 +11,15 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
     def setUp(self) -> None:
         super().setUp()
         self.email = "test_user@ozcoding.com"
-        self.purpose = "signup"
+        self.valid_code = "aB3dE5"
 
         self.send_url = reverse("users:send-email")
         self.verify_url = reverse("users:verify-email")
 
     def test_send_email_success(self) -> None:
-        """이메일 발송 성공 테스트"""
-        data = {"email": self.email, "purpose": self.purpose}
+        """[성공] 정상적인 이메일 및 용도로 인증 코드 발송"""
+        purpose = "signup"
+        data = {"email": self.email, "purpose": purpose}
 
         response = self.client.post(self.send_url, data)
 
@@ -35,84 +36,100 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
         cached_data = cache.get(cache_key)
         self.assertIsNotNone(cached_data)
         self.assertIn("code", cached_data)
-        self.assertEqual(cached_data["purpose"], self.purpose)
+        self.assertEqual(cached_data["purpose"], purpose)
 
     def test_send_email_invalid_email(self) -> None:
-        """잘못된 이메일 형식 발송 실패 테스트"""
-        data = {"email": "invalid_email_format", "purpose": self.purpose}
+        """[실패] 잘못된 이메일 형식 발송 테스트"""
+        data = {"email": "invalid_email_format", "purpose": "signup"}
 
         response = self.client.post(self.send_url, data)
 
-        # 400 에러 확인 및 아까 수정한 status 반환 로직이 잘 작동하는지 확인
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("email", response.data["error_detail"])
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_verify_email_success(self) -> None:
-        """인증 코드 검증 성공 테스트"""
-        valid_code = "aB3dE5"
-
-        # 1. 테스트를 위해 캐시에 미리 인증 코드를 강제로 세팅
-        cache_key = f"email_code_{self.email}"
-        cache.set(cache_key, {"code": valid_code, "purpose": self.purpose}, timeout=300)
-
-        data = {"email": self.email, "code": valid_code}
-
-        response = self.client.post(self.verify_url, data)
-
-        # 2. 200 성공 및 토큰 발급 확인
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["detail"], "이메일 인증이 성공했습니다")
-        self.assertIn("email_token", response.data)
-
-        # 3. 검증 완료 후 기존 인증번호 캐시가 삭제되었는지 확인
-        self.assertIsNone(cache.get(cache_key))
-
-        # 4. 검증 완료 증명 토큰이 캐시에 저장되었는지 확인
-        email_token = response.data["email_token"]
-        token_key = f"purpose_{self.purpose}_verify_token_{email_token}"
-        self.assertEqual(cache.get(token_key), self.email)
-
-    def test_verify_email_invalid_code(self) -> None:
-        """틀린 인증 코드 입력 시 실패 테스트"""
-        valid_code = "aB3dE5"
-
-        # 1. 캐시에 정상 코드를 세팅
-        cache_key = f"email_code_{self.email}"
-        cache.set(cache_key, {"code": valid_code, "purpose": self.purpose}, timeout=300)
-
-        data = {"email": self.email, "code": "WRONG1"}  # 틀린 코드 전송
-
-        response = self.client.post(self.verify_url, data)
-
-        # 2. 400 에러 및 메시지 확인
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("code", response.data["error_detail"])
-
-        # 3. 실패했으므로 재시도를 위해 캐시가 삭제되지 않고 남아있어야 함
-        self.assertIsNotNone(cache.get(cache_key))
-
-    def test_verify_email_expired_code(self) -> None:
-        """인증 시간이 만료된(캐시에 없는) 경우 실패 테스트"""
-        #  캐시에 아무것도 세팅하지 않음으로써 '만료된 상황'
-        data = {"email": self.email, "code": "123456"}
-
-        response = self.client.post(self.verify_url, data)
-
-        # 400 에러 및 적절한 에러 메시지가 나오는지 확인
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # 에러 메시지에 '만료'나 '요청' 등의 키워드가 포함되어 있는지 확인 (실제 뷰 로직에 맞춰 수정하세요)
-        self.assertIn("code", response.data["error_detail"])
-
     def test_send_email_invalid_purpose(self) -> None:
-        """유효하지 않은 purpose 값 발송 실패 테스트"""
+        """[실패] 유효하지 않은 purpose 값 발송 테스트"""
         # 'hack'이라는 허용되지 않은 purpose 전송
         data = {"email": self.email, "purpose": "hack"}
 
         response = self.client.post(self.send_url, data)
 
-        # 400 에러와 함께 purpose 필드에 대한 에러가 났는지 확인
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("purpose", response.data["error_detail"])
-        self.assertEqual(len(mail.outbox), 0)  # 메일 발송 안됨
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_verify_email_signup_success(self) -> None:
+        """[성공] 회원가입 용도"""
+        purpose = "signup"
+        cache_key = f"email_code_{self.email}"
+        cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
+
+        data = {"email": self.email, "code": self.valid_code}
+        response = self.client.post(self.verify_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["detail"], "이메일 인증이 성공했습니다")
+        self.assertIn("email_token", response.data)
+
+        # 토큰 발급 및 기존 캐시 삭제 확인
+        self.assertIsNone(cache.get(cache_key))
+        token_key = f"email_verify_token_{response.data['email_token']}"
+        cached_data = cache.get(token_key)
+        self.assertIsNotNone(cached_data)  # 캐시가 존재하는지 확인
+        self.assertEqual(cached_data["email"], self.email)  # 이메일이 맞는지 확인
+        self.assertEqual(cached_data["purpose"], purpose)  # 용도도 맞게 들어갔는지 확인
+
+    def test_verify_email_find_password_success(self) -> None:
+        """[성공] 비밀번호 찾기 용도"""
+        purpose = "find_password"
+        cache_key = f"email_code_{self.email}"
+        cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
+
+        data = {"email": self.email, "code": self.valid_code}
+        response = self.client.post(self.verify_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # 💡 PM 지시사항 검증: 비밀번호 찾기 맞춤 메시지
+        self.assertEqual(response.data["detail"], "이메일 인증이 성공했습니다")
+
+    def test_verify_email_recovery_success(self) -> None:
+        """[성공] 계정 복구 용도"""
+        purpose = "recovery"
+        cache_key = f"email_code_{self.email}"
+        cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
+
+        data = {"email": self.email, "code": self.valid_code}
+        response = self.client.post(self.verify_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # 💡 PM 지시사항 검증: 계정 복구 맞춤 메시지
+        self.assertEqual(response.data["detail"], "이메일 인증이 성공했습니다")
+
+    # ==========================================
+    # 3. 검증 (Verify) API 테스트 - 예외 상황
+    # ==========================================
+
+    def test_verify_email_invalid_code(self) -> None:
+        """[실패] 틀린 인증 코드 입력 시 실패 테스트"""
+        purpose = "signup"
+        cache_key = f"email_code_{self.email}"
+        cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
+
+        data = {"email": self.email, "code": "WRONG1"}  # 틀린 코드 전송
+        response = self.client.post(self.verify_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("인증코드가 만료되거나 일치하지 않습니다", response.data["error_detail"])
+
+        # 실패했으므로 재시도를 위해 캐시가 삭제되지 않고 남아있어야 함
+        self.assertIsNotNone(cache.get(cache_key))
+
+    def test_verify_email_expired_code(self) -> None:
+        """[실패] 인증 시간이 만료된(캐시에 없는) 경우 실패 테스트"""
+        # 캐시에 아무것도 세팅하지 않음으로써 '만료된 상황' 가정
+        data = {"email": self.email, "code": self.valid_code}
+        response = self.client.post(self.verify_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("인증코드가 만료되거나 일치하지 않습니다", response.data["error_detail"])

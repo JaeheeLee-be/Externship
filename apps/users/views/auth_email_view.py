@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -13,6 +14,8 @@ from apps.users.serializers.auth_email_serializer import (
 from apps.users.serializers.purpose_enum import AuthPurpose
 from apps.users.services.auth_email_service import EmailVerificationService
 
+User = get_user_model()
+
 
 class EmailSendView(APIView):
     permission_classes = [AllowAny]
@@ -25,7 +28,12 @@ class EmailSendView(APIView):
         responses={
             200: OpenApiResponse(
                 description="발송 성공",
-                examples=[OpenApiExample(name="성공 응답", value={"detail": "이메일 인증 코드가 전송되었습니다."})],
+                examples=[
+                    OpenApiExample(
+                        name="성공 응답",
+                        value={"detail": "이메일 인증 코드가 전송되었습니다."},
+                    )
+                ],
             ),
             400: OpenApiResponse(
                 description="잘못된 요청 (유효성 검사 실패 등)",
@@ -48,15 +56,35 @@ class EmailSendView(APIView):
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data["email"]
-        purpose_str = serializer.validated_data["purpose"]
-        purpose = AuthPurpose(purpose_str)
+        purpose = AuthPurpose(serializer.validated_data["purpose"])
 
-        # service
         try:
             EmailVerificationService.send_verification_email(email, purpose)
+            # 용도별 사전 검증
+            if purpose == AuthPurpose.SIGNUP:
+                if User.objects.filter(email=email).exists():
+                    return Response(
+                        {"error_detail": {"email": ["이미 가입된 이메일입니다."]}},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            elif purpose == AuthPurpose.FIND_PASSWORD:
+                if not User.objects.filter(email=email, is_active=True).exists():
+                    return Response(
+                        {"error_detail": {"email": ["가입되지 않은 이메일입니다."]}},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            elif purpose == AuthPurpose.RECOVERY:
+                if not User.objects.filter(email=email, is_active=False).exists():
+                    return Response(
+                        {"error_detail": {"email": ["복구 가능한 계정이 없습니다."]}},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
             return Response({"detail": "이메일 인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
         except ValidationError as e:
-            return Response({"error_detail": {"email": [e.detail]}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class EmailVerificationView(APIView):
@@ -65,7 +93,7 @@ class EmailVerificationView(APIView):
     @extend_schema(
         tags=["Accounts (이메일 인증)"],
         summary="이메일 인증 코드 검증 API",
-        description="사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 32바이트 email_token을 반환합니다.",
+        description="사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 email_token을 반환합니다.",
         request=EmailVerifySerializer,
         responses={
             200: OpenApiResponse(
@@ -91,6 +119,8 @@ class EmailVerificationView(APIView):
             ),
         },
     )
+
+    ## 이메일 검증 인지 코드 검증 뷰
     def post(self, request: Request) -> Response:
         serializer = EmailVerifySerializer(data=request.data)
         if not serializer.is_valid():
@@ -110,4 +140,4 @@ class EmailVerificationView(APIView):
                 status=status.HTTP_200_OK,
             )
         except ValidationError as e:
-            return Response({"error_detail": {"code": [e.detail]}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)

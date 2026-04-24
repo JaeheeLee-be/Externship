@@ -46,7 +46,7 @@ class EmailVerificationService:
             )
 
         except Exception:
-            raise ValidationError("이메일 발송 실패 이메일 주소를 확인바랍니다")
+            raise ValidationError("이메일 발송 실패 했습니다")
 
     @classmethod
     def verification_code(cls, email: str, code: str) -> str:
@@ -65,15 +65,18 @@ class EmailVerificationService:
         if not cached_data or cached_data.get("code") != code:
             raise ValidationError("인증코드가 만료되거나 일치하지 않습니다")
 
-        purpose = cached_data.get("purpose")
+        # 삭제시 검증
+        if not cache.delete(cache_key):
+            raise ValidationError({"code": "이미 사용된 인증 코드입니다."})
 
-        cache.delete(cache_key)
+        purpose = cached_data.get("purpose")
 
         # 인증 성공시 토큰 발급
         verify_token = secrets.token_urlsafe(32)
 
         # 승인 토큰 캐쉬 저장 유효 10분
-        token_key = f"purpose_{purpose}_verify_token_{verify_token}"
-        cache.set(token_key, email, timeout=600)
+        token_key = f"email_verify_token_{verify_token}"
+        data = {"email": email, "purpose": purpose}
+        cache.set(token_key, data, timeout=600)
 
         return verify_token

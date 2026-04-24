@@ -1,6 +1,8 @@
-from django.urls import path
+from django.urls import include, path
 
 from apps.users.views.auth_email_view import EmailSendView, EmailVerificationView
+
+app_name = "users"
 
 urlpatterns = [
     # 최종 경로: api/v1/accounts/verification/send-email

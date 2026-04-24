@@ -15,6 +15,11 @@ class EmailRequestSerializer(serializers.Serializer[Any]):
 
 
 class EmailVerifySerializer(serializers.Serializer[Any]):
-    # 인증번호 확인 요청
+    # 인증번호 확인
     email = serializers.EmailField(error_messages={"required": "이 필드는 필수 항목입니다."})
     code = serializers.CharField(min_length=6, max_length=6, error_messages={"required": "이 필드는 필수 항목입니다."})
+
+    def validate_code(self, value: str) -> str:
+        if not value.isalnum():
+            raise serializers.ValidationError("인증 코드는 영문자와 숫자로만 이루어져야 합니다.")
+        return value
