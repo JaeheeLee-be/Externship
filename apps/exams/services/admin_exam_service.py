@@ -2,7 +2,7 @@ from typing import Optional
 
 from django.db.models import Count, Q, QuerySet
 
-from apps.exams.exceptions.exam_exception import SubjectNotFound
+from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
 from apps.exams.models import Exam
 from apps.posts.models import Subject
 
@@ -51,6 +51,8 @@ def get_exam_list(
 
 
 def create_exam(subject_id: int, title: str, thumbnail_image_url: Optional[str] = None) -> Exam:
+    if Exam.objects.filter(title=title).exists():
+        raise ExamTitleConflict()
     if not Subject.objects.filter(id=subject_id).exists():
         raise SubjectNotFound()
     return Exam.objects.create(

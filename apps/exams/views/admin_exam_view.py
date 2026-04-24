@@ -65,20 +65,15 @@ class ExamListCreateView(APIView):
         },
     )
     def get(self, request: Request) -> Response:
-        try:
-            queryset = get_exam_list(
-                subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
-                search_keyword=request.query_params.get("search_keyword"),
-                sort=request.query_params.get("sort"),
-                order=request.query_params.get("order"),
-            )
-            paginator = PageNumberPagination()
-            page = paginator.paginate_queryset(queryset, request)
-            serializer = ExamListSerializer(page, many=True, context={"request": request})
-        except NotAuthenticated:
-            return Response({"detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        except PermissionDenied:
-            return Response({"detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+        queryset = get_exam_list(
+            subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
+            search_keyword=request.query_params.get("search_keyword"),
+            sort=request.query_params.get("sort"),
+            order=request.query_params.get("order"),
+        )
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = ExamListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
@@ -100,10 +95,6 @@ class ExamListCreateView(APIView):
             serializer = ExamCreateSerializer(data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
             exam = create_exam(**serializer.validated_data)
-        except NotAuthenticated:
-            return Response({"detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        except PermissionDenied:
-            return Response({"detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         except ExamTitleConflict:
             return Response({"detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
         except SubjectNotFound:

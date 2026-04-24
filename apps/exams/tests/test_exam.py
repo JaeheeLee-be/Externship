@@ -242,3 +242,34 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["detail"], "해당 과목 정보를 찾을 수 없습니다.")
         self.assertEqual(Exam.objects.count(), 2)
+
+    # 쪽지시험 생성: 동일한 이름의 시험 생성
+    def test_exam_create_title_unique_exception(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(
+            reverse("exam-list"),
+            {
+                "subject_id": self.subject_python.id,
+                "title": "test_exam",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["detail"], "동일한 이름의 시험이 이미 존재합니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    # 쪽지시험 생성: 유효하지 않은 요청
+    def test_exam_create_invalid_thumbnail_extension(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(
+            reverse("exam-list"),
+            {
+                "subject_id": self.subject_python.id,
+                "title": "new_exam",
+                "thumbnail_image_url": "https://example.com/image.gif",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["detail"], "유효하지 않은 시험 생성 요청입니다.")
+        self.assertEqual(Exam.objects.count(), 2)

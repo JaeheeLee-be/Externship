@@ -46,14 +46,6 @@ class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
 
-    def validate_title(self, value: str) -> str:
-        queryset = Exam.objects.filter(title=value)
-        if self.instance:
-            queryset = queryset.exclude(pk=cast(Exam, self.instance).pk)
-        if queryset.exists():
-            raise ExamTitleConflict()
-        return value
-
     def validate_thumbnail_image_url(self, value: str) -> str:
         if value == "default_img_url":
             return value
@@ -73,3 +65,4 @@ class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
             "thumbnail_image_url",
         ]
         read_only_fields = ["id"]
+        extra_kwargs = {"title": {"validators": []}}
