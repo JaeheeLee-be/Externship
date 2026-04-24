@@ -35,7 +35,7 @@ def create_upload_urls(file_name: str, path: str, expire: int = 600, *, add_name
         ExpiresIn=expire,
     )
 
-    # img_url
+    # DB의 img_url
     img_url = f"https://{settings.AWS_S3_BUCKET_NAME}.s3.{settings.AWS_S3_REGION}.amazonaws.com/{key}"
 
     return presigned_url, img_url
