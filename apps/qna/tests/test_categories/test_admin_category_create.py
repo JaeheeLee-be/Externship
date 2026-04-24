@@ -200,3 +200,56 @@ class AdminCategoryCreateAPITest(APITestCase):
             response.status_code,
             [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
         )
+
+    # 대분류가 부모를 가질때
+    def test_fail_when_large_has_parent(self) -> None:
+        parent = QuestionCategory.objects.create(name="백엔드", parent=None)
+
+        payload = {
+            "category_type": "large",
+            "name": "프론트엔드",
+            "parent_id": parent.id,
+        }
+
+        response = self.client.post(self.url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["error_detail"],
+            "대분류는 parent_id를 가질 수 없습니다.",
+        )
+
+    # 중분류의 부모가 대분류가 아닐때
+    def test_fail_when_middle_parent_depth_invalid(self) -> None:
+        large = QuestionCategory.objects.create(name="백엔드", parent=None)
+        middle = QuestionCategory.objects.create(name="프레임워크", parent=large)
+
+        payload = {
+            "category_type": "middle",
+            "name": "Django",
+            "parent_id": middle.id,
+        }
+
+        response = self.client.post(self.url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["error_detail"],
+            "중분류의 부모는 대분류여야 합니다.",
+        )
+
+    # 이름이 비어있을때
+    def test_fail_when_name_is_only_spaces(self) -> None:
+        payload = {
+            "category_type": "large",
+            "name": "   ",
+            "parent_id": None,
+        }
+
+        response = self.client.post(self.url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["error_detail"],
+            "카테고리 종류와 이름은 필수 입력값입니다.",
+        )

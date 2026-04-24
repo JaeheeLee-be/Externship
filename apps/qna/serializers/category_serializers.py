@@ -33,14 +33,6 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
     )
     parent_id = serializers.IntegerField(required=False, allow_null=True)
 
-    def get_error_detail(self) -> str:
-        first_error = next(iter(self.errors.values()))
-
-        if isinstance(first_error, list):
-            return str(first_error[0])
-
-        return str(first_error)
-
     def validate_name(self, value: str) -> str:
         value = value.strip()
         if not value:
@@ -57,34 +49,68 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
         # 대분류는 부모를 가질 수 없음
         if category_type == "large":
             if parent_id is not None:
-                raise serializers.ValidationError("대분류는 parent_id를 가질 수 없습니다.")
+                raise serializers.ValidationError(
+                    "대분류는 parent_id를 가질 수 없습니다.",
+                    code="large_has_parent",
+                )
 
         # 중/소분류는 부모가 필요함
         if category_type in ["middle", "small"]:
             if parent_id is None:
-                raise serializers.ValidationError("부모 카테고리를 찾을 수 없습니다.")
+                raise serializers.ValidationError(
+                    "부모 카테고리를 찾을 수 없습니다.",
+                    code="parent_not_found",
+                )
 
             try:
                 parent = QuestionCategory.objects.get(id=parent_id)
             except QuestionCategory.DoesNotExist:
-                raise serializers.ValidationError("부모 카테고리를 찾을 수 없습니다.")
+                raise serializers.ValidationError(
+                    "부모 카테고리를 찾을 수 없습니다.",
+                    code="parent_not_found",
+                )
 
             parent_depth = get_category_depth(parent)
 
             # 중분류의 부모는 대분류
             if category_type == "middle" and parent_depth != 1:
-                raise serializers.ValidationError("중분류의 부모는 대분류여야 합니다.")
+                raise serializers.ValidationError(
+                    "중분류의 부모는 대분류여야 합니다.",
+                    code="invalid_middle_parent",
+                )
 
             # 소분류의 부모는 중분류
             if category_type == "small" and parent_depth != 2:
-                raise serializers.ValidationError("소분류의 부모는 중분류여야 합니다.")
+                raise serializers.ValidationError(
+                    "소분류의 부모는 중분류여야 합니다.",
+                    code="invalid_small_parent",
+                )
 
         # 같은 부모 아래 동일 이름 중복 방지
         if QuestionCategory.objects.filter(parent=parent, name=name).exists():
-            raise serializers.ValidationError("동일한 이름의 카테고리가 이미 존재합니다.")
+            raise serializers.ValidationError(
+                "동일한 이름의 카테고리가 이미 존재합니다.",
+                code="duplicate_category",
+            )
 
         attrs["parent"] = parent
         return attrs
+
+    def get_error_detail(self) -> str:
+        first_error = next(iter(self.errors.values()))
+
+        if isinstance(first_error, list):
+            return str(first_error[0])
+
+        return str(first_error)
+
+    def get_error_code(self) -> str:
+        first_error = next(iter(self.errors.values()))
+
+        if isinstance(first_error, list):
+            return getattr(first_error[0], "code", "invalid")
+
+        return getattr(first_error, "code", "invalid")
 
 
 # 카테고리 생성 응답

@@ -12,6 +12,14 @@ from apps.qna.serializers.category_serializers import (
 )
 from apps.qna.services.admin_category_services import CategoryService
 
+ERROR_STATUS_MAP = {
+    "parent_not_found": status.HTTP_404_NOT_FOUND,
+    "duplicate_category": status.HTTP_409_CONFLICT,
+    "large_has_parent": status.HTTP_400_BAD_REQUEST,
+    "invalid_middle_parent": status.HTTP_400_BAD_REQUEST,
+    "invalid_small_parent": status.HTTP_400_BAD_REQUEST,
+}
+
 
 class AdminCategoryCreateAPIView(APIView):
     permission_classes = [IsRoleAdminUser]
@@ -21,19 +29,14 @@ class AdminCategoryCreateAPIView(APIView):
 
         if not serializer.is_valid():
             error_detail = serializer.get_error_detail()
-
-            status_code: int
-
-            if error_detail == "부모 카테고리를 찾을 수 없습니다.":
-                status_code = status.HTTP_404_NOT_FOUND
-            elif error_detail == "동일한 이름의 카테고리가 이미 존재합니다.":
-                status_code = status.HTTP_409_CONFLICT
-            else:
-                status_code = status.HTTP_400_BAD_REQUEST
+            error_code = serializer.get_error_code()
 
             return Response(
                 {"error_detail": error_detail},
-                status=status_code,
+                status=ERROR_STATUS_MAP.get(
+                    error_code,
+                    status.HTTP_400_BAD_REQUEST,
+                ),
             )
 
         category = CategoryService.create_category(
