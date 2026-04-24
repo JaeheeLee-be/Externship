@@ -11,6 +11,13 @@ s3 = boto3.client(
     aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
 )
 
+ALLOWED_SUFFIX = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+}
+
 
 """
 file_name: 확장자를 포함한 파일명을 그대로 넣어주세요
@@ -21,9 +28,15 @@ add_name: 파일명을 uuid_cat.png처럼 만들고 싶다면, add_name에 cat�
 """
 
 
-def create_upload_urls(file_name: str, path: str, expire: int = 600, *, add_name: str) -> tuple[str, str]:
-    # 파일명에서 확장자 분리
-    suffix = Path(file_name).suffix
+def create_upload_urls(file_name: str, path: str, expire: int = 600, *, add_name: str | None = None) -> tuple[str, str]:
+    # 파일명에서 확장자 분리, 확장자는 소문자로 통일
+    suffix = Path(file_name).suffix.lower()
+
+    # 확장자 화이트리스트
+    if suffix not in ALLOWED_SUFFIX:
+        raise ValueError("지원하지 않는 파일 형식입니다.")
+
+    content_type = ALLOWED_SUFFIX[suffix]
 
     # rstrip("/"): path 마지막에 슬래시가 있으면 제거. 없으면 내비둠
     key = path.rstrip("/") + "/" + image_uuid(add_name) + suffix
@@ -31,7 +44,11 @@ def create_upload_urls(file_name: str, path: str, expire: int = 600, *, add_name
     # boto3로 presigned_url 만드는 함수
     presigned_url = s3.generate_presigned_url(
         ClientMethod="put_object",
-        Params={"Bucket": settings.AWS_S3_BUCKET_NAME, "Key": key},
+        Params={
+            "Bucket": settings.AWS_S3_BUCKET_NAME,
+            "Key": key,
+            "ContentType": content_type,
+        },
         ExpiresIn=expire,
     )
 
