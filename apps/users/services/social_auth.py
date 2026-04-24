@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Union, Optional
+from typing import Any, Union
 
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -25,15 +25,15 @@ class SocialAuthService:
 
     공개 인터페이스
     ─────────────────────────────────────────────────────────────────
-    get_auth_url(provider)          → OAuth 인증 페이지 URL 반환
-    login(provider, code, **kwargs) → 로그인 또는 회원가입 후 JWT 반환
+    get_auth_url(provider)                   → OAuth 인증 페이지 URL 반환
+    login_or_register(provider, code, state) → 로그인 또는 회원가입 후 JWT 반환
 
-    login 내부 처리 순서
+    login_or_register 내부 처리 순서
     ─────────────────────────────────────────────────────────────────
     1. provider API 호출 → 소셜 유저 정보 획득         (_get_user_info)
        - kakao: settings.KAKAO_REDIRECT_URI (고정 설정값, 서비스 내부에서 직접 읽음)
        - naver: state (요청마다 달라지는 동적 값, Naver 콜백 쿼리에서 추출해 전달)
-    2. 기존 소셜 유저 확인                             (_login_or_register)
+    2. 기존 소셜 유저 확인                             (_process_user)
        └─ 존재하면 → JWT 발급 후 반환  (is_new_user=False)
     3. 동일 이메일의 일반 이메일 유저 확인
        └─ 존재하면 → SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
@@ -47,7 +47,6 @@ class SocialAuthService:
     def get_auth_url(cls, provider: str) -> str:
         """
         provider에 맞는 OAuth 인증 페이지 URL을 반환한다.
-        뷰는 이 URL로 단순 리다이렉트만 수행하면 된다.
 
         Raises:
             SocialAuthError: 지원하지 않는 provider
@@ -61,7 +60,7 @@ class SocialAuthService:
         raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
 
     @classmethod
-    def login(cls, provider: str, code: str, state: str = "") -> dict[str, Any]:
+    def process_user(cls, provider: str, code: str, state: str = "") -> dict[str, Any]:
         """
         OAuth 인가 코드를 받아 로그인 또는 회원가입을 처리한 뒤 JWT를 반환한다.
 
@@ -82,7 +81,7 @@ class SocialAuthService:
                              또는 일반 이메일로 가입된 유저가 소셜 로그인 시도 시
         """
         user_info = cls._get_user_info(provider, code, state)
-        return cls._login_or_register(provider, user_info)
+        return cls._login_and_register(provider, user_info)
 
     # ── provider API 호출 ──────────────────────────────────────────
 
@@ -110,7 +109,7 @@ class SocialAuthService:
     # ── DB 조회 / 생성 ─────────────────────────────────────────────
 
     @classmethod
-    def _login_or_register(cls, provider: str, user_info: _UserInfo) -> dict[str, Any]:
+    def _login_and_register(cls, provider: str, user_info: _UserInfo) -> dict[str, Any]:
         """
         1. 기존 소셜 유저  → 바로 로그인
         2. 일반 이메일 유저 → SocialAuthError
