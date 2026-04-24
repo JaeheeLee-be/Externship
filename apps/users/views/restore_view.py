@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from apps.users.models import User, Withdrawal
 from apps.users.serializers.restore_serializer import RestoreRequestSerializer, RestoreSerializer
-from apps.users.services.withdrawal_service import make_restore_token, parse_restore_token, restore_user
+from apps.users.services.withdrawal_service import parse_restore_token, restore_user
 
 
 class RestoreRequestView(APIView):
@@ -33,10 +33,7 @@ class RestoreRequestView(APIView):
         try:
             user = User.objects.get(email=email)
             if Withdrawal.objects.filter(user=user).exists():
-                token = make_restore_token(user.id)
-                # TODO: 이메일 발송 (인증 코드 구현 후 추가)
-                # send_restore_email(user.email, token)
-                _ = token
+                pass  # TODO: 이메일 발송 (인증 코드 구현 후 추가)
         except User.DoesNotExist:
             pass
 
