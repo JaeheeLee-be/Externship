@@ -2,6 +2,7 @@ import secrets
 import uuid
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
@@ -9,8 +10,11 @@ from rest_framework.exceptions import ValidationError
 from apps.core.utils.base62 import Base62
 from apps.users.serializers.purpose_enum import AuthPurpose
 
+User = get_user_model()
+
 
 class EmailVerificationService:
+
     @classmethod
     def send_verification_email(cls, email: str, purpose: AuthPurpose) -> None:
         """
@@ -20,6 +24,17 @@ class EmailVerificationService:
         :param purpose: [signup, find_password, recovery] 중 하나
         :raises ValidationError: Redis 캐시 저장 실패 시 발생
         """
+        if purpose == AuthPurpose.SIGNUP:
+            if User.objects.filter(email=email).exists():
+                raise ValidationError("이미 가입된 이메일입니다.")
+
+        elif purpose == AuthPurpose.FIND_PASSWORD:
+            if not User.objects.filter(email=email, is_active=True).exists():
+                raise ValidationError("가입되지 않은 이메일 입니다.")
+
+        elif purpose == AuthPurpose.RECOVERY:
+            if not User.objects.filter(email=email, is_active=False).exists():
+                raise ValidationError("복구 가능한 계정이 없습니다")
 
         # Base62 코드 생성
         code = Base62.uuid_encode(uuid.uuid4(), length=6)

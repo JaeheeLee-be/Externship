@@ -105,10 +105,6 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["detail"], "이메일 인증이 성공했습니다")
 
-    # ==========================================
-    # 3. 검증 (Verify) API 테스트 - 예외 상황
-    # ==========================================
-
     def test_verify_email_invalid_code(self) -> None:
         """[실패] 틀린 인증 코드 입력 시 실패 테스트"""
         purpose = "signup"

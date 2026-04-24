@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -13,8 +12,6 @@ from apps.users.serializers.auth_email_serializer import (
 )
 from apps.users.serializers.purpose_enum import AuthPurpose
 from apps.users.services.auth_email_service import EmailVerificationService
-
-User = get_user_model()
 
 
 class EmailSendView(APIView):
@@ -60,27 +57,6 @@ class EmailSendView(APIView):
 
         try:
             EmailVerificationService.send_verification_email(email, purpose)
-            # 용도별 사전 검증
-            if purpose == AuthPurpose.SIGNUP:
-                if User.objects.filter(email=email).exists():
-                    return Response(
-                        {"error_detail": {"email": ["이미 가입된 이메일입니다."]}},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            elif purpose == AuthPurpose.FIND_PASSWORD:
-                if not User.objects.filter(email=email, is_active=True).exists():
-                    return Response(
-                        {"error_detail": {"email": ["가입되지 않은 이메일입니다."]}},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            elif purpose == AuthPurpose.RECOVERY:
-                if not User.objects.filter(email=email, is_active=False).exists():
-                    return Response(
-                        {"error_detail": {"email": ["복구 가능한 계정이 없습니다."]}},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
 
             return Response({"detail": "이메일 인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
         except ValidationError as e:
