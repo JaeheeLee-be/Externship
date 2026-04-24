@@ -1,4 +1,4 @@
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
@@ -76,11 +76,9 @@ class ExamListCreateView(APIView):
             page = paginator.paginate_queryset(queryset, request)
             serializer = ExamListSerializer(page, many=True, context={"request": request})
         except NotAuthenticated:
-            return Response(
-                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
         except PermissionDenied:
-            return Response({"error_detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "쪽지시험 목록 조회 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
@@ -103,16 +101,14 @@ class ExamListCreateView(APIView):
             serializer.is_valid(raise_exception=True)
             exam = create_exam(**serializer.validated_data)
         except NotAuthenticated:
-            return Response(
-                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
         except PermissionDenied:
-            return Response({"error_detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "쪽지시험 생성 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
         except ExamTitleConflict:
-            return Response({"error_detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+            return Response({"detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
         except SubjectNotFound:
-            return Response({"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except ValidationError:
-            return Response({"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)
