@@ -13,7 +13,6 @@ from apps.users.services.kakao import KakaoUserInfo
 from apps.users.services.naver import NaverUserInfo
 from apps.users.services.social_auth import SocialAuthError, SocialAuthService
 
-
 # ── 픽스처 헬퍼 ──────────────────────────────────────────────────────
 
 
@@ -99,7 +98,7 @@ class SocialLoginViewTest(TestCase):
         """지원하지 않는 provider 요청 시 400 반환"""
         mock_get_auth_url.side_effect = SocialAuthError("지원하지 않는 소셜 로그인 제공자입니다: google")
 
-        response = self.client.get(reverse("users:social-login", kwargs={"provider": "google"}))
+        response: Any = self.client.get(reverse("users:social-login", kwargs={"provider": "google"}))
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("detail", response.data)
@@ -113,14 +112,14 @@ class SocialCallbackViewTest(TestCase):
 
     def test_error_param_returns_400(self) -> None:
         """OAuth error 파라미터가 있을 때 400 반환"""
-        response = self.client.get(self.kakao_url, {"error": "access_denied"})
+        response: Any = self.client.get(self.kakao_url, {"error": "access_denied"})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "access_denied")
 
     def test_missing_code_returns_400(self) -> None:
         """code 없이 요청 시 400 반환"""
-        response = self.client.get(self.kakao_url)
+        response: Any = self.client.get(self.kakao_url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("detail", response.data)
@@ -134,7 +133,7 @@ class SocialCallbackViewTest(TestCase):
             "refresh": "refresh_token_value",
         }
 
-        response = self.client.get(self.kakao_url, {"code": "valid_code"})
+        response: Any = self.client.get(self.kakao_url, {"code": "valid_code"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data["is_new_user"])
@@ -149,7 +148,7 @@ class SocialCallbackViewTest(TestCase):
             "refresh": "new_refresh_token",
         }
 
-        response = self.client.get(self.kakao_url, {"code": "valid_code"})
+        response: Any = self.client.get(self.kakao_url, {"code": "valid_code"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["is_new_user"])
@@ -160,7 +159,7 @@ class SocialCallbackViewTest(TestCase):
         """SocialAuthError 발생 시 400 + detail 반환"""
         mock_process_user.side_effect = SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
 
-        response = self.client.get(self.kakao_url, {"code": "some_code"})
+        response: Any = self.client.get(self.kakao_url, {"code": "some_code"})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "일반 이메일로 회원 가입한 유저 입니다")
@@ -170,7 +169,7 @@ class SocialCallbackViewTest(TestCase):
         """예상치 못한 예외 발생 시 500 반환"""
         mock_process_user.side_effect = RuntimeError("DB 연결 실패")
 
-        response = self.client.get(self.kakao_url, {"code": "some_code"})
+        response: Any = self.client.get(self.kakao_url, {"code": "some_code"})
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn("detail", response.data)

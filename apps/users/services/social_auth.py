@@ -60,7 +60,7 @@ class SocialAuthService:
         service = _OAUTH_SERVICES.get(provider)
         if service is None:
             raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
-        return service.get_auth_url()
+        return str(service.get_auth_url())
 
     @classmethod
     def process_user(cls, provider: str, code: str, state: str = "") -> dict[str, Any]:
