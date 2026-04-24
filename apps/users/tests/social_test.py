@@ -11,7 +11,13 @@ from rest_framework.test import APIClient
 from apps.users.models import SocialUsers, User
 from apps.users.services.kakao import KakaoUserInfo
 from apps.users.services.naver import NaverUserInfo
-from apps.users.services.social_auth import SocialAuthError, SocialAuthService
+from apps.users.services.social_auth import SocialAuthService
+from apps.users.utils.social_exceptions import (
+    EmailAlreadyRegisteredError,
+    EmailNotProvidedError,
+    SocialAuthError,
+    UnsupportedProviderError,
+)
 
 # ── 픽스처 헬퍼 ──────────────────────────────────────────────────────
 
@@ -65,7 +71,7 @@ class SocialLoginViewTest(TestCase):
     @patch("apps.users.views.social_views.SocialAuthService.get_auth_url")
     def test_invalid_provider_returns_400(self, mock_get_auth_url: MagicMock) -> None:
         """지원하지 않는 provider 요청 시 400 반환"""
-        mock_get_auth_url.side_effect = SocialAuthError("지원하지 않는 소셜 로그인 제공자입니다: google")
+        mock_get_auth_url.side_effect = UnsupportedProviderError()
 
         response: Any = self.client.get(reverse("users:social-login", kwargs={"provider": "google"}))
 
@@ -134,7 +140,7 @@ class SocialCallbackViewTest(TestCase):
     @patch("apps.users.views.social_views.SocialAuthService.process_user")
     def test_social_auth_error_returns_400(self, mock_process_user: MagicMock) -> None:
         """SocialAuthError 발생 시 400 + detail 반환"""
-        mock_process_user.side_effect = SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
+        mock_process_user.side_effect = EmailAlreadyRegisteredError()
 
         response: Any = self.client.get(self.kakao_url, {"code": "some_code"})
 
@@ -213,10 +219,8 @@ class SocialAuthServiceGetAuthUrlTest(TestCase):
 
     def test_invalid_provider_raises_social_auth_error(self) -> None:
         """지원하지 않는 provider → SocialAuthError 발생"""
-        with self.assertRaises(SocialAuthError) as ctx:
+        with self.assertRaises(UnsupportedProviderError):
             SocialAuthService.get_auth_url("google")
-
-        self.assertIn("google", str(ctx.exception))
 
 
 class ExistingSocialUserLoginTest(TestCase):
@@ -293,7 +297,7 @@ class EmailOnlyUserConflictTest(TestCase):
         """동일 이메일 일반 가입 유저 → SocialAuthError('일반 이메일로 회원 가입한 유저 입니다')"""
         mock_get_user_info.return_value = self.kakao_info
 
-        with self.assertRaises(SocialAuthError) as ctx:
+        with self.assertRaises(EmailAlreadyRegisteredError) as ctx:
             SocialAuthService.process_user(provider="kakao", code="valid_code")
 
         self.assertEqual(str(ctx.exception), "일반 이메일로 회원 가입한 유저 입니다")
@@ -344,7 +348,7 @@ class NewSocialUserRegistrationTest(TestCase):
         """이메일 없는 소셜 유저 → SocialAuthError('이메일 정보를 가져올 수 없습니다.')"""
         mock_get_user_info.return_value = self.kakao_info_no_email
 
-        with self.assertRaises(SocialAuthError) as ctx:
+        with self.assertRaises(EmailNotProvidedError) as ctx:
             SocialAuthService.process_user(provider="kakao", code="valid_code")
 
         self.assertEqual(str(ctx.exception), "이메일 정보를 가져올 수 없습니다.")

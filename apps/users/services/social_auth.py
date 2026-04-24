@@ -8,13 +8,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import SocialUsers, User
 from apps.users.services.kakao import KakaoOAuthService, KakaoUserInfo
 from apps.users.services.naver import NaverOAuthService, NaverUserInfo
-
-
-class SocialAuthError(Exception):
-    """소셜 인증 관련 도메인 오류"""
-
-    pass
-
+from apps.users.utils.social_exceptions import (
+    EmailAlreadyRegisteredError,
+    EmailNotProvidedError,
+    SocialAuthError,
+    UnsupportedProviderError,
+)
 
 _UserInfo = Union[KakaoUserInfo, NaverUserInfo]
 
@@ -41,9 +40,9 @@ class SocialAuthService:
        - naver: state (요청마다 달라지는 동적 값, Naver 콜백 쿼리에서 추출해 전달)
     2. 기존 소셜 유저 확인                             (_login_and_register)
        └─ 존재하면 → JWT 발급 후 반환  (is_new_user=False)
-    3. 이메일 정보 없으면 → SocialAuthError("이메일 정보를 가져올 수 없습니다.")
+    3. 이메일 정보 없으면 → EmailNotProvidedError
     4. 동일 이메일의 일반 이메일 유저 확인
-       └─ 존재하면 → SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
+       └─ 존재하면 → EmailAlreadyRegisteredError
     5. 신규 유저 → User + SocialUsers 생성 후 JWT 발급 (is_new_user=True)
     ─────────────────────────────────────────────────────────────────
     """
@@ -59,7 +58,7 @@ class SocialAuthService:
         """
         service = _OAUTH_SERVICES.get(provider)
         if service is None:
-            raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+            raise UnsupportedProviderError()
         return str(service.get_auth_url())
 
     @classmethod
@@ -96,7 +95,7 @@ class SocialAuthService:
         if provider == "naver":
             return NaverOAuthService.get_user_info_by_code(code, state)
 
-        raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+        raise UnsupportedProviderError()
 
     # ── DB 조회 / 생성 ─────────────────────────────────────────────
 
@@ -104,8 +103,8 @@ class SocialAuthService:
     def _login_and_register(cls, provider: str, user_info: _UserInfo) -> dict[str, Any]:
         """
         1. 기존 소셜 유저  → 바로 로그인
-        2. 이메일 정보 없음 → SocialAuthError
-        3. 일반 이메일 유저 → SocialAuthError
+        2. 이메일 정보 없음 → EmailNotProvidedError
+        3. 일반 이메일 유저 → EmailAlreadyRegisteredError
         4. 신규 유저       → 회원가입 후 로그인
         """
         # 1. 기존 소셜 유저 확인
@@ -120,11 +119,11 @@ class SocialAuthService:
 
         # 2. 이메일 정보 없는 소셜 유저는 회원가입 차단
         if not user_info.email:
-            raise SocialAuthError("이메일 정보를 가져올 수 없습니다.")
+            raise EmailNotProvidedError()
 
         # 3. 동일 이메일의 일반 이메일 가입 유저 확인
         if User.objects.filter(email=user_info.email).exists():
-            raise SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
+            raise EmailAlreadyRegisteredError()
 
         # 4. 신규 유저 생성
         user = cls._create_social_user(user_info)
@@ -141,10 +140,10 @@ class SocialAuthService:
     def _create_social_user(cls, user_info: _UserInfo) -> User:
         """소셜 전용 User 생성. 비밀번호를 unusable로 설정해 일반 로그인을 차단한다."""
         user = User(
-            email=user_info.email or "",
-            name=user_info.name or "",
-            nickname=user_info.nickname or "",
-            phone_number=user_info.phone_number or "",
+            email=user_info.email,
+            name=user_info.name,
+            nickname=user_info.nickname,
+            phone_number=user_info.phone_number,
             profile_img_url=user_info.profile_img_url,
             gender=user_info.gender,
             birthday=user_info.birthday,

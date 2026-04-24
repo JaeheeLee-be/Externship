@@ -9,7 +9,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.services.social_auth import SocialAuthError, SocialAuthService
+from apps.users.services.social_auth import SocialAuthService
+from apps.users.utils.social_exceptions import SocialAuthError
 
 
 def set_auth_cookies(response: Any, refresh: str) -> None:
