@@ -16,8 +16,7 @@ def delete_expired_withdrawn_users() -> int:
 
     count = 0
     for withdrawal in expired_withdrawals:
-        if withdrawal.user is not None:
-            withdrawal.user.delete()  # user 삭제 → withdrawal.user = NULL (SET_NULL)
-            count += 1
+        withdrawal.user.delete()  # user 삭제 → withdrawal.user = NULL (SET_NULL)
+        count += 1
 
     return count

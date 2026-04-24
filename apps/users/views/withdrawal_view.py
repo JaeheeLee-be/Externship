@@ -28,12 +28,13 @@ class WithdrawalView(APIView):
             400: inline_serializer(
                 name="WithdrawalValidationError",
                 fields={
-                    "error_detail": serializers.DictField(child=serializers.ListField(child=serializers.CharField()))
+                    "reason": serializers.ListField(child=serializers.CharField()),
+                    "detail": serializers.CharField(),
                 },
             ),
             401: inline_serializer(
                 name="WithdrawalUnauthorized",
-                fields={"error_detail": serializers.CharField()},
+                fields={"detail": serializers.CharField()},
             ),
         },
     )

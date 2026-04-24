@@ -236,9 +236,13 @@ AWS_S3_CONFIG = Config(s3={"addressing_style": "virtual"})
 
 # FRONTEND_REDIRECT_URI
 FRONTEND_REDIRECT_URI = os.getenv("FRONTEND_REDIRECT_URI")
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
+CELERY_TIMEZONE = "Asia/Seoul"
+
 CELERY_BEAT_SCHEDULE = {
     "delete-expired-withdrawn-users": {
         "task": "apps.users.tasks.delete_expired_withdrawn_users",
-        "schedule": crontab(hour=0, minute=0),  # 매일 자정
+        "schedule": crontab(hour=0, minute=0),
     },
 }

@@ -18,16 +18,13 @@ def create_user(
     name: str = "홍길동",
     phone_number: str = "01012345678",
 ) -> User:
-    user = User.objects.create_user(
+    return User.objects.create_user(
         email=email,
         password=password,
         nickname=nickname,
         name=name,
         phone_number=phone_number,
     )
-    user.is_active = True
-    user.save(update_fields=["is_active"])
-    return user
 
 
 def get_auth_header(user: User) -> dict[str, Any]:
