@@ -4,20 +4,6 @@ from pathlib import Path
 import boto3
 from django.conf import settings
 
-# s3 = boto3.client(
-#     "s3",
-#     region_name=settings.AWS_S3_REGION,
-#     aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
-#     aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
-# )
-#
-# ALLOWED_SUFFIX = {
-#     ".jpg": "image/jpeg",
-#     ".jpeg": "image/jpeg",
-#     ".png": "image/png",
-#     ".gif": "image/gif",
-# }
-
 
 class S3Handler:
     ALLOWED_SUFFIX = {
@@ -38,6 +24,7 @@ class S3Handler:
         self.bucket = settings.AWS_S3_BUCKET_NAME
         self.region = settings.AWS_S3_REGION
 
+    # presigned url과 img_url 2개를 반환하는 함수
     def create_upload_urls(
         self, file_name: str, path: str, expire: int = 600, *, add_name: str | None = None
     ) -> tuple[str, str]:
@@ -59,6 +46,7 @@ class S3Handler:
 
         return presigned_url, img_url
 
+    # 확장자 분리, 확장자 화이트 리스트
     @classmethod
     def _suffix(cls, file_name: str) -> tuple[str, str]:
         suffix = Path(file_name).suffix.lower()
@@ -70,17 +58,20 @@ class S3Handler:
 
         return suffix, content_type
 
+    # 키: 파일명을 포함한 저장경로. ex) uploads/images/questions/uuid.png
     def _key(self, path: str, suffix: str, add_name: str | None) -> str:
         key = path.rstrip("/") + "/" + self._image_uuid(add_name) + suffix
 
         return key
 
+    # 파일명 생성 함수
     @staticmethod
     def _image_uuid(add_name: str | None) -> str:
         add = f"_{add_name}" if add_name else ""
 
         return str(uuid.uuid4()) + add
 
+    # 업로드용 presigned url 생성 함수
     def _upload_presigned_url(self, key: str, content_type: str, expire: int) -> str:
         presigned_url = self.s3.generate_presigned_url(
             ClientMethod="put_object",
@@ -94,6 +85,7 @@ class S3Handler:
 
         return presigned_url
 
+    # DB의 img_url 생성 함수
     def _img_url(self, key: str) -> str:
         img_url = f"https://{self.bucket}.s3.{self.region}.amazonaws.com/{key}"
 
