@@ -8,7 +8,7 @@ class ErrorDataKeyMixin:
     """
 
     def handle_exception(self, exc: Exception) -> Response:
-        response = super().handle_exception(exc)  # type: ignore[misc]
+        response: Response = super().handle_exception(exc)  # type: ignore[misc]
         if "detail" in response.data:
             response.data["error_detail"] = response.data.pop("detail")
         return response
