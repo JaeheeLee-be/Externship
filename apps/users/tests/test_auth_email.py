@@ -103,7 +103,6 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # 💡 PM 지시사항 검증: 계정 복구 맞춤 메시지
         self.assertEqual(response.data["detail"], "이메일 인증이 성공했습니다")
 
     # ==========================================
