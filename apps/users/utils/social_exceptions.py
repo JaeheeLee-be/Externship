@@ -10,8 +10,8 @@ class SocialAuthError(Exception):
 class UnsupportedProviderError(SocialAuthError):
     """지원하지 않는 OAuth provider"""
 
-    def __init__(self, provider: str) -> None:
-        super().__init__(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+    def __init__(self) -> None:
+        super().__init__("지원하지 않는 소셜 로그인 제공자입니다.")
 
 
 class EmailNotProvidedError(SocialAuthError):
