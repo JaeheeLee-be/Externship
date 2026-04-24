@@ -115,7 +115,6 @@ class AdminCategoryCreateAPITest(APITestCase):
         )
 
     # 중분류에 부모 없을때
-    # 중분류에 부모 없을때
     def test_fail_when_middle_has_no_parent(self) -> None:
         payload = {
             "category_type": "middle",
