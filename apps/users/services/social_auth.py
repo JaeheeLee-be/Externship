@@ -8,12 +8,20 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import SocialUsers, User
 from apps.users.services.kakao import KakaoOAuthService, KakaoUserInfo
 from apps.users.services.naver import NaverOAuthService, NaverUserInfo
+from apps.users.utils.social_exceptions import (
+    EmailAlreadyRegisteredError,
+    EmailNotProvidedError,
+    SocialAuthError,
+    UnsupportedProviderError,
+)
 
-
-class SocialAuthError(Exception):
-    """소셜 인증 관련 도메인 오류"""
-
-    pass
+__all__ = [
+    "SocialAuthError",
+    "UnsupportedProviderError",
+    "EmailNotProvidedError",
+    "EmailAlreadyRegisteredError",
+    "SocialAuthService",
+]
 
 
 _UserInfo = Union[KakaoUserInfo, NaverUserInfo]
@@ -59,7 +67,7 @@ class SocialAuthService:
         """
         service = _OAUTH_SERVICES.get(provider)
         if service is None:
-            raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+            raise UnsupportedProviderError(provider)
         return str(service.get_auth_url())
 
     @classmethod
@@ -96,7 +104,7 @@ class SocialAuthService:
         if provider == "naver":
             return NaverOAuthService.get_user_info_by_code(code, state)
 
-        raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+        raise UnsupportedProviderError(provider)
 
     # ── DB 조회 / 생성 ─────────────────────────────────────────────
 
@@ -120,11 +128,11 @@ class SocialAuthService:
 
         # 2. 이메일 정보 없는 소셜 유저는 회원가입 차단
         if not user_info.email:
-            raise SocialAuthError("이메일 정보를 가져올 수 없습니다.")
+            raise EmailNotProvidedError()
 
         # 3. 동일 이메일의 일반 이메일 가입 유저 확인
         if User.objects.filter(email=user_info.email).exists():
-            raise SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
+            raise EmailAlreadyRegisteredError()
 
         # 4. 신규 유저 생성
         user = cls._create_social_user(user_info)

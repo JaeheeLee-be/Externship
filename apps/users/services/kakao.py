@@ -89,11 +89,11 @@ class KakaoOAuthService:
         else:
             birthday = None
 
-        # ✅ 수정: gender "male"/"female" → "M"/"F" 변환 (User.Gender 모델과 일치)
+        # gender "male"/"female" → "M"/"F" 변환 (User.Gender 모델과 일치)
         raw_gender = account.get("gender")
         gender = cls._GENDER_MAP.get(raw_gender) if raw_gender else None
 
-        # ✅ 수정: phone_number 정규화 "+82 10-1234-5678" → "01012345678"
+        # phone_number 정규화 "+82 10-1234-5678" → "01012345678"
         raw_phone = account.get("phone_number", "")
         phone_number = cls._normalize_phone(raw_phone) if raw_phone else None
 
