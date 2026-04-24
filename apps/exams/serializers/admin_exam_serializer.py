@@ -65,4 +65,4 @@ class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
             "thumbnail_image_url",
         ]
         read_only_fields = ["id"]
-        extra_kwargs: dict = {"title": {"validators": []}}
+        extra_kwargs: dict[str, dict[str, list[object]]] = {"title": {"validators": []}}
