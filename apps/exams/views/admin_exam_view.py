@@ -23,7 +23,7 @@ from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 
 class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
-    
+
     def handle_exception(self, exc: Exception) -> Response:
         response = super().handle_exception(exc)
         if "detail" in response.data:
