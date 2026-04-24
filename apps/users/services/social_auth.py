@@ -1,114 +1,168 @@
-# 카카오/네이버 공통 로직
-# 카카오/네이버 모두 필수 항목 전부 받아와서 바로 회원가입
-
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Union, Optional
 
-from django.db import IntegrityError, transaction
+from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import SocialUsers, User
+from apps.users.services.kakao import KakaoOAuthService, KakaoUserInfo
+from apps.users.services.naver import NaverOAuthService, NaverUserInfo
 
 
 class SocialAuthError(Exception):
+    """소셜 인증 관련 도메인 오류"""
+
     pass
 
 
-class SocialAuthService:
-    """소셜 로그인/회원가입 공통 서비스"""
+_UserInfo = Union[KakaoUserInfo, NaverUserInfo]
 
-    @staticmethod
-    def _issue_jwt(user: User) -> dict[str, str]:
-        """JWT 발급"""
+
+class SocialAuthService:
+    """
+    소셜 로그인 / 회원가입 전체 비즈니스 로직
+
+    공개 인터페이스
+    ─────────────────────────────────────────────────────────────────
+    get_auth_url(provider)          → OAuth 인증 페이지 URL 반환
+    login(provider, code, **kwargs) → 로그인 또는 회원가입 후 JWT 반환
+
+    login 내부 처리 순서
+    ─────────────────────────────────────────────────────────────────
+    1. provider API 호출 → 소셜 유저 정보 획득         (_get_user_info)
+       - kakao: settings.KAKAO_REDIRECT_URI (고정 설정값, 서비스 내부에서 직접 읽음)
+       - naver: state (요청마다 달라지는 동적 값, Naver 콜백 쿼리에서 추출해 전달)
+    2. 기존 소셜 유저 확인                             (_login_or_register)
+       └─ 존재하면 → JWT 발급 후 반환  (is_new_user=False)
+    3. 동일 이메일의 일반 이메일 유저 확인
+       └─ 존재하면 → SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
+    4. 신규 유저 → User + SocialUsers 생성 후 JWT 발급 (is_new_user=True)
+    ─────────────────────────────────────────────────────────────────
+    """
+
+    # ── 공개 메서드 ────────────────────────────────────────────────
+
+    @classmethod
+    def get_auth_url(cls, provider: str) -> str:
+        """
+        provider에 맞는 OAuth 인증 페이지 URL을 반환한다.
+        뷰는 이 URL로 단순 리다이렉트만 수행하면 된다.
+
+        Raises:
+            SocialAuthError: 지원하지 않는 provider
+        """
+        if provider == "kakao":
+            return KakaoOAuthService.get_auth_url()
+
+        if provider == "naver":
+            return NaverOAuthService.get_auth_url()
+
+        raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+
+    @classmethod
+    def login(cls, provider: str, code: str, state: str = "") -> dict[str, Any]:
+        """
+        OAuth 인가 코드를 받아 로그인 또는 회원가입을 처리한 뒤 JWT를 반환한다.
+
+        Args:
+            provider : 'kakao' 또는 'naver'
+            code     : OAuth 인가 코드
+            state    : Naver 콜백 쿼리의 state 값 (Naver 전용 동적 값, kakao는 사용 안 함)
+
+        Returns:
+            {
+                "is_new_user": bool,
+                "access" : str,   # JWT access token
+                "refresh": str,   # JWT refresh token
+            }
+
+        Raises:
+            SocialAuthError: 지원하지 않는 provider, 인증 실패,
+                             또는 일반 이메일로 가입된 유저가 소셜 로그인 시도 시
+        """
+        user_info = cls._get_user_info(provider, code, state)
+        return cls._login_or_register(provider, user_info)
+
+    # ── provider API 호출 ──────────────────────────────────────────
+
+    @classmethod
+    def _get_user_info(cls, provider: str, code: str, state: str = "") -> _UserInfo:
+        """
+        provider에 맞는 OAuth API를 호출해 소셜 유저 정보를 반환한다.
+
+        kakao: redirect_uri는 고정 설정값이므로 settings에서 직접 읽는다.
+        naver: redirect_uri는 NaverOAuthService 내부에서 settings를 읽고,
+               state는 요청마다 달라지는 동적 값(Naver 콜백 쿼리 파라미터)이므로 인자로 받는다.
+
+        Raises:
+            SocialAuthError: 지원하지 않는 provider
+        """
+        if provider == "kakao":
+            redirect_uri: str = getattr(settings, "KAKAO_REDIRECT_URI", "")
+            return KakaoOAuthService.get_user_info_by_code(code, redirect_uri)
+
+        if provider == "naver":
+            return NaverOAuthService.get_user_info_by_code(code, state)
+
+        raise SocialAuthError(f"지원하지 않는 소셜 로그인 제공자입니다: {provider}")
+
+    # ── DB 조회 / 생성 ─────────────────────────────────────────────
+
+    @classmethod
+    def _login_or_register(cls, provider: str, user_info: _UserInfo) -> dict[str, Any]:
+        """
+        1. 기존 소셜 유저  → 바로 로그인
+        2. 일반 이메일 유저 → SocialAuthError
+        3. 신규 유저       → 회원가입 후 로그인
+        """
+        # 1. 기존 소셜 유저 확인
+        try:
+            social_user = SocialUsers.objects.select_related("user").get(
+                provider=provider,
+                provider_id=user_info.provider_id,
+            )
+            return cls._generate_token_result(social_user.user, is_new_user=False)
+        except SocialUsers.DoesNotExist:
+            pass
+
+        # 2. 동일 이메일의 일반 이메일 가입 유저 확인
+        if user_info.email and User.objects.filter(email=user_info.email).exists():
+            raise SocialAuthError("일반 이메일로 회원 가입한 유저 입니다")
+
+        # 3. 신규 유저 생성
+        user = cls._create_social_user(user_info)
+        SocialUsers.objects.create(
+            user=user,
+            provider=provider,
+            provider_id=user_info.provider_id,
+        )
+        return cls._generate_token_result(user, is_new_user=True)
+
+    # ── 헬퍼 ──────────────────────────────────────────────────────
+
+    @classmethod
+    def _create_social_user(cls, user_info: _UserInfo) -> User:
+        """소셜 전용 User 생성. 비밀번호를 unusable로 설정해 일반 로그인을 차단한다."""
+        user = User(
+            email=user_info.email or "",
+            name=user_info.name or "",
+            nickname=user_info.nickname or "",
+            phone_number=user_info.phone_number or "",
+            profile_img_url=user_info.profile_img_url,
+            gender=user_info.gender,
+            birthday=user_info.birthday,
+        )
+        user.set_unusable_password()
+        user.save()
+        return user
+
+    @classmethod
+    def _generate_token_result(cls, user: User, is_new_user: bool) -> dict[str, Any]:
+        """JWT access / refresh 토큰을 생성하고 결과 딕셔너리를 반환한다."""
         refresh = RefreshToken.for_user(user)
         return {
+            "is_new_user": is_new_user,
             "access": str(refresh.access_token),
             "refresh": str(refresh),
         }
-
-    @staticmethod
-    def _make_placeholder_email(provider: str, provider_id: str) -> str:
-        """소셜 유저 이메일 없을 시 사용할 이메일"""
-        return f"{provider}_{provider_id}@social.invaild"
-
-    @staticmethod
-    def _make_placeholder_phone(provider: str, provider_id: str) -> str:
-        """소셜 유저의 전화번호 없을 시 사용할 전화번호"""
-        return f"S{provider_id[:19]}"[:20]
-
-    @staticmethod
-    def login_or_register(
-        provider: str,
-        provider_id: str,
-        email: Optional[str],
-        name: Optional[str],
-        nickname: Optional[str],
-        profile_img_url: Optional[str],
-        phone_number: Optional[str],
-        gender: Optional[str],
-        birthday: Optional[str],
-    ) -> dict[str, Any]:
-        """카카오 / 네이버 소셜 유저 로그인 / 회원가입
-        is_new_user: 신규 가입 여부
-        access : JWT access 토큰
-        refresh : JWT로 토큰 받고 view에서 쿠키로 변환
-        """
-        # ── 기존 소셜 유저 조회 ──────────────────────────────────
-        social_user = (
-            SocialUsers.objects.filter(provider=provider, provider_id=provider_id).select_related("user").first()
-        )
-        if social_user:
-            return {"is_new_user": False, **SocialAuthService._issue_jwt(social_user.user)}
-
-        # ── 신규 유저 생성 ────────────────────────────────────────
-        # unique 필드에 빈 문자열 말고 플레이스 홀더 사용
-        resolved_email = email or SocialAuthService._make_placeholder_email(provider, provider_id)
-        resolved_nickname = nickname or ""  # 닉네임은 provider 제공값 그대로 사용 (unique 제약은 모델에서 처리)
-        resolved_phone = phone_number or SocialAuthService._make_placeholder_phone(provider, provider_id)
-        resolved_name = name or ""
-
-        try:
-            with transaction.atomic():
-                # 이미 같은 이메일로 일반 가입된 유저가 있는지 확인
-                existing_user = User.objects.filter(email=resolved_email).first()
-
-                if existing_user:
-                    # 이미 존재하는 이메일이면 SocialUsers만 연결 (중복 생성 방지)
-                    SocialUsers.objects.get_or_create(
-                        user=existing_user,
-                        provider=provider,
-                        provider_id=provider_id,
-                    )
-                    return {"is_new_user": False, **SocialAuthService._issue_jwt(existing_user)}
-
-                user = User(
-                    email=resolved_email,
-                    name=resolved_name,
-                    nickname=resolved_nickname,
-                    phone_number=resolved_phone,
-                    gender=gender,
-                    birthday=birthday,
-                    profile_img_url=profile_img_url,
-                    is_active=True,
-                )
-                user.set_unusable_password()
-                user.save()
-
-                SocialUsers.objects.create(
-                    user=user,
-                    provider=provider,
-                    provider_id=provider_id,
-                )
-
-        except IntegrityError:
-            # 동시 요청으로 먼저 생성된 경우 재조회
-            social_user = (
-                SocialUsers.objects.filter(provider=provider, provider_id=provider_id).select_related("user").first()
-            )
-            if social_user:
-                return {"is_new_user": False, **SocialAuthService._issue_jwt(social_user.user)}
-            # 재조회에도 없으면 찐 오류
-            raise SocialAuthError("소셜 유저 생성 중 오류가 발생했습니다.") from None
-
-        return {"is_new_user": True, **SocialAuthService._issue_jwt(user)}
