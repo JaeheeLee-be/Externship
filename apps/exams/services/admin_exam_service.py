@@ -50,7 +50,7 @@ def get_exam_list(
     return queryset
 
 
-def create_exam(subject_id: int, title: str, thumbnail_image_url: Optional[str] = str) -> Exam:
+def create_exam(subject_id: int, title: str, thumbnail_image_url: str = "default_img_url") -> Exam:
     if Exam.objects.filter(title=title).exists():
         raise ExamTitleConflict()
     if not Subject.objects.filter(id=subject_id).exists():
