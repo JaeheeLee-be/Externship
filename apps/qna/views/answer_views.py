@@ -46,7 +46,7 @@ class AnswerAcceptView(APIView):
     service = AnswerAcceptService()
 
     def post(self, request: Request, answer_id: int) -> Response:
-        assert isinstance(request.user, User) # mypy 통과를 위한 코드
+        assert isinstance(request.user, User)
         answer = self.service.answer_accept(
             user=request.user,
             answer_id=answer_id,
