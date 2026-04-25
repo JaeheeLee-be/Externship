@@ -274,6 +274,10 @@ class AnswerUpdateTestCase(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 =======
 class AnswerCommentViewTestCase(BaseTestCase):
+    """
+    POST api/v1/qna/answers/{answer_id}/comments
+    답변 댓글 작성 API test code
+    """
     def setUp(self) -> None:
         self.client = APIClient()
         self.answer = Answer.objects.create(
@@ -286,6 +290,7 @@ class AnswerCommentViewTestCase(BaseTestCase):
         }
 
     def test_comment_create(self) -> None:
+        """댓글 생성 test code"""
         self.client.force_authenticate(user=self.user)
         url = reverse("answer_comments", kwargs={"answer_id": self.answer.id})
         response = self.client.post(url, self.comment, format="json")
@@ -297,6 +302,7 @@ class AnswerCommentViewTestCase(BaseTestCase):
         self.assertIn("created_at", response.data)
 
     def test_comment_create_invalid(self) -> None:
+        """댓글 요청이 이상할떄 test code -> 400"""
         self.client.force_authenticate(user=self.user)
         url = reverse("answer_comments", kwargs={"answer_id": self.answer.id})
         response = self.client.post(url, {}, format="json")
@@ -304,6 +310,7 @@ class AnswerCommentViewTestCase(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_comment_answer_not_found(self) -> None:
+        """댓글을 달 답변을 찾지 못 했을떄 -> 404"""
         self.client.force_authenticate(user=self.user)
         url = reverse("answer_comments", kwargs={"answer_id": 9999999})
         response = self.client.post(url, self.comment, format="json")
@@ -311,6 +318,7 @@ class AnswerCommentViewTestCase(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_comment_create_unauthenticated(self) -> None:
+        """댓글을 달 유저가 로그인된 상태가 아닐때 -> 401"""
         url = reverse("answer_comments", kwargs={"answer_id": self.answer.id})
         response = self.client.post(url, self.comment, format="json")
 

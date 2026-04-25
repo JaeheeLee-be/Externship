@@ -86,13 +86,19 @@ class AnswerDetailService:
         return answer
 
 class AnswerCommentService:
+    """
+    POST api/v1/qna/answers/{answer_id}/comments
+    답변 댓글 작성 API에 관한 서비스 class
+    """
     def get_object(self, answer_id: int) -> Answer:
+        """answer 데이터 가져오는 함수"""
         try:
             return Answer.objects.get(pk=answer_id)
         except Answer.DoesNotExist:
             raise NotFound("해당 답변을 찾을 수 없습니다.")
 
     def create_comment(self, user: User, answer_id: int, **validated_data: Any) -> AnswerComment:
+        """answer_comment 답변 댓글 작성 함수"""
         answer_comment = AnswerComment.objects.create(
             author_id=user.id,
             answer_id=answer_id,

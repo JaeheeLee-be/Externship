@@ -58,13 +58,22 @@ class AnswerUpdateSerializer(serializers.ModelSerializer[Answer]):
         )
 
 class AnswerCommentRequestSerializer(serializers.ModelSerializer[AnswerComment]):
+<<<<<<< HEAD
 
+=======
+    """
+    답변 댓글 작성 요청 serializer
+    """
+>>>>>>> e32055c (chore:주석 작성)
     class Meta:
         model = AnswerComment
         fields = ["content"]
 
 
 class AnswerCommentResponseSerializer(serializers.ModelSerializer[AnswerComment]):
+    """
+    답변 댓글 작성 응답 serializer
+    """
     comment_id = serializers.IntegerField(source="id")
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 

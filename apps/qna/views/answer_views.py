@@ -131,6 +131,10 @@ class AnswerDetail(APIView):
         return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
 
 class AnswerCommentView(APIView):
+    """
+    POST api/v1/qna/answers/{answer_id}/comments
+    답변 댓글 작성 API
+    """
     permission_classes = [IsAuthenticated]
     answer_comment_service = AnswerCommentService()
 
