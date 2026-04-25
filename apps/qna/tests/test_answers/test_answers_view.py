@@ -3,9 +3,13 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.qna.models.answer_models import Answer
+<<<<<<< HEAD
 from apps.qna.models.question_models import Question, QuestionCategory
+=======
+from apps.qna.models.question_models import Question, QuestionCategorie
+>>>>>>> 2117118 (feat:답변 댓글 test code 작성)
 from apps.users.models import User
-from apps.qna.models.answer_models import Answer
+
 
 class BaseTestCase(APITestCase):
     """다른 test class 여서도 동일하게 사용가능하게 구현"""
@@ -88,6 +92,7 @@ class AnswersViewTestCase(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+<<<<<<< HEAD
 class AnswerAcceptViewTestCase(BaseTestCase):
     """
     POST api/v1/qna/answers/{answer_id}/accept
@@ -267,3 +272,47 @@ class AnswerUpdateTestCase(BaseTestCase):
         response = self.client.put(url, {"content": "updated content", "img_urls": []}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+=======
+class AnswerCommentViewTestCase(BaseTestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.answer = Answer.objects.create(
+            question=self.question,
+            author=self.user,
+            content="testcontent",
+        )
+        self.comment = {
+            "content": "testcontent",
+        }
+
+    def test_comment_create(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answer_comments", kwargs={"answer_id": self.answer.id})
+        response = self.client.post(url, self.comment, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["answer_id"], self.answer.id)
+        self.assertEqual(response.data["author_id"], self.user.id)
+        self.assertIn("comment_id", response.data)
+        self.assertIn("created_at", response.data)
+
+    def test_comment_create_invalid(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answer_comments", kwargs={"answer_id": self.answer.id})
+        response = self.client.post(url, {}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_comment_answer_not_found(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answer_comments", kwargs={"answer_id": 9999999})
+        response = self.client.post(url, self.comment, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_comment_create_unauthenticated(self) -> None:
+        url = reverse("answer_comments", kwargs={"answer_id": self.answer.id})
+        response = self.client.post(url, self.comment, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+>>>>>>> 2117118 (feat:답변 댓글 test code 작성)

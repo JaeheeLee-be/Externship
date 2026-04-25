@@ -129,17 +129,19 @@ class AnswerDetail(APIView):
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
+
 class AnswerCommentView(APIView):
     permission_classes = [IsAuthenticated]
     answer_comment_service = AnswerCommentService()
-    def post(self,request:Request,answer_id:int)->Response:
+
+    def post(self, request: Request, answer_id: int) -> Response:
         answer = self.answer_comment_service.get_object(answer_id)
         serializer = AnswerCommentRequestSerializer(
             data=request.data,
         )
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)
-
+        assert request.user.id is not None
         answer_comment = self.answer_comment_service.create_comment(
             answer_id=answer.id,
             user=request.user,

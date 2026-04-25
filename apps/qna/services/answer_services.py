@@ -84,17 +84,18 @@ class AnswerDetailService:
                 [AnswerImage(img_url=img, answer=answer) for img in validated_data.get("img_urls", [])]
             )
         return answer
+
 class AnswerCommentService:
-    def get_object(self,answer_id:int)->Answer:
+    def get_object(self, answer_id: int) -> Answer:
         try:
             return Answer.objects.get(pk=answer_id)
         except Answer.DoesNotExist:
             raise NotFound("해당 답변을 찾을 수 없습니다.")
 
-    def create_comment(self,user:User,answer_id,**validated_data:Any)->AnswerComment:
+    def create_comment(self, user: User, answer_id: int, **validated_data: Any) -> AnswerComment:
         answer_comment = AnswerComment.objects.create(
-            author_id = user.id,
-            answer_id = answer_id,
+            author_id=user.id,
+            answer_id=answer_id,
             content=validated_data["content"],
         )
         return answer_comment
