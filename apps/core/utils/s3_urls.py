@@ -4,7 +4,8 @@
 from apps.core.utils.s3_urls import s3
 위에서처럼 임포트해서 쓰세요
 
-presigned_url, img_url 생성: s3.create_upload_urls()
+presigned_url, img_url = s3.create_upload_urls()
+위에서처럼 업로드에 필요한 url들을 생성하세요
 
 파라미터에 대한 설명은 create_upload_urls() 내부에 있습니다
 """
