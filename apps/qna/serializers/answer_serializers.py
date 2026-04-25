@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from apps.qna.models.answer_models import Answer
+from apps.qna.models.answer_models import Answer,AnswerComment
+
 
 
 class AnswerRequestSerializer(serializers.Serializer[Answer]):
@@ -56,3 +57,19 @@ class AnswerUpdateSerializer(serializers.ModelSerializer[Answer]):
             "answer_id",
             "updated_at",
         )
+class AnswerCommentRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =AnswerComment
+        fields = ["content"]
+
+class AnswerCommentResponseSerializer(serializers.ModelSerializer):
+    comment_id = serializers.IntegerField(source="id")
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    class Meta:
+        model = AnswerComment
+        fields = [
+            "comment_id",
+            "answer_id",
+            "author_id",
+            "created_at",
+        ]

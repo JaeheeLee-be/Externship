@@ -25,11 +25,14 @@ from apps.qna.serializers.answer_serializers import (
     AnswerRequestSerializer,
     AnswerResponseSerializer,
     AnswerUpdateSerializer,
+    AnswerCommentRequestSerializer,
+    AnswerCommentResponseSerializer,
 )
 from apps.qna.services.answer_services import (
     AnswerAcceptService,
     AnswerDetailService,
     AnswerService,
+    AnswerCommentService
 )
 
 
@@ -126,3 +129,21 @@ class AnswerDetail(APIView):
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
+class AnswerCommentView(APIView):
+    permission_classes = [IsAuthenticated]
+    answer_comment_service = AnswerCommentService()
+    def post(self,request:Request,answer_id:int)->Response:
+        answer = self.answer_comment_service.get_object(answer_id)
+        serializer = AnswerCommentRequestSerializer(
+            data=request.data,
+        )
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+
+        answer_comment = self.answer_comment_service.create_comment(
+            answer_id=answer.id,
+            user=request.user,
+            **serializer.validated_data,
+        )
+        return Response(AnswerCommentResponseSerializer(answer_comment).data,status=status.HTTP_201_CREATED)
+    # 403 에러는 관리자만 답변에 대한 댓글을 작성할 수 있는지 물어보자

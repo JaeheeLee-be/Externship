@@ -5,7 +5,7 @@ from rest_framework.test import APIClient, APITestCase
 from apps.qna.models.answer_models import Answer
 from apps.qna.models.question_models import Question, QuestionCategory
 from apps.users.models import User
-
+from apps.qna.models.answer_models import Answer
 
 class BaseTestCase(APITestCase):
     """다른 test class 여서도 동일하게 사용가능하게 구현"""
