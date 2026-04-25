@@ -68,11 +68,6 @@ class TestS3Handler(TestCase):
         img_url = s3._img_url(self.key)
         self.assertLessEqual(len(img_url), 255)
 
-    # s3.create_img_url이 잘 작동하는지
-    def test_create_img_url(self) -> None:
-        img_url = s3.create_img_url(self.file_name, self.path)
-        self.assertTrue(img_url.startswith("https://"))
-
     # presigned_url이 잘 생성되는지
     @mock_aws
     def test_presigned_url_for_upload(self) -> None:
@@ -87,6 +82,8 @@ class TestS3Handler(TestCase):
 
     # s3.create_upload_urls()가 잘 작동하는지
     @mock_aws
-    def test_create_presigned_url(self) -> None:
-        presigned_url = s3.create_presigned_url(self.file_name, self.path)
+    def test_create_upload_urls(self) -> None:
+        presigned_url, img_url = s3.create_upload_urls(self.file_name, self.path)
         self.assertTrue(presigned_url.startswith("https://"))
+        self.assertTrue(img_url.startswith("https://"))
+        self.assertNotEqual(presigned_url, img_url)

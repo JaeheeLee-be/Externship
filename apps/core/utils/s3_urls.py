@@ -4,10 +4,9 @@
 from apps.core.utils.s3_urls import s3
 위에서처럼 임포트해서 쓰세요
 
-presigned_url 생성: s3.create_presigned_url()
-img_url 생성: s3.create_img_url()
+presigned_url, img_url 생성: s3.create_upload_urls()
 
-파라미터에 대한 설명은 create_presigned_url() 내부에 있습니다
+파라미터에 대한 설명은 create_upload_urls() 내부에 있습니다
 """
 
 import uuid
@@ -36,8 +35,10 @@ class S3Handler:
         self.bucket = settings.AWS_S3_BUCKET_NAME
         self.region = settings.AWS_S3_REGION
 
-    # presigned url을 반환하는 함수
-    def create_presigned_url(self, file_name: str, path: str, expire: int = 600, *, add_name: str | None = None) -> str:
+    # presigned url, img_url을 반환하는 함수
+    def create_upload_urls(
+        self, file_name: str, path: str, expire: int = 600, *, add_name: str | None = None
+    ) -> tuple[str, str]:
         """
         file_name: 확장자를 포함한 파일명을 그대로 넣어주세요
         path: 저장경로에서 파일명을 뺀 값. 저장경로가 uploads/images/questions/uuid.png라면
@@ -48,19 +49,9 @@ class S3Handler:
 
         key, content_type = self._key_and_type(file_name, path, add_name)
         presigned_url = self._presigned_url_for_upload(key, content_type, expire)
-
-        return presigned_url
-
-    # img_url을 반환하는 함수
-    def create_img_url(self, file_name: str, path: str, *, add_name: str | None = None) -> str:
-        """
-        파라미터에 대한 설명은 create_presigned_url() 참고
-        """
-
-        key, _ = self._key_and_type(file_name, path, add_name)
         img_url = self._img_url(key)
 
-        return img_url
+        return presigned_url, img_url
 
     # key: 파일명을 포함한 저장경로. ex) uploads/images/questions/uuid.png
     def _key_and_type(self, file_name: str, path: str, add_name: str | None = None) -> tuple[str, str]:
