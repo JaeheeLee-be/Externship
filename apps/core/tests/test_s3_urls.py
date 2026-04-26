@@ -82,12 +82,30 @@ class TestS3Handler(TestCase):
         self.assertIn("X-Amz-Algorithm", presigned_url)
         self.assertIn("X-Amz-Expires=600", presigned_url)
 
+    # 모킹된 presigned_url과 그렇지 않은 presigned_url이 동일한지
+    def test_mocked_presigned_url(self) -> None:
+
+        @mock_aws
+        def mocking() -> str:
+            return s3._presigned_url_for_upload(self.key, self.content_type)
+
+        presigned_url = s3._presigned_url_for_upload(self.key, self.content_type)
+        mocked_presigned_url = mocking()
+
+        self.assertEqual(presigned_url, mocked_presigned_url)
+
+    # presigned_url의 시작 부분이 img_url과 동일한지
+    def test_presigned_url_startswith_img_url(self) -> None:
+        img_url = s3._img_url(self.key)
+        presigned_url = s3._presigned_url_for_upload(self.key, self.content_type)
+        self.assertTrue(presigned_url.startswith(img_url))
+
     # s3.create_upload_urls()가 잘 작동하는지
     def test_create_upload_urls(self) -> None:
         presigned_url, img_url = s3.create_upload_urls(self.file_name, self.path)
         self.assertTrue(presigned_url.startswith("https://"))
         self.assertTrue(img_url.startswith("https://"))
-        self.assertNotEqual(presigned_url, img_url)
+        self.assertTrue(presigned_url.startswith(img_url))
 
 
 class TestMock(TestCase):

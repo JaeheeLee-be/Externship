@@ -29,6 +29,7 @@ class S3Handler:
     def __init__(self) -> None:
         self.s3 = boto3.client(
             "s3",
+            config=settings.AWS_S3_CONFIG,
             region_name=settings.AWS_S3_REGION,
             aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
