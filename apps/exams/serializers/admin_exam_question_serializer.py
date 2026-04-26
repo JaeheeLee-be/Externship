@@ -1,63 +1,48 @@
 from rest_framework import serializers
 
-from apps.exams.models.exam_question_model import ExamQuestion
+from apps.exams.models import ExamQuestion
 
 
-class QuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
+class QuestionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExamQuestion
+        fields = ["exam_id", "question", "prompt", "blank_count", "options_json", "answer", "point", "explanation"]
+        read_only_fields = ["exam_id"]
+
+    def validate(self, data):
+        if data["point"] <= 0:
+            raise serializers.ValidationError("배점은 0보다 작거나 같을 수 없습니다.")
+        return data
+
+
+class QuestionUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamQuestion
         fields = [
             "id",
-            "exam",
-            "type",
+            "exam_id",
             "question",
             "prompt",
+            "blank_count",
             "options_json",
-            "blank_count",
             "answer",
             "point",
             "explanation",
         ]
+        read_only_fields = ["id", "exam_id"]
 
-    def validate_point(self, value: int) -> int:
-        if value < 0:
-            raise serializers.ValidationError("배점은 양수여야 합니다.")
-        return value
+    def validate(self, data):
+        point = data.get("point")
+        if point is not None and point <= 0:
+            raise serializers.ValidationError("배점은 0보다 작거나 같을 수 없습니다.")
+        return data
 
 
-class BlankSerializer(QuestionSerializer):
+class QuestionDeleteResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamQuestion
         fields = [
             "id",
-            "exam",
-            "type",
-            "question",
-            "prompt",
-            "blank_count",
-            "answer",
-            "point",
-            "explanation",
+            "exam_id",
         ]
-        read_only_fields = ("id", "exam")
-        extra_kwargs = {
-            "prompt": {"required": True},
-            "blank_count": {"required": True},
-        }
-
-
-class ChoiceAndSortSerializer(QuestionSerializer):
-    class Meta:
-        model = ExamQuestion
-        fields = ["id", "exam", "type", "question", "options_json", "answer", "point", "explanation"]
-        read_only_fields = ("id", "exam")
-        extra_kwargs = {
-            "options_json": {"required": True, "description": "지문은 필수 입니다."},
-        }
-
-
-class WordAndQuizSerializer(QuestionSerializer):
-    class Meta:
-        model = ExamQuestion
-        fields = ["id", "exam", "type", "question", "answer", "point", "explanation"]
-        read_only_fields = ("id", "exam")
+        read_only_fields = ["id", "exam_id"]
