@@ -79,9 +79,6 @@ class RestoreView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "이미 삭제된 계정입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            restore_user(user)
-        except ValidationError as e:
-            return Response({"detail": str(e.detail[0])}, status=status.HTTP_400_BAD_REQUEST)
+        restore_user(user)
 
         return Response({"detail": "계정이 복구됐습니다."}, status=status.HTTP_200_OK)
