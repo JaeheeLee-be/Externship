@@ -80,7 +80,9 @@ class RestoreViewTest(APITestCase):
 
     def test_restore_with_invalid_token_returns_400(self) -> None:
         """캐시에 없는 토큰 - 400 반환"""
-        response = self.client.post(self.url, data={"email_token": "nonexistent_token"}, content_type="application/json")
+        response = self.client.post(
+            self.url, data={"email_token": "nonexistent_token"}, content_type="application/json"
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_restore_with_wrong_purpose_returns_400(self) -> None:
@@ -98,7 +100,9 @@ class RestoreViewTest(APITestCase):
         )
         set_recovery_token("expired_due_token", user.email)
 
-        response = self.client.post(self.url, data={"email_token": "expired_due_token"}, content_type="application/json")
+        response = self.client.post(
+            self.url, data={"email_token": "expired_due_token"}, content_type="application/json"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -108,7 +112,9 @@ class RestoreViewTest(APITestCase):
         set_recovery_token("deleted_user_token", user.email)
         user.delete()
 
-        response = self.client.post(self.url, data={"email_token": "deleted_user_token"}, content_type="application/json")
+        response = self.client.post(
+            self.url, data={"email_token": "deleted_user_token"}, content_type="application/json"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
