@@ -1,7 +1,7 @@
 from django.http import HttpRequest, HttpResponseBase
 from django.urls import path
 
-from apps.posts.views.post_crud import (
+from apps.posts.views.post_crud_view import (
     PostCreateView,
     PostDeleteView,
     PostDetailView,
