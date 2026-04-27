@@ -16,7 +16,7 @@ from apps.users.services.enrollment_service import create_enrollment
 class EnrollmentView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) ->Never :
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
         raise NotAuthenticated(detail="자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
