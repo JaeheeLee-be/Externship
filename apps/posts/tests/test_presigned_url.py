@@ -4,13 +4,20 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.core.utils.test_factories import create_test_user
+from apps.users.models import User
 
 
 class PresignedUrlViewTest(APITestCase):
+    user: User
+    url: str
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.user = create_test_user("uploader")
+        cls.url = reverse("presigned_url")
+
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = create_test_user("uploader")
-        self.url = reverse("presigned_url")
 
     @mock_aws
     def test_generate_presigned_url_success(self) -> None:
