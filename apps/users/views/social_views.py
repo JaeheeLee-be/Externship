@@ -21,7 +21,7 @@ def set_auth_cookies(response: Any, refresh: str) -> None:
         max_age=60 * 60 * 24 * 4,  # 4일
         domain=getattr(settings, "COOKIE_DOMAIN", None),
         httponly=True,
-       # secure=getattr(settings, "COOKIE_SECURE", True),
+        # secure=getattr(settings, "COOKIE_SECURE", True),
         samesite=getattr(settings, "COOKIE_SAMESITE", "Lax"),
         path="/",
     )
@@ -66,11 +66,13 @@ class SocialCallbackView(APIView):
             return redirect(f"{frontend_url}/social-callback?{params}")
 
         except Exception:
-            params = urlencode({
-                "provider": provider,
-                "is_success": "false",
-                "error": "server_error",
-            })
+            params = urlencode(
+                {
+                    "provider": provider,
+                    "is_success": "false",
+                    "error": "server_error",
+                }
+            )
             return redirect(f"{frontend_url}/social-callback?{params}")
 
         params = urlencode(

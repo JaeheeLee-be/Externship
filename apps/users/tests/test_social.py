@@ -122,8 +122,6 @@ class SocialCallbackViewTest(TestCase):
         self.assertIn("localhost:3000/social-callback", response["Location"])
 
 
-
-
 class SocialAuthServiceTest(TestCase):
     def test_error_param_raises_oauth_callback_error(self) -> None:
         with self.assertRaises(OAuthCallbackError):
@@ -140,9 +138,14 @@ class SocialAuthServiceTest(TestCase):
     @patch("apps.users.services.social_auth.NaverOAuthService.get_user_info_by_code")
     def test_naver_calls_naver_service(self, mock: MagicMock) -> None:
         mock.return_value = NaverUserInfo(
-            provider_id="naver_1", email="naver@example.com", name="네이버",
-            nickname="닉", profile_img_url=None, phone_number="01011112222",
-            gender="M", birthday="1990-01-01",
+            provider_id="naver_1",
+            email="naver@example.com",
+            name="네이버",
+            nickname="닉",
+            profile_img_url=None,
+            phone_number="01011112222",
+            gender="M",
+            birthday="1990-01-01",
         )
         result = SocialAuthService.process_user(provider="naver", code="code", state="state")
         self.assertTrue(result["is_new_user"])
@@ -157,9 +160,14 @@ class ExistingSocialUserTest(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         cls.kakao_info = KakaoUserInfo(
-            provider_id="kakao_001", email="exist@example.com", name="기존유저",
-            nickname="기존닉", phone_number="01033334444", profile_img_url=None,
-            gender="M", birthday="1991-05-05",
+            provider_id="kakao_001",
+            email="exist@example.com",
+            name="기존유저",
+            nickname="기존닉",
+            phone_number="01033334444",
+            profile_img_url=None,
+            gender="M",
+            birthday="1991-05-05",
         )
         cls.user = User(email="exist@example.com", name="기존유저", nickname="기존닉", phone_number="01033334444")
         cls.user.set_unusable_password()
@@ -181,14 +189,24 @@ class NewSocialUserTest(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         cls.kakao_info = KakaoUserInfo(
-            provider_id="kakao_new_001", email="new@example.com", name="신규유저",
-            nickname="신규닉", phone_number="01055556666", profile_img_url=None,
-            gender="F", birthday="1995-03-10",
+            provider_id="kakao_new_001",
+            email="new@example.com",
+            name="신규유저",
+            nickname="신규닉",
+            phone_number="01055556666",
+            profile_img_url=None,
+            gender="F",
+            birthday="1995-03-10",
         )
         cls.kakao_info_no_email = KakaoUserInfo(
-            provider_id="kakao_new_002", email=None, name="이메일없음",
-            nickname="닉", phone_number=None, profile_img_url=None,
-            gender=None, birthday=None,
+            provider_id="kakao_new_002",
+            email=None,
+            name="이메일없음",
+            nickname="닉",
+            phone_number=None,
+            profile_img_url=None,
+            gender=None,
+            birthday=None,
         )
 
     @patch("apps.users.services.social_auth.KakaoOAuthService.get_user_info_by_code")
@@ -222,9 +240,14 @@ class EmailConflictTest(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         cls.kakao_info = KakaoUserInfo(
-            provider_id="kakao_conflict_001", email="conflict@example.com", name="충돌유저",
-            nickname="충돌닉", phone_number="01077778888", profile_img_url=None,
-            gender="M", birthday="1988-12-25",
+            provider_id="kakao_conflict_001",
+            email="conflict@example.com",
+            name="충돌유저",
+            nickname="충돌닉",
+            phone_number="01077778888",
+            profile_img_url=None,
+            gender="M",
+            birthday="1988-12-25",
         )
         cls.user = User(email="conflict@example.com", name="충돌유저", nickname="충돌닉", phone_number="01077778888")
         cls.user.set_unusable_password()
@@ -235,8 +258,6 @@ class EmailConflictTest(TestCase):
         mock.return_value = self.kakao_info
         with self.assertRaises(EmailAlreadyRegisteredError):
             SocialAuthService.process_user(provider="kakao", code="code")
-
-
 
 
 class KakaoOAuthServiceTest(TestCase):
@@ -272,9 +293,12 @@ class KakaoOAuthServiceTest(TestCase):
         mock.return_value.json.return_value = {
             "id": 12345,
             "kakao_account": {
-                "email": "kakao@test.com", "name": "카카오",
-                "phone_number": "+82 10-1234-5678", "gender": "male",
-                "birthyear": "1990", "birthday": "0505",
+                "email": "kakao@test.com",
+                "name": "카카오",
+                "phone_number": "+82 10-1234-5678",
+                "gender": "male",
+                "birthyear": "1990",
+                "birthday": "0505",
                 "profile": {"nickname": "닉", "profile_image_url": "https://img.jpg"},
             },
         }
@@ -296,9 +320,6 @@ class KakaoOAuthServiceTest(TestCase):
 
     def test_normalize_phone_local(self) -> None:
         self.assertEqual(KakaoOAuthService._normalize_phone("010-1234-5678"), "01012345678")
-
-
-
 
 
 class NaverOAuthServiceTest(TestCase):
@@ -333,10 +354,15 @@ class NaverOAuthServiceTest(TestCase):
     def test_get_user_info_parses_full_response(self, mock: MagicMock) -> None:
         mock.return_value.json.return_value = {
             "response": {
-                "id": "naver_abc", "email": "naver@test.com", "name": "네이버",
-                "nickname": "닉", "profile_image": "https://img.jpg",
-                "mobile": "010-9876-5432", "gender": "F",
-                "birthyear": "1995", "birthday": "07-20",
+                "id": "naver_abc",
+                "email": "naver@test.com",
+                "name": "네이버",
+                "nickname": "닉",
+                "profile_image": "https://img.jpg",
+                "mobile": "010-9876-5432",
+                "gender": "F",
+                "birthyear": "1995",
+                "birthday": "07-20",
             }
         }
         info = NaverOAuthService.get_user_info("token")
