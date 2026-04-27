@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from botocore.exceptions import HTTPClientError
 from django.test import TestCase
+from freezegun import freeze_time
 from moto import mock_aws
 
 from apps.core.presigned_url.s3_handler import get_s3_handler
@@ -64,3 +65,17 @@ class TestPresignedUrlNetwork(TestCase):
         urls_dict = PresignedUrlService.create_upload_urls("test.jpg", "image/jpeg", "test/")
         self.assertTrue(urls_dict["presigned_url"].startswith("https://"))
         self.assertTrue(urls_dict["img_url"].startswith("https://"))
+
+
+    # 모킹된 presigned_url과 그렇지 않은 presigned_url이 동일한지
+    @freeze_time("2026-04-27 11:11:11")
+    def test_mocked_presigned_url(self) -> None:
+
+        @mock_aws
+        def mocking() -> str:
+            return self.s3_handler.presigned_url_for_upload(key="path/uuid_test.jpg", content_type="image/jpeg")
+
+        presigned_url = self.s3_handler.presigned_url_for_upload(key="path/uuid_test.jpg", content_type="image/jpeg")
+        mocked_presigned_url = mocking()
+
+        self.assertEqual(presigned_url, mocked_presigned_url)
