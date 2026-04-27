@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from apps.users.models import User
 from apps.users.serializers.withdrawal_serializer import WithdrawalSerializer
 from apps.users.services.withdrawal_service import withdraw_user
+from apps.users.utils.withdrawal_exceptions import WithdrawalBadRequestError
 
 
 class WithdrawalView(APIView):
@@ -41,10 +42,13 @@ class WithdrawalView(APIView):
         serializer = WithdrawalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        withdraw_user(
-            user=cast(User, request.user),
-            reason=serializer.validated_data["reason"],
-            reason_detail=serializer.validated_data["reason_detail"],
-        )
+        try:
+            withdraw_user(
+                user=cast(User, request.user),
+                reason=serializer.validated_data["reason"],
+                reason_detail=serializer.validated_data["reason_detail"],
+            )
+        except WithdrawalBadRequestError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -15,6 +15,10 @@ from apps.users.serializers.restore_serializer import (
 )
 from apps.users.services.auth_email_service import EmailVerificationService
 from apps.users.services.withdrawal_service import restore_user_by_token
+from apps.users.utils.withdrawal_exceptions import (
+    WithdrawalBadRequestError,
+    WithdrawalNotFoundError,
+)
 
 
 class RestoreRequestView(APIView):
@@ -64,6 +68,11 @@ class RestoreView(APIView):
         serializer = RestoreSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        restore_user_by_token(serializer.validated_data["email_token"])
+        try:
+            restore_user_by_token(serializer.validated_data["email_token"])
+        except WithdrawalBadRequestError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except WithdrawalNotFoundError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({"detail": "계정이 복구됐습니다."}, status=status.HTTP_200_OK)

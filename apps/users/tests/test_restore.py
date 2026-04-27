@@ -6,11 +6,15 @@ from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.test import APITestCase
 
 from apps.users.models import User, Withdrawal
 from apps.users.services.withdrawal_service import restore_user_by_token
+from apps.users.utils.withdrawal_exceptions import (
+    DeletedUserError,
+    InvalidRecoveryTokenError,
+    RecoveryPeriodExpiredError,
+)
 
 
 def create_withdrawn_user(
@@ -83,16 +87,16 @@ class RestoreViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_restore_invalid_token_returns_400(self) -> None:
-        """서비스에서 ValidationError → 400 반환"""
+        """서비스에서 InvalidRecoveryTokenError → 400 반환"""
         with patch("apps.users.views.restore_view.restore_user_by_token") as mock:
-            mock.side_effect = ValidationError("유효하지 않은 복구 토큰입니다.")
+            mock.side_effect = InvalidRecoveryTokenError()
             response = self.client.post(self.url, data={"email_token": "bad_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_restore_user_not_found_returns_404(self) -> None:
-        """서비스에서 NotFound → 404 반환"""
+        """서비스에서 DeletedUserError → 404 반환"""
         with patch("apps.users.views.restore_view.restore_user_by_token") as mock:
-            mock.side_effect = NotFound("이미 삭제된 계정입니다.")
+            mock.side_effect = DeletedUserError()
             response = self.client.post(self.url, data={"email_token": "some_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -110,29 +114,29 @@ class RestoreViewTest(APITestCase):
 class RestoreUserByTokenServiceTest(TestCase):
     """restore_user_by_token 서비스 단위 테스트"""
 
-    def test_invalid_token_raises_validation_error(self) -> None:
-        """캐시 미스 → ValidationError"""
+    def test_invalid_token_raises_error(self) -> None:
+        """캐시 미스 → InvalidRecoveryTokenError"""
         with patch("apps.users.services.withdrawal_service.cache") as mock_cache:
             mock_cache.get.return_value = None
-            with self.assertRaises(ValidationError):
+            with self.assertRaises(InvalidRecoveryTokenError):
                 restore_user_by_token("invalid_token")
 
-    def test_wrong_purpose_raises_validation_error(self) -> None:
-        """purpose가 recovery가 아닌 토큰 → ValidationError"""
+    def test_wrong_purpose_raises_error(self) -> None:
+        """purpose가 recovery가 아닌 토큰 → InvalidRecoveryTokenError"""
         with patch("apps.users.services.withdrawal_service.cache") as mock_cache:
             mock_cache.get.return_value = {"email": "test@oz.com", "purpose": "signup"}
-            with self.assertRaises(ValidationError):
+            with self.assertRaises(InvalidRecoveryTokenError):
                 restore_user_by_token("signup_token")
 
-    def test_deleted_user_raises_not_found(self) -> None:
-        """DB에 유저 없음 → NotFound"""
+    def test_deleted_user_raises_error(self) -> None:
+        """DB에 유저 없음 → DeletedUserError"""
         with patch("apps.users.services.withdrawal_service.cache") as mock_cache:
             mock_cache.get.return_value = {"email": "ghost@oz.com", "purpose": "recovery"}
-            with self.assertRaises(NotFound):
+            with self.assertRaises(DeletedUserError):
                 restore_user_by_token("ghost_token")
 
-    def test_expired_due_date_raises_validation_error(self) -> None:
-        """복구 기간 만료 → ValidationError"""
+    def test_expired_due_date_raises_error(self) -> None:
+        """복구 기간 만료 → RecoveryPeriodExpiredError"""
         user, _ = create_withdrawn_user(
             email="expired@oz.com",
             phone_number="01088888888",
@@ -140,11 +144,11 @@ class RestoreUserByTokenServiceTest(TestCase):
         )
         with patch("apps.users.services.withdrawal_service.cache") as mock_cache:
             mock_cache.get.return_value = {"email": user.email, "purpose": "recovery"}
-            with self.assertRaises(ValidationError):
+            with self.assertRaises(RecoveryPeriodExpiredError):
                 restore_user_by_token("expired_token")
 
-    def test_already_active_user_raises_validation_error(self) -> None:
-        """이미 활성화된 계정 복구 시도 → ValidationError"""
+    def test_already_active_user_raises_error(self) -> None:
+        """이미 활성화된 계정 복구 시도 → DeletedUserError (is_active=False 조건 미충족)"""
         active_user = User.objects.create_user(
             email="active@oz.com",
             password="Test1234!@",
@@ -154,8 +158,8 @@ class RestoreUserByTokenServiceTest(TestCase):
         )
         with patch("apps.users.services.withdrawal_service.cache") as mock_cache:
             mock_cache.get.return_value = {"email": active_user.email, "purpose": "recovery"}
-            # is_active=True인 유저는 get(is_active=False) 에서 DoesNotExist → NotFound
-            with self.assertRaises(NotFound):
+            # is_active=True인 유저는 get(is_active=False) 에서 DoesNotExist → DeletedUserError
+            with self.assertRaises(DeletedUserError):
                 restore_user_by_token("active_token")
 
     def test_success_restores_user(self) -> None:
