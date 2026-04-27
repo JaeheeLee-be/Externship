@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.users.models import User, Withdrawal
-from apps.users.services.withdrawal_service import make_restore_token
 
 
 def create_withdrawn_user(
@@ -31,6 +31,10 @@ def create_withdrawn_user(
         due_date=date.today() + timedelta(days=due_days),
     )
     return user, withdrawal
+
+
+def set_recovery_token(token: str, email: str) -> None:
+    cache.set(f"email_verify_token_{token}", {"email": email, "purpose": "recovery"}, timeout=600)
 
 
 class RestoreRequestViewTest(APITestCase):
@@ -63,11 +67,11 @@ class RestoreViewTest(APITestCase):
         self.url = reverse("users:restore")
 
     def test_restore_success(self) -> None:
-        """유효한 토큰으로 복구 - 200 반환, is_active=True, Withdrawal 삭제"""
-        user, withdrawal = create_withdrawn_user()
-        token = make_restore_token(user.id)
+        """유효한 email_token으로 복구 - 200 반환, is_active=True, Withdrawal 삭제"""
+        user, _ = create_withdrawn_user()
+        set_recovery_token("valid_token_abc", user.email)
 
-        response = self.client.post(self.url, data={"token": token}, content_type="application/json")
+        response = self.client.post(self.url, data={"email_token": "valid_token_abc"}, content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user.refresh_from_db()
@@ -75,8 +79,14 @@ class RestoreViewTest(APITestCase):
         self.assertFalse(Withdrawal.objects.filter(user=user).exists())
 
     def test_restore_with_invalid_token_returns_400(self) -> None:
-        """잘못된 토큰 - 400 반환"""
-        response = self.client.post(self.url, data={"token": "invalid.token"}, content_type="application/json")
+        """캐시에 없는 토큰 - 400 반환"""
+        response = self.client.post(self.url, data={"email_token": "nonexistent_token"}, content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_restore_with_wrong_purpose_returns_400(self) -> None:
+        """purpose가 recovery가 아닌 토큰 - 400 반환"""
+        cache.set("email_verify_token_signup_token", {"email": "someone@oz.com", "purpose": "signup"}, timeout=600)
+        response = self.client.post(self.url, data={"email_token": "signup_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_restore_with_expired_due_date_returns_400(self) -> None:
@@ -86,23 +96,23 @@ class RestoreViewTest(APITestCase):
             phone_number="01088888888",
             due_days=-1,
         )
-        token = make_restore_token(user.id)
+        set_recovery_token("expired_due_token", user.email)
 
-        response = self.client.post(self.url, data={"token": token}, content_type="application/json")
+        response = self.client.post(self.url, data={"email_token": "expired_due_token"}, content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_restore_already_deleted_user_returns_400(self) -> None:
         """유저가 이미 완전 삭제된 경우 - 400 반환"""
         user, _ = create_withdrawn_user(email="deleted@oz.com", phone_number="01077777777")
-        token = make_restore_token(user.id)
+        set_recovery_token("deleted_user_token", user.email)
         user.delete()
 
-        response = self.client.post(self.url, data={"token": token}, content_type="application/json")
+        response = self.client.post(self.url, data={"email_token": "deleted_user_token"}, content_type="application/json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_restore_without_token_returns_400(self) -> None:
-        """토큰 누락 - 400 반환"""
+        """email_token 누락 - 400 반환"""
         response = self.client.post(self.url, data={}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
