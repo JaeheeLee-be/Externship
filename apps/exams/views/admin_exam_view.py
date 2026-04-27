@@ -109,6 +109,4 @@ class ExamListCreateView(ErrorDataKeyMixin, APIView):
         except PermissionDenied as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
-
-
         return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)
