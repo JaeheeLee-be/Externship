@@ -25,7 +25,7 @@ class PresignedUrlView(APIView):
             raise TypeError(f"{cls.__name__}에 path 클래스 변수를 정의해야 합니다")
         if not isinstance(cls.path, str):
             raise TypeError(f"{cls.__name__}: path는 str이어야 합니다.")
-        if not isinstance(cls.expire, int) and cls.expire is not None:
+        if not isinstance(cls.expire, int):
             raise TypeError(f"{cls.__name__}: expire는 int여야 합니다.")
 
     # post, put 메서드의 공용 함수

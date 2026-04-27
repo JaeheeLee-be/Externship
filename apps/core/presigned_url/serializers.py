@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import Any
 
-from rest_framework import exceptions, serializers, status
+from rest_framework import serializers
 
 from apps.core.presigned_url.constants import ALLOWED_SUFFIX
-
+from rest_framework.serializers import ValidationError
+from django.utils.text import slugify
 
 class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
     """
@@ -22,14 +23,14 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
         suffix = path.suffix.lower()
 
         if suffix not in ALLOWED_SUFFIX:
-            error = exceptions.APIException(detail={"error_detail": "지원하지 않는 파일 형식입니다."})
-            error.status_code = status.HTTP_400_BAD_REQUEST
-            raise error
+            raise ValidationError({"error_detail": "지원하지 않는 파일 형식입니다."})
 
+        # 파일명 슬러그화
         stem = path.stem
+        slugified_stem = slugify(stem, allow_unicode=True)
 
         # content_type도 함께 반환
-        attrs["file_name"] = stem + suffix
+        attrs["file_name"] = slugified_stem + suffix
         attrs["content_type"] = ALLOWED_SUFFIX[suffix]
 
         return attrs
