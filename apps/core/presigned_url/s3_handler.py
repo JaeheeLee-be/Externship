@@ -35,5 +35,11 @@ class S3Handler:
 
         return img_url
 
+s3_handler = None
 
-s3_handler = S3Handler()
+def get_s3_handler():
+    global s3_handler
+
+    if s3_handler is None:
+        s3_handler = S3Handler()
+    return s3_handler
