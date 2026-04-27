@@ -51,8 +51,8 @@ def get_exam_list(
 
 
 def create_exam(subject_id: int, title: str, thumbnail_image_url: str = "default_img_url") -> Exam:
-    if Exam.objects.filter(title=title).exists():
-        raise ExamTitleConflict()
     if not Subject.objects.filter(id=subject_id).exists():
         raise SubjectNotFound()
+    if Exam.objects.filter(title=title).exists():
+        raise ExamTitleConflict()
     return Exam.objects.create(subject_id=subject_id, title=title, thumbnail_image_url=thumbnail_image_url)
