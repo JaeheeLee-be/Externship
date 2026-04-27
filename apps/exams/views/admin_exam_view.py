@@ -180,10 +180,6 @@ class ExamDetailView(ErrorDataKeyMixin, APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         except SubjectNotFound as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except NotAuthenticated as e:
-            return Response({"error_detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-        except PermissionDenied as e:
-            return Response({"error_detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
         except ValueError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(ExamCreatePutSerializer(exam, context={"request": request}).data, status=status.HTTP_200_OK)
