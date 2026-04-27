@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.core import signing
+from django.core.cache import cache
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -9,9 +9,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.models import User, Withdrawal
-from apps.users.serializers.restore_serializer import RestoreRequestSerializer, RestoreSerializer
-from apps.users.services.withdrawal_service import parse_restore_token, restore_user
+from apps.users.models import User
+from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.serializers.restore_serializer import (
+    RestoreRequestSerializer,
+    RestoreSerializer,
+)
+from apps.users.services.auth_email_service import EmailVerificationService
+from apps.users.services.withdrawal_service import restore_user
 
 
 class RestoreRequestView(APIView):
@@ -21,9 +26,9 @@ class RestoreRequestView(APIView):
     @extend_schema(
         tags=["accounts"],
         summary="계정 복구 요청",
-        description="탈퇴 신청한 이메일로 복구 링크를 발송합니다. 이메일 존재 여부와 무관하게 200을 반환합니다.",
+        description="탈퇴 신청한 이메일로 인증 코드를 발송합니다. 이메일 존재 여부와 무관하게 200을 반환합니다.",
         request=RestoreRequestSerializer,
-        responses={200: OpenApiResponse(description="복구 링크 발송 완료")},
+        responses={200: OpenApiResponse(description="인증 코드 발송 완료")},
     )
     def post(self, request: Request) -> Response:
         serializer = RestoreRequestSerializer(data=request.data)
@@ -31,13 +36,11 @@ class RestoreRequestView(APIView):
 
         email: str = serializer.validated_data["email"]
         try:
-            user = User.objects.get(email=email)
-            if Withdrawal.objects.filter(user=user).exists():
-                pass  # TODO: 이메일 발송 (인증 코드 구현 후 추가)
-        except User.DoesNotExist:
-            pass
+            EmailVerificationService.send_verification_email(email, AuthPurpose.RECOVERY)
+        except ValidationError:
+            pass  # 보안상 이메일 존재 여부 노출 방지
 
-        return Response({"detail": "복구 링크를 이메일로 발송했습니다."}, status=status.HTTP_200_OK)
+        return Response({"detail": "인증 코드를 이메일로 발송했습니다."}, status=status.HTTP_200_OK)
 
 
 class RestoreView(APIView):
@@ -47,7 +50,7 @@ class RestoreView(APIView):
     @extend_schema(
         tags=["accounts"],
         summary="계정 복구",
-        description="복구 링크의 토큰으로 계정을 복구합니다. 토큰은 탈퇴 후 14일 이내에만 유효합니다.",
+        description="이메일 인증 후 발급된 email_token으로 계정을 복구합니다. 토큰은 10분간 유효합니다.",
         request=RestoreSerializer,
         responses={
             200: OpenApiResponse(description="계정 복구 완료"),
@@ -61,16 +64,18 @@ class RestoreView(APIView):
         serializer = RestoreSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token: str = serializer.validated_data["token"]
-        try:
-            user_id: int = parse_restore_token(token)
-        except signing.SignatureExpired:
-            return Response({"detail": "복구 링크가 만료됐습니다."}, status=status.HTTP_400_BAD_REQUEST)
-        except signing.BadSignature:
-            return Response({"detail": "유효하지 않은 복구 링크입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        email_token: str = serializer.validated_data["email_token"]
+        token_key = f"email_verify_token_{email_token}"
+        cached = cache.get(token_key)
+
+        if not cached or cached.get("purpose") != AuthPurpose.RECOVERY.value:
+            return Response({"detail": "유효하지 않은 복구 토큰입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache.delete(token_key)
+        email: str = cached["email"]
 
         try:
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(email=email, is_active=False)
         except User.DoesNotExist:
             return Response({"detail": "이미 삭제된 계정입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
