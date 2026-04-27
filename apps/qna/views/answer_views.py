@@ -5,20 +5,25 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.qna.schemas.answer_schemas import answer_accept_schema,answer_create_schema
+from apps.core.utils.permissions import IsRoleAdminUser
 from apps.core.utils.types import AuthenticatedRequest
+from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
 )
 from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
-from apps.users.models import User
-from apps.core.utils.permissions import IsRoleAdminUser
+
 
 class AnswerView(APIView):
-    permission_classes = [IsAuthenticated,IsRoleAdminUser]
+    """
+    POST api/v1/qna/questions/{question_id}/answers
+    답변 등록 API
+    """
+    permission_classes = [IsAuthenticated, IsRoleAdminUser]
     service = AnswerService()
+
     @answer_create_schema
     def post(self, request: AuthenticatedRequest, question_id: int) -> Response:
         question = self.service.get_question(question_id)
@@ -44,9 +49,9 @@ class AnswerAcceptView(APIView):
 
     permission_classes = [IsAuthenticated]
     service = AnswerAcceptService()
+
     @answer_accept_schema
-    def post(self, request: Request, answer_id: int) -> Response:
-        assert isinstance(request.user, User)
+    def post(self, request: AuthenticatedRequest, answer_id: int) -> Response:
         answer = self.service.answer_accept(
             user=request.user,
             answer_id=answer_id,

@@ -2,10 +2,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-
-from apps.qna.models.question_models import Question, QuestionCategory
-
 from apps.qna.models.answer_models import Answer
+from apps.qna.models.question_models import Question, QuestionCategory
 from apps.users.models import User
 
 
