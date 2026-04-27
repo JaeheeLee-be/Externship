@@ -6,7 +6,7 @@ from django.core.cache import cache
 from twilio.base.exceptions import TwilioRestException
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from apps.users.serializers.purpose_enum import SmsPurpose
+from apps.users.utils.purpose_enum import SmsPurpose
 
 User = get_user_model()
 

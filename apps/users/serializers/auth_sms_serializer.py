@@ -1,9 +1,6 @@
-from typing import Any
-
 from rest_framework import serializers
-from rest_framework.fields import CharField
 
-from apps.users.serializers.purpose_enum import SmsPurpose
+from apps.users.utils.purpose_enum import SmsPurpose
 
 
 

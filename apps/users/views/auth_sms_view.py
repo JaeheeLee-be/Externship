@@ -2,7 +2,6 @@ from drf_spectacular.utils import OpenApiExample, OpenApiResponse,extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,7 +10,7 @@ from apps.users.serializers.auth_sms_serializer import (
     SmsVerifySerializer
 )
 
-from apps.users.serializers.purpose_enum import SmsPurpose
+from apps.users.utils.purpose_enum import SmsPurpose
 from apps.users.services.auth_sms_service import SmsVerificationService
 
 

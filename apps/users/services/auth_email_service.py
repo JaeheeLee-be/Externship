@@ -8,7 +8,7 @@ from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
-from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.utils.purpose_enum import AuthPurpose
 
 User = get_user_model()
 

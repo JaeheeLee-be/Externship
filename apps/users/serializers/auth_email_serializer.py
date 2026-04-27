@@ -2,7 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.utils.purpose_enum import AuthPurpose
 
 
 class EmailRequestSerializer(serializers.Serializer[Any]):

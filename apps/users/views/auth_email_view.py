@@ -10,7 +10,7 @@ from apps.users.serializers.auth_email_serializer import (
     EmailRequestSerializer,
     EmailVerifySerializer,
 )
-from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.utils.purpose_enum import AuthPurpose
 from apps.users.services.auth_email_service import EmailVerificationService
 
 
