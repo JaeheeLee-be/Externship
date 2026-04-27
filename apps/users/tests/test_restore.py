@@ -76,7 +76,7 @@ class RestoreViewTest(APITestCase):
 
         response = self.client.post(self.url, data={"email_token": "valid_token_abc"}, content_type="application/json")
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.data)
         user.refresh_from_db()
         self.assertTrue(user.is_active)
         self.assertFalse(Withdrawal.objects.filter(user=user).exists())
