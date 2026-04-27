@@ -13,6 +13,8 @@ from apps.exams.excpections.exam_question_exceptions import (
 from apps.exams.serializers.admin_exam_question_serializer import (
     QuestionCreateSerializer,
     QuestionUpdateSerializer,
+    QuestionCreateResponseSerializer,
+    QuestionUpdateResponseSerializer
 )
 from apps.exams.services.admin_exam_question_service import (
     QuestionService,
@@ -46,7 +48,7 @@ class AdminQuestionCreateView(APIView):  # TODO : ErrorDataKey 상속 추가 예
             data = serializer.validated_data
             service = QuestionService(exam_id)
             new_question = service.create_question(data)
-        return Response(QuestionCreateSerializer(new_question).data, status=status.HTTP_201_CREATED)
+        return Response(QuestionCreateResponseSerializer(new_question).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -76,7 +78,4 @@ class AdminQuestionUpdateView(APIView):  # TODO : ErrorDataKey 상속 추가 예
             mod_data = serializer.validated_data
             service = QuestionService(exam_id)
             mod_question = service.update_question(mod_data, question_id)
-        return Response(QuestionUpdateSerializer(mod_question).data, status=status.HTTP_200_OK)
-
-
-# TODO : 삭제 기능 구현하기
+        return Response(QuestionUpdateResponseSerializer(mod_question).data, status=status.HTTP_200_OK)
