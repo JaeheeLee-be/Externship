@@ -23,10 +23,10 @@ class CourseListResponseSerializer(serializers.ModelSerializer[Course]):
         ]
 
     def get_active_cohort_count(self, obj: Course) -> int:
-        return 0 # 다른 팀원 작업 완료 전까지 일단 0
+        return 0 # 다른 거 작업 완료 전까지 일단 0
 
     def get_total_student_count(self, obj: Course) -> int:
-        return 0 # 다른 팀원 작업 완료 전까지 일단 0
+        return 0 # 다른 거 작업 완료 전까지 일단 0
 
 # 003 과정 상세 조회 사용 데이터 규격
 class CourseDetailResponseSerializer(serializers.ModelSerializer[Course]):
