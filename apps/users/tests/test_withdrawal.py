@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from django.test import TestCase
 from django.urls import reverse
@@ -36,10 +36,12 @@ def get_auth_header(user: User) -> dict[str, Any]:
 class WithdrawalViewTest(APITestCase):
     """DELETE /api/v1/accounts/me 회원 탈퇴 API 테스트"""
 
+    url: ClassVar[str]
+
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.url = reverse("users:account-withdrawal")
+        cls.url = reverse("users:withdrawal")
 
     def setUp(self) -> None:
         self.user = create_user()

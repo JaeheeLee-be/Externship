@@ -82,6 +82,6 @@ class RestoreView(APIView):
         try:
             restore_user(user)
         except ValidationError as e:
-            return Response({"detail": e.detail[0]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e.detail[0])}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"detail": "계정이 복구됐습니다."}, status=status.HTTP_200_OK)
