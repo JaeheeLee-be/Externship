@@ -46,7 +46,7 @@ def create_withdrawn_user(
 
 
 class RestoreRequestViewTest(APITestCase):
-    """POST /api/v1/accounts/recover/request 복구 요청 테스트"""
+    """POST /api/v1/accounts/restore/request 복구 요청 테스트"""
 
     def setUp(self) -> None:
         self.url = reverse("users:restore-request")
@@ -54,17 +54,47 @@ class RestoreRequestViewTest(APITestCase):
     def test_request_with_withdrawn_email_returns_200(self) -> None:
         """탈퇴한 이메일로 요청 시 200 반환"""
         create_withdrawn_user()
-        response = self.client.post(self.url, data={"email": "withdrawn@oz.com"}, content_type="application/json")
+        response = self.client.post(
+            self.url,
+            data={"email": "withdrawn@oz.com", "purpose": "recovery"},
+            content_type="application/json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_request_with_unknown_email_returns_200(self) -> None:
         """존재하지 않는 이메일도 200 반환 (이메일 존재 여부 노출 방지)"""
-        response = self.client.post(self.url, data={"email": "nobody@oz.com"}, content_type="application/json")
+        response = self.client.post(
+            self.url,
+            data={"email": "nobody@oz.com", "purpose": "recovery"},
+            content_type="application/json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_request_with_invalid_email_returns_400(self) -> None:
         """이메일 형식이 아닌 값 - 400 반환"""
-        response = self.client.post(self.url, data={"email": "notanemail"}, content_type="application/json")
+        response = self.client.post(
+            self.url,
+            data={"email": "notanemail", "purpose": "recovery"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_request_without_purpose_returns_400(self) -> None:
+        """purpose 누락 - 400 반환"""
+        response = self.client.post(
+            self.url,
+            data={"email": "withdrawn@oz.com"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_request_with_wrong_purpose_returns_400(self) -> None:
+        """purpose가 recovery가 아닌 값 - 400 반환"""
+        response = self.client.post(
+            self.url,
+            data={"email": "withdrawn@oz.com", "purpose": "signup"},
+            content_type="application/json",
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -74,7 +104,7 @@ class RestoreRequestViewTest(APITestCase):
 
 
 class RestoreViewTest(APITestCase):
-    """POST /api/v1/accounts/recover 계정 복구 View 테스트"""
+    """POST /api/v1/accounts/restore 계정 복구 View 테스트"""
 
     def setUp(self) -> None:
         self.url = reverse("users:restore")

@@ -72,5 +72,6 @@ def restore_user_by_token(email_token: str) -> None:
     except User.DoesNotExist:
         raise DeletedUserError()
 
-    cache.delete(token_key)  # 유저 확인 후 토큰 삭제
+    if not cache.delete(token_key):  # 이미 사용된 토큰 검증
+        raise InvalidRecoveryTokenError()
     restore_user(user)

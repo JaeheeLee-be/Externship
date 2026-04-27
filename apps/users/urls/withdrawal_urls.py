@@ -5,6 +5,6 @@ from apps.users.views.withdrawal_view import WithdrawalView
 
 urlpatterns = [
     path("me", WithdrawalView.as_view(), name="withdrawal"),
-    path("recover/request", RestoreRequestView.as_view(), name="restore-request"),
-    path("recover", RestoreView.as_view(), name="restore"),
+    path("restore/request", RestoreRequestView.as_view(), name="restore-request"),
+    path("restore", RestoreView.as_view(), name="restore"),
 ]

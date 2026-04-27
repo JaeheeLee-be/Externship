@@ -8,11 +8,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.users.serializers.auth_email_serializer import EmailRequestSerializer
 from apps.users.serializers.purpose_enum import AuthPurpose
-from apps.users.serializers.restore_serializer import (
-    RestoreRequestSerializer,
-    RestoreSerializer,
-)
+from apps.users.serializers.withdrawal_serializer import RestoreSerializer
 from apps.users.services.auth_email_service import EmailVerificationService
 from apps.users.services.withdrawal_service import restore_user_by_token
 from apps.users.utils.withdrawal_exceptions import (
@@ -24,16 +22,30 @@ from apps.users.utils.withdrawal_exceptions import (
 class RestoreRequestView(APIView):
     permission_classes = [AllowAny]
 
+    def handle_exception(self, exc: Exception) -> Response:
+        if hasattr(exc, "detail") and hasattr(exc, "status_code"):
+            return Response({"error_detail": exc.detail}, status=exc.status_code)  # type: ignore[union-attr]
+        return super().handle_exception(exc)
+
     @extend_schema(
         tags=["accounts"],
         summary="계정 복구 요청",
         description="탈퇴 신청한 이메일로 인증 코드를 발송합니다. 이메일 존재 여부와 무관하게 200을 반환합니다.",
-        request=RestoreRequestSerializer,
-        responses={200: OpenApiResponse(description="인증 코드 발송 완료")},
+        request=EmailRequestSerializer,
+        responses={
+            200: OpenApiResponse(description="인증 코드 발송 완료"),
+            400: inline_serializer(
+                name="RestoreRequestValidationError",
+                fields={"error_detail": serializers.CharField()},
+            ),
+        },
     )
     def post(self, request: Request) -> Response:
-        serializer = RestoreRequestSerializer(data=request.data)
+        serializer = EmailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data["purpose"] != AuthPurpose.RECOVERY:
+            raise ValidationError({"purpose": "계정 복구 요청에는 purpose=recovery만 허용됩니다."})
 
         email: str = serializer.validated_data["email"]
         try:
@@ -47,6 +59,11 @@ class RestoreRequestView(APIView):
 class RestoreView(APIView):
     permission_classes = [AllowAny]
 
+    def handle_exception(self, exc: Exception) -> Response:
+        if hasattr(exc, "detail") and hasattr(exc, "status_code"):
+            return Response({"error_detail": exc.detail}, status=exc.status_code)  # type: ignore[union-attr]
+        return super().handle_exception(exc)
+
     @extend_schema(
         tags=["accounts"],
         summary="계정 복구",
@@ -56,11 +73,11 @@ class RestoreView(APIView):
             200: OpenApiResponse(description="계정 복구 완료"),
             400: inline_serializer(
                 name="RestoreValidationError",
-                fields={"detail": serializers.CharField()},
+                fields={"error_detail": serializers.CharField()},
             ),
             404: inline_serializer(
                 name="RestoreNotFound",
-                fields={"detail": serializers.CharField()},
+                fields={"error_detail": serializers.CharField()},
             ),
         },
     )
@@ -71,8 +88,8 @@ class RestoreView(APIView):
         try:
             restore_user_by_token(serializer.validated_data["email_token"])
         except WithdrawalBadRequestError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except WithdrawalNotFoundError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"detail": "계정이 복구됐습니다."}, status=status.HTTP_200_OK)
+        return Response({"detail": "계정복구가 완료되었습니다."}, status=status.HTTP_200_OK)

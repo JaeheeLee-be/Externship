@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import Never, Optional, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -18,6 +19,21 @@ from apps.users.utils.withdrawal_exceptions import WithdrawalBadRequestError
 class WithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def permission_denied(
+        self,
+        request: Request,
+        message: Optional[str] = None,
+        code: Optional[str] = None,
+    ) -> Never:
+        if request.authenticators and not request.successful_authenticator:
+            raise NotAuthenticated("인증이 필요합니다.")
+        raise PermissionDenied("접근 권한이 없습니다.")
+
+    def handle_exception(self, exc: Exception) -> Response:
+        if hasattr(exc, "detail") and hasattr(exc, "status_code"):
+            return Response({"error_detail": exc.detail}, status=exc.status_code)  # type: ignore[union-attr]
+        return super().handle_exception(exc)
+
     @extend_schema(
         tags=["accounts"],
         summary="회원 탈퇴",
@@ -27,14 +43,11 @@ class WithdrawalView(APIView):
             204: OpenApiResponse(description="탈퇴 처리 완료"),
             400: inline_serializer(
                 name="WithdrawalValidationError",
-                fields={
-                    "reason": serializers.ListField(child=serializers.CharField(), required=False),
-                    "detail": serializers.CharField(required=False),
-                },
+                fields={"error_detail": serializers.CharField(required=False)},
             ),
             401: inline_serializer(
                 name="WithdrawalUnauthorized",
-                fields={"detail": serializers.CharField()},
+                fields={"error_detail": serializers.CharField()},
             ),
         },
     )
@@ -49,6 +62,6 @@ class WithdrawalView(APIView):
                 reason_detail=serializer.validated_data["reason_detail"],
             )
         except WithdrawalBadRequestError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
