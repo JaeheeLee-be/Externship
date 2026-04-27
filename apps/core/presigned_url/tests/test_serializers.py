@@ -27,6 +27,13 @@ class TestPresignedUrlRequestSerializer(TestCase):
             serializer.is_valid(raise_exception=True)
         self.assertEqual(e.exception.detail["error_detail"], "지원하지 않는 파일 형식입니다.")  # type: ignore
 
+    # file_name의 길이 제한 테스트
+    def test_max_length(self) -> None:
+        data = {"file_name": f"{"test"*25}.jpg"}
+        with self.assertRaises(APIException) as e:
+            serializer = PresignedUrlRequestSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
     # 대문자 확장자를 넣어도 소문자로 변환이 되는지
     def test_suffix_lowercase(self) -> None:
         data = {"file_name": "test_file.JPG"}

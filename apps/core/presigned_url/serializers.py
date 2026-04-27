@@ -7,6 +7,10 @@ from apps.core.constants import ALLOWED_SUFFIX
 
 
 class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
+    """
+    presigned url 요청 시리얼라이저
+    """
+
     # file_name이 100자 제한이면, img_url이 최대 200자 쯤 나옴
     file_name = serializers.CharField(max_length=100)
 
@@ -24,6 +28,10 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
 
 
 class PresignedUrlResponseSerializer(serializers.Serializer[Any]):
+    """
+    presigned url 응답 시리얼라이저
+    """
+
     presigned_url = serializers.CharField()
     img_url = serializers.CharField(max_length=255)
     key = serializers.CharField()
