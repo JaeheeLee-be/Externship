@@ -1,23 +1,32 @@
+from typing import Any
+
 from rest_framework import serializers
 
-from apps.exams.models import ExamQuestion
+from apps.exams.models.exam_question_model import ExamQuestion
 
 
 class PointValidateMixin:
-    def validate_point(self, value):
+    def validate_point(self, value: Any) -> Any:
         if value <= 0:
             raise serializers.ValidationError("배점은 0보다 작거나 같을 수 없습니다.")
         return value
 
 
-class QuestionCreateSerializer(PointValidateMixin, serializers.ModelSerializer):
+class QuestionCreateSerializer(PointValidateMixin, serializers.ModelSerializer[ExamQuestion]):
     class Meta:
         model = ExamQuestion
         fields = ["question", "type", "prompt", "blank_count", "options_json", "answer", "point", "explanation"]
 
 
-class QuestionUpdateSerializer(PointValidateMixin, serializers.ModelSerializer):
+class QuestionUpdateSerializer(PointValidateMixin, serializers.ModelSerializer[ExamQuestion]):
+    question = serializers.CharField(required=False)
+    type = serializers.CharField(required=False)
+    prompt = serializers.CharField(required=False)
+    blank_count = serializers.IntegerField(required=False)
+    options_json = serializers.CharField(required=False)
+    answer = serializers.JSONField(required=False)
     point = serializers.IntegerField(required=False)
+    explanation = serializers.CharField(required=False)
 
     class Meta:
         model = ExamQuestion
@@ -33,7 +42,7 @@ class QuestionUpdateSerializer(PointValidateMixin, serializers.ModelSerializer):
         ]
 
 
-class QuestionDeleteResponseSerializer(serializers.ModelSerializer):
+class QuestionDeleteResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
     class Meta:
         model = ExamQuestion
         fields = [
@@ -43,7 +52,7 @@ class QuestionDeleteResponseSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "exam_id"]
 
 
-class QuestionResponseSerializer(serializers.ModelSerializer):
+class QuestionResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
     class Meta:
         model = ExamQuestion
         fields = ["question", "type", "prompt", "blank_count", "options_json", "answer", "point", "explanation"]

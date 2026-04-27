@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -15,6 +17,25 @@ class TestAdminExamQuestionCreateView(APITestCase):
     client: APIClient
     admin_user: User
     user: User
+    student: User
+    course: Course
+    subject: Subject
+    data: Dict[str, Any]
+    fail_point_data: Dict[str, Any]
+    update_data: Dict[str, Any]
+    update_fail_point_data: Dict[str, Any]
+    create_url: str
+    update_url: str
+    error_400_create: str
+    error_401_create: str
+    error_403_create: str
+    error_404_create: str
+    error_409_create: str
+    error_400_update: str
+    error_401_update: str
+    error_403_update: str
+    error_404_update: str
+    error_409_update: str
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -149,27 +170,25 @@ class TestAdminExamQuestionCreateView(APITestCase):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.put(self.update_url, self.update_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            ExamQuestion.objects.filter(id=self.question.id).first().question, self.update_data["question"]
-        )
+        self.assertEqual(ExamQuestion.objects.get(id=self.question.id).question, self.update_data["question"])
 
     def test_user_check_update_question(self) -> None:
         self.client.force_authenticate(user=self.user)
         response = self.client.put(self.update_url, self.update_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data.get("error_detail"), self.error_403_create)
+        self.assertEqual(response.data.get("error_detail"), self.error_403_update)
 
     def test_student_check_update_question(self) -> None:
         self.client.force_authenticate(user=self.student)
         response = self.client.put(self.update_url, self.update_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data.get("error_detail"), self.error_403_create)
+        self.assertEqual(response.data.get("error_detail"), self.error_403_update)
 
     def test_unauth_student_check_update_question(self) -> None:
         self.client.force_authenticate(user=None)
         response = self.client.put(self.update_url, self.update_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(response.data.get("error_detail"), self.error_401_create)
+        self.assertEqual(response.data.get("error_detail"), self.error_401_update)
 
     def test_admin_check_update_limit_point(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
@@ -182,4 +201,4 @@ class TestAdminExamQuestionCreateView(APITestCase):
         )
         response = self.client.put(self.update_url, self.update_fail_point_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data.get("error_detail"), self.error_409_create)
+        self.assertEqual(response.data.get("error_detail"), self.error_409_update)
