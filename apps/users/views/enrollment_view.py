@@ -1,3 +1,5 @@
+from typing import cast
+
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -5,7 +7,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from typing import cast
 
 from apps.users.models import User
 from apps.users.serializers.enrollment_serializer import EnrollmentSerializer
