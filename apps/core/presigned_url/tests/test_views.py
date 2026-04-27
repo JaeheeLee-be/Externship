@@ -78,3 +78,18 @@ class TestPresignedUrlView(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"error_detail": "지원하지 않는 파일 형식입니다."})
+
+    # post 요청일 때도 잘 작동하는지
+    def test_post_request(self) -> None:
+        request = self.factory.post(
+            path="test/",
+            data={"file_name": "test.jpg"},
+            format="json",
+        )
+        response = self.view(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("presigned_url", response.data)
+        self.assertIn("img_url", response.data)
+        self.assertIn("key", response.data)
+        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key"})

@@ -27,7 +27,7 @@ class PresignedUrlView(APIView):
         if not isinstance(cls.expire, int) and cls.expire is not None:
             raise TypeError(f"{cls.__name__}: expire는 int여야 합니다.")
 
-    def put(self, request: Request) -> Response:
+    def _handle_request(self, request: Request) -> Response:
         request_serializer = PresignedUrlRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -40,3 +40,9 @@ class PresignedUrlView(APIView):
 
         response_serializer = PresignedUrlResponseSerializer(instance=urls)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request: Request) -> Response:
+        return self._handle_request(request)
+
+    def post(self, request: Request) -> Response:
+        return self._handle_request(request)
