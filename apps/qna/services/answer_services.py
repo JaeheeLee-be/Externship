@@ -42,12 +42,12 @@ class AnswerAcceptService:
 
     def answer_accept(self, user: User, answer_id: int) -> Answer:
         """질문을 작성한 작성자만 채택이 가능 하며 이미 채택된 답글이 있으면 에러 발생"""
-        answer = self.get_answer(answer_id)
-
-        if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
-            raise ConflictException()
-        if answer.question.author_id != user.id:
-            raise PermissionDenied("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
-        answer.is_adopted = True
-        answer.save()
+        with transaction.atomic():
+            answer = Answer.objects.select_for_update().select_related("question").get(pk=answer_id)
+            if answer.question.author_id != user.id:
+                raise PermissionDenied("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
+            if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
+                raise ConflictException()
+            answer.is_adopted = True
+            answer.save()
         return answer
