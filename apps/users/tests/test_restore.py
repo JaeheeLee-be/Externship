@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from unittest.mock import MagicMock, patch
 
-from django.core.cache import cache
-from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.users.models import User, Withdrawal
-
-_LOCMEM_CACHE = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 
 def create_withdrawn_user(
@@ -36,10 +33,6 @@ def create_withdrawn_user(
     return user, withdrawal
 
 
-def set_recovery_token(token: str, email: str) -> None:
-    cache.set(f"email_verify_token_{token}", {"email": email, "purpose": "recovery"}, timeout=600)
-
-
 class RestoreRequestViewTest(APITestCase):
     """POST /api/v1/accounts/recover/request 복구 요청 테스트"""
 
@@ -63,17 +56,23 @@ class RestoreRequestViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-@override_settings(CACHES=_LOCMEM_CACHE)
 class RestoreViewTest(APITestCase):
     """POST /api/v1/accounts/recover 계정 복구 테스트"""
 
     def setUp(self) -> None:
         self.url = reverse("users:restore")
 
+    def _mock_cache(self, cached_value: dict[str, str] | None) -> MagicMock:
+        patcher = patch("apps.users.views.restore_view.cache")
+        mock = patcher.start()
+        mock.get.return_value = cached_value
+        self.addCleanup(patcher.stop)
+        return mock
+
     def test_restore_success(self) -> None:
         """유효한 email_token으로 복구 - 200 반환, is_active=True, Withdrawal 삭제"""
         user, _ = create_withdrawn_user()
-        set_recovery_token("valid_token_abc", user.email)
+        self._mock_cache({"email": user.email, "purpose": "recovery"})
 
         response = self.client.post(self.url, data={"email_token": "valid_token_abc"}, content_type="application/json")
 
@@ -84,6 +83,7 @@ class RestoreViewTest(APITestCase):
 
     def test_restore_with_invalid_token_returns_400(self) -> None:
         """캐시에 없는 토큰 - 400 반환"""
+        self._mock_cache(None)
         response = self.client.post(
             self.url, data={"email_token": "nonexistent_token"}, content_type="application/json"
         )
@@ -91,7 +91,7 @@ class RestoreViewTest(APITestCase):
 
     def test_restore_with_wrong_purpose_returns_400(self) -> None:
         """purpose가 recovery가 아닌 토큰 - 400 반환"""
-        cache.set("email_verify_token_signup_token", {"email": "someone@oz.com", "purpose": "signup"}, timeout=600)
+        self._mock_cache({"email": "someone@oz.com", "purpose": "signup"})
         response = self.client.post(self.url, data={"email_token": "signup_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -102,7 +102,7 @@ class RestoreViewTest(APITestCase):
             phone_number="01088888888",
             due_days=-1,
         )
-        set_recovery_token("expired_due_token", user.email)
+        self._mock_cache({"email": user.email, "purpose": "recovery"})
 
         response = self.client.post(
             self.url, data={"email_token": "expired_due_token"}, content_type="application/json"
@@ -113,7 +113,7 @@ class RestoreViewTest(APITestCase):
     def test_restore_already_deleted_user_returns_400(self) -> None:
         """유저가 이미 완전 삭제된 경우 - 400 반환"""
         user, _ = create_withdrawn_user(email="deleted@oz.com", phone_number="01077777777")
-        set_recovery_token("deleted_user_token", user.email)
+        self._mock_cache({"email": user.email, "purpose": "recovery"})
         user.delete()
 
         response = self.client.post(
