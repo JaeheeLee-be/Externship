@@ -8,8 +8,8 @@ def generate_presigned_url(file_name: str) -> dict[str, str]:
             file_name=file_name,
             path="uploads/images/posts/",
         )
-    except ValueError as e:
-        raise InvalidFileExtensionError(str(e))
+    except ValueError:
+        raise InvalidFileExtensionError("지원하지 않는 파일 형식입니다")
 
     key = img_url.split(".amazonaws.com/")[-1]
     return {
