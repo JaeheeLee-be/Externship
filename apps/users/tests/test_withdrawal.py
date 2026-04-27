@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any, ClassVar
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -68,7 +69,7 @@ class WithdrawalViewTest(APITestCase):
         withdrawal = Withdrawal.objects.get(user=self.user)
         self.assertEqual(withdrawal.reason, "OTHER")
         self.assertEqual(withdrawal.reason_detail, "그냥요")
-        self.assertEqual(withdrawal.due_date, date.today() + timedelta(weeks=2))
+        self.assertEqual(withdrawal.due_date, timezone.localdate() + timedelta(weeks=2))
 
     def test_withdraw_without_reason_detail(self) -> None:
         """reason_detail 없이 탈퇴 - 204 반환, reason_detail 빈 문자열로 저장"""
@@ -154,7 +155,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(TestCase):
             user=user,
             reason="OTHER",
             reason_detail="",
-            due_date=date.today() - timedelta(days=1),  # 어제 = 만료됨
+            due_date=timezone.localdate() - timedelta(days=1),  # 어제 = 만료됨
         )
 
         count = delete_expired_withdrawn_users()
@@ -171,7 +172,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(TestCase):
             user=user,
             reason="OTHER",
             reason_detail="",
-            due_date=date.today() + timedelta(days=1),  # 내일 = 미만료
+            due_date=timezone.localdate() + timedelta(days=1),  # 내일 = 미만료
         )
 
         count = delete_expired_withdrawn_users()
@@ -188,7 +189,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(TestCase):
             user=user,
             reason="GRADUATION",
             reason_detail="",
-            due_date=date.today() - timedelta(days=1),
+            due_date=timezone.localdate() - timedelta(days=1),
         )
 
         delete_expired_withdrawn_users()
@@ -205,7 +206,7 @@ class DeleteExpiredWithdrawnUsersTaskTest(TestCase):
             user=None,
             reason="OTHER",
             reason_detail="",
-            due_date=date.today() - timedelta(days=1),
+            due_date=timezone.localdate() - timedelta(days=1),
         )
 
         count = delete_expired_withdrawn_users()

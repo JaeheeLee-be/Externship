@@ -16,7 +16,6 @@ from apps.users.services.withdrawal_service import withdraw_user
 
 class WithdrawalView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = WithdrawalSerializer
 
     @extend_schema(
         tags=["accounts"],
@@ -28,13 +27,13 @@ class WithdrawalView(APIView):
             400: inline_serializer(
                 name="WithdrawalValidationError",
                 fields={
-                    "reason": serializers.ListField(child=serializers.CharField()),
-                    "detail": serializers.CharField(),
+                    "reason": serializers.ListField(child=serializers.CharField(), required=False),
+                    "detail": serializers.CharField(required=False),
                 },
             ),
             401: inline_serializer(
                 name="WithdrawalUnauthorized",
-                fields={"error_detail": serializers.CharField()},
+                fields={"detail": serializers.CharField()},
             ),
         },
     )

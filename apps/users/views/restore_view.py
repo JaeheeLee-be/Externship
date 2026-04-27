@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from django.core.cache import cache
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -9,19 +8,17 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.models import User
 from apps.users.serializers.purpose_enum import AuthPurpose
 from apps.users.serializers.restore_serializer import (
     RestoreRequestSerializer,
     RestoreSerializer,
 )
 from apps.users.services.auth_email_service import EmailVerificationService
-from apps.users.services.withdrawal_service import restore_user
+from apps.users.services.withdrawal_service import restore_user_by_token
 
 
 class RestoreRequestView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = RestoreRequestSerializer
 
     @extend_schema(
         tags=["accounts"],
@@ -45,7 +42,6 @@ class RestoreRequestView(APIView):
 
 class RestoreView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = RestoreSerializer
 
     @extend_schema(
         tags=["accounts"],
@@ -58,27 +54,16 @@ class RestoreView(APIView):
                 name="RestoreValidationError",
                 fields={"detail": serializers.CharField()},
             ),
+            404: inline_serializer(
+                name="RestoreNotFound",
+                fields={"detail": serializers.CharField()},
+            ),
         },
     )
     def post(self, request: Request) -> Response:
         serializer = RestoreSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email_token: str = serializer.validated_data["email_token"]
-        token_key = f"email_verify_token_{email_token}"
-        cached = cache.get(token_key)
-
-        if not cached or cached.get("purpose") != AuthPurpose.RECOVERY.value:
-            return Response({"detail": "유효하지 않은 복구 토큰입니다."}, status=status.HTTP_400_BAD_REQUEST)
-
-        cache.delete(token_key)
-        email: str = cached["email"]
-
-        try:
-            user = User.objects.get(email=email, is_active=False)
-        except User.DoesNotExist:
-            return Response({"detail": "이미 삭제된 계정입니다."}, status=status.HTTP_400_BAD_REQUEST)
-
-        restore_user(user)
+        restore_user_by_token(serializer.validated_data["email_token"])
 
         return Response({"detail": "계정이 복구됐습니다."}, status=status.HTTP_200_OK)
