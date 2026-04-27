@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.qna.schemas.answer_schemas import answer_accept_schema
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
@@ -44,7 +45,7 @@ class AnswerAcceptView(APIView):
 
     permission_classes = [IsAuthenticated]
     service = AnswerAcceptService()
-
+    @answer_accept_schema
     def post(self, request: Request, answer_id: int) -> Response:
         assert isinstance(request.user, User)
         answer = self.service.answer_accept(
