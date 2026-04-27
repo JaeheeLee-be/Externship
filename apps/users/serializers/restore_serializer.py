@@ -8,4 +8,4 @@ class RestoreRequestSerializer(serializers.Serializer[None]):
 
 
 class RestoreSerializer(serializers.Serializer[None]):
-    token = serializers.CharField()
+    email_token = serializers.CharField()
