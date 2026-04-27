@@ -2,7 +2,7 @@ from django.urls import path
 
 from apps.users.views.social_views import SocialCallbackView, SocialLoginView
 
-app_name = "users"
+
 
 urlpatterns = [
     # 302 → 카카오·네이버 OAuth 인증 페이지
