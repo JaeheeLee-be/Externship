@@ -2,8 +2,6 @@ from django.urls import path
 
 from apps.users.views.auth_email_view import EmailSendView, EmailVerificationView
 
-app_name = "users"
-
 urlpatterns = [
     # 최종 경로: api/v1/accounts/verification/send-email
     path("verification/send-email", EmailSendView.as_view(), name="send-email"),
