@@ -6,4 +6,4 @@ from apps.posts.models.like import Like
 from apps.posts.models.post import Post
 from apps.posts.models.subject import Subject
 
-__all__ = ["PostCategory", "Post", "PostComment", "PostCommentTag", "Like"]
+__all__ = ["PostCategory", "Post", "PostComment", "PostCommentTag", "Like", "Subject", "Course", "Cohort"]
