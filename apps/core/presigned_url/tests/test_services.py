@@ -4,7 +4,7 @@ from apps.core.presigned_url.services import PresignedUrlService
 
 
 class TestServices(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.file_name = "test.jpg"
         self.path = "test/"
         self.key = PresignedUrlService._key(file_name=self.file_name, path=self.path)
@@ -24,7 +24,9 @@ class TestServices(TestCase):
 
     # create_upload_urls()가 잘 작동하는지
     def test_create_upload_urls(self) -> None:
-        url = PresignedUrlService.create_upload_urls(file_name=self.file_name, content_type="image/jpeg", path=self.path)
+        url = PresignedUrlService.create_upload_urls(
+            file_name=self.file_name, content_type="image/jpeg", path=self.path
+        )
         self.assertEqual(len(self.key), 50)
         self.assertIn(url["key"], url["img_url"])
         self.assertIn(url["img_url"], url["presigned_url"])

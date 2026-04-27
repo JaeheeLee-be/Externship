@@ -1,46 +1,56 @@
+from typing import Any
+
 from django.test import TestCase
 from rest_framework import status
+from rest_framework.test import APIRequestFactory
 
 from apps.core.presigned_url.views import PresignedUrlView
-from rest_framework.test import APIRequestFactory
+
 
 class TestPresignedUrlSubclass(TestCase):
 
     # 서브클래스에서 path를 정의하지 않았을 때 에러가 나는지
     def test_path_required(self) -> None:
         with self.assertRaises(TypeError) as e:
+
             class NoPathView(PresignedUrlView):
                 pass
+
         self.assertEqual(str(e.exception), "NoPathView에 path 클래스 변수를 정의해야 합니다")
 
     # 서브클래스에서 path를 str 외의 타입으로 정의했을 때 에러가 나는지
     def test_path_type(self) -> None:
         with self.assertRaises(TypeError) as e:
+
             class InvalidPathView(PresignedUrlView):
-                path = 123
+                path = 123  # type: ignore[assignment]
+
         self.assertEqual(str(e.exception), "InvalidPathView: path는 str이어야 합니다.")
 
     # 서브클래스에서 expire를 int 외의 타입으로 정의했을 때 에러가 나는지
     def test_expire_type(self) -> None:
         with self.assertRaises(TypeError) as e:
+
             class InvalidExpireView(PresignedUrlView):
                 path = "test/"
-                expire = "600"
+                expire = "600"  # type: ignore[assignment]
+
         self.assertEqual(str(e.exception), "InvalidExpireView: expire는 int여야 합니다.")
 
 
 class TestPresignedUrlView(TestCase):
+    view: Any
+    factory: APIRequestFactory
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         class PresignedUrlSubclass(PresignedUrlView):
             path = "test/"
 
         cls.view = PresignedUrlSubclass.as_view()
         cls.factory = APIRequestFactory()
 
-    def setUp(self):
-        ...
+    def setUp(self) -> None: ...
 
     # 올바른 request인 경우 성공하는지
     def test_success(self) -> None:

@@ -16,7 +16,8 @@ class TestPresignedUrlNetwork(TestCase):
         - @mock_aws가 정상적으로 모킹을 하는지 테스트.
         - s3.create_upload_urls()가 실제 aws 서버 호출 없이 동작하는 메서드인지 테스트
     """
-    def setUp(self):
+
+    def setUp(self) -> None:
         self.s3_handler = get_s3_handler()
 
     @mock_aws
@@ -65,7 +66,6 @@ class TestPresignedUrlNetwork(TestCase):
         urls_dict = PresignedUrlService.create_upload_urls("test.jpg", "image/jpeg", "test/")
         self.assertTrue(urls_dict["presigned_url"].startswith("https://"))
         self.assertTrue(urls_dict["img_url"].startswith("https://"))
-
 
     # 모킹된 presigned_url과 그렇지 않은 presigned_url이 동일한지
     @freeze_time("2026-04-27 11:11:11")

@@ -38,6 +38,7 @@ class S3Handler:
 
 s3_handler: S3Handler | None = None
 
+
 # lazy_init, singleton
 def get_s3_handler() -> S3Handler:
     global s3_handler
