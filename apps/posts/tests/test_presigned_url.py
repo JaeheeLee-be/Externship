@@ -45,7 +45,7 @@ class PresignedUrlViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error_detail", response.data)
-        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다")
 
     def test_no_extension(self) -> None:
         self.client.force_authenticate(user=self.user)
