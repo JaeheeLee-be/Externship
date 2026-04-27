@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Union
 
 from django.conf import settings
+from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import SocialUsers, User
@@ -18,7 +19,6 @@ from apps.users.utils.social_exceptions import (
 
 _UserInfo = Union[KakaoUserInfo, NaverUserInfo]
 
-
 _OAUTH_SERVICES: dict[str, Any] = {
     "kakao": KakaoOAuthService,
     "naver": NaverOAuthService,
@@ -29,7 +29,6 @@ class SocialAuthService:
 
     @classmethod
     def get_auth_url(cls, provider: str) -> str:
-
         service = _OAUTH_SERVICES.get(provider)
         if service is None:
             raise UnsupportedProviderError()
@@ -43,7 +42,6 @@ class SocialAuthService:
         state: str = "",
         error: str | None = None,
     ) -> dict[str, Any]:
-
         if error:
             raise OAuthCallbackError(error)
         if not code:
@@ -53,7 +51,6 @@ class SocialAuthService:
 
     @classmethod
     def _get_user_info(cls, provider: str, code: str, state: str = "") -> _UserInfo:
-
         if provider == "kakao":
             redirect_uri: str = getattr(settings, "KAKAO_REDIRECT_URI", "")
             return KakaoOAuthService.get_user_info_by_code(code, redirect_uri)
@@ -81,17 +78,17 @@ class SocialAuthService:
         if User.objects.filter(email=user_info.email).exists():
             raise EmailAlreadyRegisteredError()
 
-        user = cls._create_social_user(user_info)
-        SocialUsers.objects.create(
-            user=user,
-            provider=provider,
-            provider_id=user_info.provider_id,
-        )
+        with transaction.atomic():
+            user = cls._create_social_user(user_info)
+            SocialUsers.objects.create(
+                user=user,
+                provider=provider,
+                provider_id=user_info.provider_id,
+            )
         return cls._generate_token_result(user, is_new_user=True)
 
     @classmethod
     def _create_social_user(cls, user_info: _UserInfo) -> User:
-
         user = User(
             email=user_info.email or "",
             name=user_info.name or "",
@@ -107,7 +104,6 @@ class SocialAuthService:
 
     @classmethod
     def _generate_token_result(cls, user: User, is_new_user: bool) -> dict[str, Any]:
-
         refresh = RefreshToken.for_user(user)
         return {
             "is_new_user": is_new_user,
