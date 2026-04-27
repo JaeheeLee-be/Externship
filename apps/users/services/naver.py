@@ -1,6 +1,3 @@
-# 네이버 API 통신
-# 필수 항목 : 이메일, 닉네임, 이름, 휴대폰 번호, 생년월일, 성별, 프로필 사진
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -23,7 +20,7 @@ class NaverUserInfo:
 
 
 class NaverOAuthService:
-    """네이버 OAuth 2.0 서비스"""
+
 
     AUTH_URL = "https://nid.naver.com/oauth2.0/authorize"
     TOKEN_URL = "https://nid.naver.com/oauth2.0/token"
@@ -31,7 +28,7 @@ class NaverOAuthService:
 
     @classmethod
     def get_auth_url(cls, state: str | None = None) -> str:
-        """네이버 OAuth 인증 페이지 URL 반환"""
+
         return (
             f"{cls.AUTH_URL}"
             f"?client_id={settings.NAVER_CLIENT_ID}"
@@ -42,7 +39,7 @@ class NaverOAuthService:
 
     @classmethod
     def get_access_token(cls, code: str, state: str) -> str:
-        """인가 코드로 네이버 액세스 토큰 발급"""
+
         response = requests.post(
             cls.TOKEN_URL,
             data={
@@ -80,13 +77,13 @@ class NaverOAuthService:
 
         user_data = data.get("response", {})
 
-        # 전화번호 : 010-1234-5678 -> 01012345678
+
         raw_phone = user_data.get("mobile", "")
         phone_number = raw_phone.replace("-", "") if raw_phone else None
 
         gender = user_data.get("gender") or None
 
-        # 생년 월일: birthyear = 2000 , birthday = 12-31 -> 2000-12-31
+
         birthyear = user_data.get("birthyear", "")
         birthday_mmdd = user_data.get("birthday", "")
         if birthyear and birthday_mmdd:
@@ -107,6 +104,6 @@ class NaverOAuthService:
 
     @classmethod
     def get_user_info_by_code(cls, code: str, state: str) -> NaverUserInfo:
-        """인가 코드로 네이버 사용자 정보 조회"""
+
         access_token = cls.get_access_token(code, state)
         return cls.get_user_info(access_token)

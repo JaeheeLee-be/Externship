@@ -1,7 +1,3 @@
-# 카카오 API 통신
-# 받아올 수 있는 항목: provider_id, nickname, profile_img_url, email, name, phone_number, gender, birthday
-
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,7 +20,6 @@ class KakaoUserInfo:
 
 
 class KakaoOAuthService:
-    """카카오 OAuth 2.0 서비스"""
 
     AUTH_URL = "https://kauth.kakao.com/oauth/authorize"
     TOKEN_URL = "https://kauth.kakao.com/oauth/token"
@@ -34,7 +29,7 @@ class KakaoOAuthService:
 
     @classmethod
     def get_auth_url(cls) -> str:
-        """카카오 OAuth 인증 페이지 URL 반환"""
+
         return (
             f"{cls.AUTH_URL}"
             f"?client_id={settings.KAKAO_CLIENT_ID}"
@@ -44,7 +39,7 @@ class KakaoOAuthService:
 
     @classmethod
     def get_access_token(cls, code: str, redirect_uri: str) -> str:
-        """인가 코드로 카카오 액세스 토큰 발급"""
+
         response = requests.post(
             cls.TOKEN_URL,
             data={
@@ -70,7 +65,7 @@ class KakaoOAuthService:
 
     @classmethod
     def get_user_info(cls, access_token: str) -> KakaoUserInfo:
-        """카카오 액서스 토큰으로 사용자 정보 조회"""
+
         response = requests.get(
             cls.USER_INFO_URL,
             headers={"Authorization": f"Bearer {access_token}"},
@@ -89,11 +84,11 @@ class KakaoOAuthService:
         else:
             birthday = None
 
-        # gender "male"/"female" → "M"/"F" 변환 (User.Gender 모델과 일치)
+
         raw_gender = account.get("gender")
         gender = cls._GENDER_MAP.get(raw_gender) if raw_gender else None
 
-        # phone_number 정규화 "+82 10-1234-5678" → "01012345678"
+
         raw_phone = account.get("phone_number", "")
         phone_number = cls._normalize_phone(raw_phone) if raw_phone else None
 
@@ -110,13 +105,13 @@ class KakaoOAuthService:
 
     @classmethod
     def get_user_info_by_code(cls, code: str, redirect_uri: str) -> KakaoUserInfo:
-        """인가 코드로 사용자 정보 조회"""
+
         access_token = cls.get_access_token(code, redirect_uri)
         return cls.get_user_info(access_token)
 
     @staticmethod
     def _normalize_phone(raw: str) -> str:
-        """전화번호(01-1234-5678) -> 01012345678"""
+
         phone = raw.rstrip()
         if phone.startswith("+82"):
             phone = "0" + phone[3:].strip()

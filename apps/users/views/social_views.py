@@ -28,10 +28,7 @@ def set_auth_cookies(response: Any, refresh: str) -> None:
 
 
 class SocialLoginView(APIView):
-    """
-    소셜 로그인 뷰
-    카카오 또는 네이버 OAuth 인증 페이지로 302 리다이렉트
-    """
+
 
     authentication_classes: list[Any] = []
     permission_classes: list[Any] = []
@@ -46,12 +43,7 @@ class SocialLoginView(APIView):
 
 
 class SocialCallbackView(APIView):
-    """
-    소셜 로그인 콜백 뷰
-    OAuth 인가 코드를 받아 로그인 또는 회원가입 처리 후 프론트엔드로 302 리다이렉트
-    - 성공 : access token을 쿼리 파라미터로, refresh token을 HttpOnly 쿠키로 전달
-    - 실패 : error 메세지를 쿼리 파라미터로 전달
-    """
+
 
     authentication_classes: list[Any] = []
     permission_classes: list[Any] = []
