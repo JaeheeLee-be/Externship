@@ -17,6 +17,7 @@ class PresignedUrlView(APIView):
     path: str
     expire: int = 600
 
+    # 서브클래스 정의 시점에 클래스 속성 체크
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
@@ -27,6 +28,7 @@ class PresignedUrlView(APIView):
         if not isinstance(cls.expire, int) and cls.expire is not None:
             raise TypeError(f"{cls.__name__}: expire는 int여야 합니다.")
 
+    # post, put 메서드의 공용 함수
     def _handle_request(self, request: Request) -> Response:
         request_serializer = PresignedUrlRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)

@@ -17,6 +17,7 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
     def validate(self, attrs: dict[str, str]) -> dict[str, str]:
         file_name = attrs["file_name"]
 
+        # 확장자 소문자로 통일
         path = Path(file_name)
         suffix = path.suffix.lower()
 
@@ -27,6 +28,7 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
 
         stem = path.stem
 
+        # content_type도 함께 반환
         attrs["file_name"] = stem + suffix
         attrs["content_type"] = ALLOWED_SUFFIX[suffix]
 
