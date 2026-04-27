@@ -1,4 +1,4 @@
-from typing import cast, Never
+from typing import Never, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
