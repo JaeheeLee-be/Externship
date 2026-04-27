@@ -1,31 +1,31 @@
 import secrets
 
 from django.conf import settings
-from twilio.rest import Client # type: ignore[import-untyped]
-from django.core.cache import cache
-from twilio.base.exceptions import TwilioRestException # type: ignore[import-untyped]
-from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from rest_framework.exceptions import ValidationError
+from twilio.base.exceptions import TwilioRestException  # type: ignore[import-untyped]
+from twilio.rest import Client  # type: ignore[import-untyped]
+
 from apps.users.utils.purpose_enum import SmsPurpose
 
 User = get_user_model()
+
 
 class SmsVerificationService:
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     service_sid = settings.TWILIO_VERIFY_SERVICE_SID
 
-
     @classmethod
-    def phone_format_change(cls,phone_number:str) ->str:
+    def phone_format_change(cls, phone_number: str) -> str:
         # 01012345678 -> 1012345678
-        clean_phone = phone_number.lstrip('0')
-        if not clean_phone.startswith('+82'):
+        clean_phone = phone_number.lstrip("0")
+        if not clean_phone.startswith("+82"):
             return f"+82{clean_phone}"
         return phone_number
 
-
     @classmethod
-    def send_verification_sms(cls,phone_number:str,purpose:SmsPurpose)->None:
+    def send_verification_sms(cls, phone_number: str, purpose: SmsPurpose) -> None:
         if purpose == SmsPurpose.SIGNUP:
             if User.objects.filter(phone_number=phone_number).exists():
                 raise ValidationError("이미 등록된 전화번호 입니다")
@@ -47,16 +47,11 @@ class SmsVerificationService:
             raise ValidationError(f"error: {e}  서버 오류가 발생했습니다")
         formatted_phone = cls.phone_format_change(phone_number)
 
-
         try:
-            cls.client.verify.v2.services(cls.service_sid) \
-                .verifications \
-                .create(to=formatted_phone, channel='sms')
+            cls.client.verify.v2.services(cls.service_sid).verifications.create(to=formatted_phone, channel="sms")
         except TwilioRestException as e:
             # 번호 형식이 잘못되었거나 Twilio 설정 문제 시 발생
             raise ValidationError(f"SMS 발송 실패: {e.msg}")
-
-
 
     @classmethod
     def verify_sms_code(cls, phone_number: str, code: str) -> str:
@@ -64,18 +59,18 @@ class SmsVerificationService:
         사용자가 입력한 코드를 Twilio에 보내서 확인하고,
         성공 시 다음 단계용 sms_token을 발급합니다.
         """
-        formatted_phone =cls.phone_format_change(phone_number)
+        formatted_phone = cls.phone_format_change(phone_number)
         cache_key = f"sms_code_{phone_number}"
         cache_data = cache.get(cache_key)
         purpose = cache_data.get("purpose")
 
         try:
-            verification_check = cls.client.verify.v2.services(cls.service_sid)\
-                .verification_checks \
-                .create(to=formatted_phone, code=code)
+            verification_check = cls.client.verify.v2.services(cls.service_sid).verification_checks.create(
+                to=formatted_phone, code=code
+            )
 
             # Twilio 서버에서 인증 성공('approved')
-            if verification_check.status == 'approved':
+            if verification_check.status == "approved":
                 sms_token = secrets.token_urlsafe(32)
                 token_key = f"purpose_{purpose}_sms_verify_token_{sms_token}"
                 data = {"phone_number": phone_number}
@@ -92,8 +87,3 @@ class SmsVerificationService:
 
         except TwilioRestException as e:
             raise ValidationError(f"인증 확인 중 오류 발생: {e.msg}")
-
-
-
-
-

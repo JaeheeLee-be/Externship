@@ -1,4 +1,4 @@
-from drf_spectacular.utils import OpenApiExample, OpenApiResponse,extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -8,15 +8,15 @@ from rest_framework.views import APIView
 
 from apps.users.serializers.auth_sms_serializer import (
     SmsSendSerializer,
-    SmsVerifySerializer
+    SmsVerifySerializer,
 )
-
-from apps.users.utils.purpose_enum import SmsPurpose
 from apps.users.services.auth_sms_service import SmsVerificationService
+from apps.users.utils.purpose_enum import SmsPurpose
 
 
 class SmsSendView(APIView):
     permission_classes = [AllowAny]
+
     @extend_schema(
         tags=["Accounts (sms 인증)"],
         summary="sms 인증 코드 발송 API",
@@ -47,21 +47,20 @@ class SmsSendView(APIView):
             ),
         },
     )
-    def post(self,request:Request)->Response:
+    def post(self, request: Request) -> Response:
         serializer = SmsSendSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        phone_number  = serializer.validated_data["phone_number"]
+        phone_number = serializer.validated_data["phone_number"]
         purpose = SmsPurpose(serializer.validated_data["purpose"])
 
-
         try:
-            SmsVerificationService.send_verification_sms(phone_number,purpose)
+            SmsVerificationService.send_verification_sms(phone_number, purpose)
 
-            return Response({"detail":"sms 인증코드가 전송되었습니다"})
+            return Response({"detail": "sms 인증코드가 전송되었습니다"})
         except ValidationError as e:
-            return Response({"error_detail": e.detail},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SmsVerificationView(APIView):
@@ -96,23 +95,15 @@ class SmsVerificationView(APIView):
             ),
         },
     )
-    def post(self,request:Request)->Response:
+    def post(self, request: Request) -> Response:
         serializer = SmsVerifySerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         phone_number = serializer.validated_data["phone_number"]
         code = serializer.validated_data["code"]
 
         try:
-            sms_token = SmsVerificationService.verify_sms_code(phone_number,code)
-            return Response(
-                {
-                    "detail": "sms 인증이 성공했습니다",
-                    "sms_token": sms_token
-                }
-            )
+            sms_token = SmsVerificationService.verify_sms_code(phone_number, code)
+            return Response({"detail": "sms 인증이 성공했습니다", "sms_token": sms_token})
         except ValidationError as e:
-            return Response({"error_detail": e.detail},status=status.HTTP_400_BAD_REQUEST)
-
-
-
+            return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
