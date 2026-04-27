@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.qna.schemas.answer_schemas import answer_accept_schema
+from apps.qna.schemas.answer_schemas import answer_accept_schema,answer_create_schema
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
@@ -14,13 +14,12 @@ from apps.qna.serializers.answer_serializers import (
 )
 from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
 from apps.users.models import User
-
+from apps.core.utils.permissions import IsRoleAdminUser
 
 class AnswerView(APIView):
-    permission_classes = [IsAuthenticated]
-    # TODO: 유저에서 staff 로그인에 관한 permission 구현 후 permission_classes 추가 -> 403
+    permission_classes = [IsAuthenticated,IsRoleAdminUser]
     service = AnswerService()
-
+    @answer_create_schema
     def post(self, request: AuthenticatedRequest, question_id: int) -> Response:
         question = self.service.get_question(question_id)
         serializer = AnswerRequestSerializer(
