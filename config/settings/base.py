@@ -4,8 +4,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from apps import core, users
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 if os.getenv("DJANGO_SETTINGS_MODULE") == "config.settings.local":
@@ -89,6 +87,7 @@ for key, value in DATABASES.items():
     if key != "ENGINE":
         if not value:
             raise ValueError(f"Database {key} is empty")
+
 
 # Redis Settings
 REDIS_HOST = os.getenv("REDIS_HOST")
