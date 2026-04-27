@@ -19,7 +19,7 @@ class AdminCategoryCreateAPITest(APITestCase):
             password="test1234",
             role="ADMIN",
         )
-        cls.url = "/api/v1/admin/qna/categories/"
+        cls.url = "/api/v1/admin/qna/categories"
 
     # 테스트마다 실행됨 (상태 객체 초기화)
     def setUp(self) -> None:

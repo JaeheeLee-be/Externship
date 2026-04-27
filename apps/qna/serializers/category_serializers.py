@@ -116,7 +116,7 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
 # 카테고리 생성 응답
 class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[QuestionCategory]):
     category_id = serializers.IntegerField(source="id")
-    parent_id = serializers.IntegerField(source="parent.id", allow_null=True)
+    parent_id = serializers.SerializerMethodField()
     category_type = serializers.SerializerMethodField()
 
     class Meta:
@@ -138,3 +138,6 @@ class AdminCategoryCreateResponseSerializer(serializers.ModelSerializer[Question
             3: "small",
         }
         return mapping.get(depth)
+
+    def get_parent_id(self, obj: QuestionCategory) -> int | None:
+        return obj.parent_id
