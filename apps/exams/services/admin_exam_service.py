@@ -56,3 +56,10 @@ def create_exam(subject_id: int, title: str, thumbnail_image_url: str = "default
     if Exam.objects.filter(title=title).exists():
         raise ExamTitleConflict()
     return Exam.objects.create(subject_id=subject_id, title=title, thumbnail_image_url=thumbnail_image_url)
+
+
+def get_exam(exam_id: int) -> Exam:
+    try:
+        return Exam.objects.select_related("subject").prefetch_related("examquestion_set").get(pk=exam_id)
+    except Exam.DoesNotExist:
+        raise ValueError("해당 쪽지시험 정보를 찾을 수 없습니다.")

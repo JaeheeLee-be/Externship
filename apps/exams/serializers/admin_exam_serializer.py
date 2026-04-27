@@ -3,7 +3,8 @@ from urllib.parse import urlparse
 
 from rest_framework import serializers
 
-from apps.exams.models import Exam
+from apps.exams.models import Exam, ExamQuestion
+from apps.posts.models import Subject
 
 
 class ExamListSerializer(serializers.ModelSerializer[Exam]):
@@ -61,3 +62,39 @@ class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
         ]
         read_only_fields = ["id"]
         extra_kwargs: dict[str, dict[str, list[object]]] = {"title": {"validators": []}}
+
+
+class SubjectNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ["id", "title"]
+
+
+class QuestionNestedSerializer(serializers.ModelSerializer):
+    options = serializers.ListField(source="options_json")
+    correct_answer = serializers.JSONField(source="answer")
+
+    class Meta:
+        model = ExamQuestion
+        fields = ["id", "type", "question", "prompt", "point", "options", "correct_answer", "explanation"]
+
+
+class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
+    subject = SubjectNestedSerializer(read_only=True)
+    questions = QuestionNestedSerializer(many=True, read_only=True, source="examquestion_set")
+
+    class Meta:
+        model = Exam
+        fields = [
+            "id",
+            "title",
+            "subject",
+            "questions",
+            "thumbnail_image_url",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ExamErrorSerializer(serializers.Serializer):
+    error_detail = serializers.CharField()

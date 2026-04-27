@@ -15,9 +15,11 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
 from apps.exams.serializers.admin_exam_serializer import (
     ExamCreateSerializer,
+    ExamDetailSerializer,
+    ExamErrorSerializer,
     ExamListSerializer,
 )
-from apps.exams.services.admin_exam_service import create_exam, get_exam_list
+from apps.exams.services.admin_exam_service import create_exam, get_exam, get_exam_list
 
 
 class ExamListCreateView(APIView):
@@ -104,3 +106,34 @@ class ExamListCreateView(APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+
+class ExamDetailView(ErrorDataKeyMixin, APIView):
+    permission_classes = [IsRoleAdminUser]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        if request.method == "GET":
+            raise PermissionDenied("쪽지시험 상세 조회 권한이 없습니다.")
+        if request.method == "PUT":
+            raise PermissionDenied("쪽지시험 수정 권한이 없습니다.")
+        raise PermissionDenied("쪽지시험 삭제 권한이 없습니다.")
+
+    @extend_schema(
+        tags=["exams"],
+        summary="쪽지 시험 상세 조회",
+        responses={
+            200: ExamDetailSerializer,
+            401: ExamErrorSerializer,
+            403: OpenApiResponse(response=ExamErrorSerializer, description="쪽지시험 상세 조회 권한이 없습니다."),
+            404: OpenApiResponse(response=ExamErrorSerializer, description="해당 쪽지시험 정보를 찾을 수 없습니다."),
+        },
+    )
+    def get(self, request: Request, exam_id: int) -> Response:
+        try:
+            exam = get_exam(exam_id)
+            serializer = ExamDetailSerializer(exam, context={"request": request})
+        except ValueError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.data, status=status.HTTP_200_OK)

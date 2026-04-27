@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
 
-from apps.exams.models import Exam
+from apps.exams.models import Exam, ExamQuestion
 from apps.posts.models import Course, Subject
 from apps.users.models import User
 
@@ -15,6 +15,8 @@ class ExamBaseTestCase(APITestCase):
     subject_python: Subject
     exam1: Exam
     exam2: Exam
+    question1: ExamQuestion
+    question2: ExamQuestion
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -59,6 +61,20 @@ class ExamBaseTestCase(APITestCase):
         cls.exam2 = Exam.objects.create(
             subject=cls.subject_python,
             title="test_exam2",
+        )
+        cls.question1 = ExamQuestion.objects.create(
+            exam=cls.exam1,
+            question="test_question",
+            type="single_choice",
+            answer={"answer": "test_answer1"},
+            point=1,
+        )
+        cls.question2 = ExamQuestion.objects.create(
+            exam=cls.exam1,
+            question="test_question2",
+            type="multiple_choice",
+            answer={"answer": ["test_answer1", "test_answer2"]},
+            point=2,
         )
 
 
@@ -273,3 +289,40 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
+
+
+class TestExamDetail(ExamBaseTestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+    # 디테일 조회: 권한 테스트
+    def test_detail_get_as_admin(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-detail", kwargs={"exam_id": self.exam1.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["title"], "test_exam")
+        self.assertEqual(response.data["subject"]["title"], "html")
+        self.assertEqual(response.data["questions"][0]["type"], "single_choice")
+        self.assertEqual(response.data["questions"][0]["question"], "test_question")
+
+    def test_detail_get_as_user(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(reverse("exam-detail", kwargs={"exam_id": self.exam1.id}))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error_detail"], "쪽지시험 상세 조회 권한이 없습니다.")
+
+    def test_detail_get_unauthorized(self) -> None:
+        response = self.client.get(reverse("exam-detail", kwargs={"exam_id": self.exam1.id}))
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
+
+    # 디테일 조회: not found
+    def test_detail_not_found(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-detail", kwargs={"exam_id": self.exam1.id + 9999}))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error_detail"], "해당 쪽지시험 정보를 찾을 수 없습니다.")
