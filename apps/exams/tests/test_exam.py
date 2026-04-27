@@ -290,6 +290,21 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
+    def test_exam_create_title_max_length(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(
+            reverse("exam-list"),
+            {
+                "subject_id": self.subject_python.id,
+                "title": "new_exam" * 20,
+                "thumbnail_image_url": "https://example.com/image.abcd",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Exam.objects.count(), 2)
+
 
 class TestExamDetail(ExamBaseTestCase):
     def setUp(self) -> None:
@@ -326,3 +341,139 @@ class TestExamDetail(ExamBaseTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["error_detail"], "해당 쪽지시험 정보를 찾을 수 없습니다.")
+
+    # 디테일 수정: 권한
+    def test_detail_put_as_admin(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "updated_exam",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["title"], "updated_exam")
+        self.assertEqual(response.data["subject_id"], self.subject_python.id)
+        self.assertEqual(response.data["thumbnail_image_url"], "https://example.com/image.jpg")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    def test_detail_put_as_user(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "updated_exam",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error_detail"], "쪽지시험 수정 권한이 없습니다.")
+
+    def test_detail_put_unauthorized(self) -> None:
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "updated_exam",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
+
+    # 디테일 수정: 수정 타이틀 제외 수정 가능
+    def test_detail_put_title_exclude(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "test_exam",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["title"], "test_exam")
+        self.assertEqual(response.data["subject_id"], self.subject_python.id)
+
+    # 디테일 수정: 예외
+    def test_detail_put_not_found(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id + 9999}),
+            {
+                "title": "updated_exam",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error_detail"], "해당 쪽지시험 정보를 찾을 수 없습니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    def test_detail_put_title_unique_exception(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "test_exam2",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["error_detail"], "동일한 이름의 시험이 이미 존재합니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    def test_detail_put_subject_not_found(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "updated_exam",
+                "subject_id": self.subject_html.id + 9999,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    def test_detail_put_invalid_thumbnail_extension(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "updated_exam",
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.abcd",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    def test_detail_put_title_max_langth(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(
+            reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
+            {
+                "title": "updated_exam" * 20,
+                "subject_id": self.subject_python.id,
+                "thumbnail_image_url": "https://example.com/image.jpg",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Exam.objects.count(), 2)

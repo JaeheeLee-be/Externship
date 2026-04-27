@@ -14,12 +14,17 @@ from rest_framework.views import APIView
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
 from apps.exams.serializers.admin_exam_serializer import (
-    ExamCreateSerializer,
+    ExamCreatePutSerializer,
     ExamDetailSerializer,
     ExamErrorSerializer,
     ExamListSerializer,
 )
-from apps.exams.services.admin_exam_service import create_exam, get_exam, get_exam_list
+from apps.exams.services.admin_exam_service import (
+    create_exam,
+    get_exam,
+    get_exam_list,
+    put_exam,
+)
 
 
 class ExamListCreateView(APIView):
@@ -81,9 +86,9 @@ class ExamListCreateView(APIView):
         tags=["exams"],
         summary="쪽지 시험 생성",
         description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp만 가능합니다.",
-        request=ExamCreateSerializer,
+        request=ExamCreatePutSerializer,
         responses={
-            201: ExamCreateSerializer,
+            201: ExamCreatePutSerializer,
             400: OpenApiResponse(description="유효하지 않은 시험 생성 요청입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 생성 권한이 없습니다."),
@@ -93,7 +98,7 @@ class ExamListCreateView(APIView):
     )
     def post(self, request: Request) -> Response:
         try:
-            serializer = ExamCreateSerializer(data=request.data, context={"request": request})
+            serializer = ExamCreatePutSerializer(data=request.data, context={"request": request})
             if not serializer.is_valid():
                 return Response(
                     {"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST
@@ -105,7 +110,9 @@ class ExamListCreateView(APIView):
         except SubjectNotFound as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ExamCreatePutSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED
+        )
 
 
 class ExamDetailView(ErrorDataKeyMixin, APIView):
@@ -137,3 +144,46 @@ class ExamDetailView(ErrorDataKeyMixin, APIView):
         except ValueError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["exams"],
+        summary="쪽지 시험 수정",
+        description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp만 가능합니다.",
+        request=ExamCreatePutSerializer,
+        responses={
+            200: ExamCreatePutSerializer,
+            400: OpenApiResponse(
+                description="유효하지 않은 요청 데이터입니다.",
+                response=ExamErrorSerializer,
+            ),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403: OpenApiResponse(description="쪽지시험 수정 권한이 없습니다."),
+            404: OpenApiResponse(
+                description="해당 쪽지시험 정보를 찾을 수 없습니다. | 해당 과목 정보를 찾을 수 없습니다.",
+                response=ExamErrorSerializer,
+            ),
+            409: OpenApiResponse(
+                description="동일한 이름의 시험이 이미 존재합니다.",
+                response=ExamErrorSerializer,
+            ),
+        },
+    )
+    def put(self, request: Request, exam_id: int) -> Response:
+        try:
+            serializer = ExamCreatePutSerializer(data=request.data, context={"request": request})
+            if not serializer.is_valid():
+                return Response(
+                    {"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST
+                )
+            exam = put_exam(exam_id=exam_id, **serializer.validated_data)
+        except ExamTitleConflict as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
+        except SubjectNotFound as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except NotAuthenticated as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        except PermissionDenied as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except ValueError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ExamCreatePutSerializer(exam, context={"request": request}).data, status=status.HTTP_200_OK)

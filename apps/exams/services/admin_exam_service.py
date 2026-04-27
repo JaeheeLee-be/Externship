@@ -63,3 +63,20 @@ def get_exam(exam_id: int) -> Exam:
         return Exam.objects.select_related("subject").prefetch_related("examquestion_set").get(pk=exam_id)
     except Exam.DoesNotExist:
         raise ValueError("해당 쪽지시험 정보를 찾을 수 없습니다.")
+
+
+def put_exam(exam_id: int, title: str, subject_id: int, thumbnail_image_url: str) -> Exam:
+    try:
+        exam = Exam.objects.get(pk=exam_id)
+    except Exam.DoesNotExist:
+        raise ValueError("해당 쪽지시험 정보를 찾을 수 없습니다.")
+    if not Subject.objects.filter(id=subject_id).exists():
+        raise SubjectNotFound()
+    if Exam.objects.filter(title=title).exclude(pk=exam_id).exists():
+        raise ExamTitleConflict()
+
+    exam.title = title
+    exam.subject_id = subject_id
+    exam.thumbnail_image_url = thumbnail_image_url
+    exam.save()
+    return exam
