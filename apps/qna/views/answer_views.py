@@ -1,11 +1,9 @@
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.utils.permissions import IsRoleAdminUser
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
 from apps.qna.serializers.answer_serializers import (
@@ -21,7 +19,8 @@ class AnswerView(APIView):
     POST api/v1/qna/questions/{question_id}/answers
     답변 등록 API
     """
-    permission_classes = [IsAuthenticated, IsRoleAdminUser]
+
+    permission_classes = [IsAuthenticated]
     service = AnswerService()
 
     @answer_create_schema
