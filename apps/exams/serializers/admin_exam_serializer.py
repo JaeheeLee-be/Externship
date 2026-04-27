@@ -9,12 +9,9 @@ from apps.exams.models import Exam
 class ExamListSerializer(serializers.ModelSerializer[Exam]):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
-    subject_name = serializers.SerializerMethodField()
+    subject_name = serializers.CharField(source="subject.title", read_only=True)
     # TODO: 디테일 제작 후 주석 해제
     # detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
-
-    def get_subject_name(self, obj: Exam) -> str:
-        return str(obj.subject.title)
 
     class Meta:
         model = Exam

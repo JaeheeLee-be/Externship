@@ -1,5 +1,5 @@
 from django.conf import settings
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser
@@ -28,13 +28,13 @@ class ExamListCreateView(APIView):
                 name="search",
                 type=str,
                 description="exam의 title과 subject의 title을 동시에 검색하며 유사, 일치를 찾습니다",
-            )
+            ),
         ],
         responses={
             200: ExamListCreateSerializer,
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 목록 조회 권한이 없습니다."),
-        }
+        },
     )
     def get(self, request):
         queryset = get_exam_list(
@@ -58,8 +58,7 @@ class ExamListCreateView(APIView):
             403: OpenApiResponse(description="쪽지시험 생성 권한이 없습니다."),
             404: OpenApiResponse(description="해당 과목 정보를 찾을 수 없습니다."),
             409: OpenApiResponse(description="동일한 이름의 시험이 이미 존재합니다."),
-
-        }
+        },
     )
     def post(self, request):
         serializer = ExamListCreateSerializer(data=request.data, context={"request": request})
