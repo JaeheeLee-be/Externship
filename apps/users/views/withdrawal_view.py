@@ -31,7 +31,7 @@ class WithdrawalView(APIView):
 
     def handle_exception(self, exc: Exception) -> Response:
         if hasattr(exc, "detail") and hasattr(exc, "status_code"):
-            return Response({"error_detail": exc.detail}, status=exc.status_code)  # type: ignore[union-attr]
+            return Response({"error_detail": exc.detail}, status=exc.status_code)
         return super().handle_exception(exc)
 
     @extend_schema(
