@@ -30,6 +30,7 @@ class TestPresignedUrlRequestSerializer(TestCase):
     # file_name의 길이 제한 테스트
     def test_max_length(self) -> None:
         data = {"file_name": f"{"test"*25}.jpg"}
+
         with self.assertRaises(APIException) as e:
             serializer = PresignedUrlRequestSerializer(data=data)
             serializer.is_valid(raise_exception=True)
@@ -41,6 +42,7 @@ class TestPresignedUrlRequestSerializer(TestCase):
         serializer = PresignedUrlRequestSerializer(data=data)
         serializer.is_valid()
         self.assertEqual(serializer.validated_data["file_name"], "test_file.jpg")
+        self.assertEqual(serializer.validated_data["content_type"], "image/jpeg")
 
     # 화이트리스트에 등록된 확장자가 들어온 경우 의도한 값을 반환을 하는지
     def test_valid_suffix(self) -> None:
@@ -48,7 +50,9 @@ class TestPresignedUrlRequestSerializer(TestCase):
 
         serializer = PresignedUrlRequestSerializer(data=data)
         serializer.is_valid()
-        self.assertEqual(serializer.validated_data, data)
+        self.assertEqual(serializer.validated_data["file_name"], "test_file.jpg")
+        self.assertEqual(serializer.validated_data["content_type"], "image/jpeg")
+
 
 
 class TestPresignedUrlResponseSerializer(TestCase):
