@@ -104,9 +104,5 @@ class ExamListCreateView(ErrorDataKeyMixin, APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         except SubjectNotFound as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except NotAuthenticated as e:
-            return Response({"error_detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-        except PermissionDenied as e:
-            return Response({"error_detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(ExamCreateSerializer(exam, context={"request": request}).data, status=status.HTTP_201_CREATED)
