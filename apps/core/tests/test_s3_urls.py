@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from botocore.exceptions import HTTPClientError
 from django.test import TestCase
+from freezegun import freeze_time
 from moto import mock_aws
 
 from apps.core.utils.s3_urls import s3
@@ -83,6 +84,7 @@ class TestS3Handler(TestCase):
         self.assertIn("X-Amz-Expires=600", presigned_url)
 
     # 모킹된 presigned_url과 그렇지 않은 presigned_url이 동일한지
+    @freeze_time("2026-04-27 11:11:11")
     def test_mocked_presigned_url(self) -> None:
 
         @mock_aws
