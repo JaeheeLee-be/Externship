@@ -2,8 +2,8 @@ from typing import Any
 
 from django.db import transaction
 from rest_framework.exceptions import NotFound, PermissionDenied
-from apps.core.utils.exceptions import ConflictException
 
+from apps.core.utils.exceptions import ConflictException
 from apps.qna.models.answer_models import Answer, AnswerImage
 from apps.qna.models.question_models import Question
 from apps.users.models import User
@@ -33,6 +33,7 @@ class AnswerAcceptService:
     """
     답변 채택 로직
     """
+
     def get_answer(self, answer_id: int) -> Answer:
         try:
             return Answer.objects.get(pk=answer_id)
