@@ -23,9 +23,9 @@ class PresignedUrlView(APIView):
         if not hasattr(cls, "path"):
             raise TypeError(f"{cls.__name__}에 path 클래스 변수를 정의해야 합니다")
         if not isinstance(cls.path, str):
-            raise TypeError(f"{cls.__name__} path는 str이어야 합니다.")
+            raise TypeError(f"{cls.__name__}: path는 str이어야 합니다.")
         if not isinstance(cls.expire, int) and cls.expire is not None:
-            raise TypeError(f"{cls.__name__} expire는 int 또는 None이어야 합니다.")
+            raise TypeError(f"{cls.__name__}: expire는 int여야 합니다.")
 
     def put(self, request: Request) -> Response:
         request_serializer = PresignedUrlRequestSerializer(data=request.data)
