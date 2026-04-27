@@ -17,7 +17,7 @@ class EnrollmentTest(APITestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.url = reverse("enroll-student")
+        cls.url = reverse("users:enroll-student")
         cls.user = User.objects.create_user(
             email="test@test.com",
             password="Test1234!",
@@ -46,12 +46,16 @@ class EnrollmentTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
             StudentEnrollmentRequests.objects.filter(
-                user=self.user, cohort_id=self.cohort.id, status="pending"
+                user=self.user, 
+                cohort_id=self.cohort.id, 
+                status="pending"
             ).exists()
         )
 
     def test_enrollment_duplicate(self) -> None:
+        # 첫 번째 신청
         self.client.post(self.url, data={"cohort_id": self.cohort.id})
+        # 두 번째 중복 신청
         response = self.client.post(self.url, data={"cohort_id": self.cohort.id})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

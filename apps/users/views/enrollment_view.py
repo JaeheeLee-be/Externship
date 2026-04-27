@@ -2,8 +2,8 @@ from typing import cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import NotAuthenticated, ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,6 +15,9 @@ from apps.users.services.enrollment_service import create_enrollment
 
 class EnrollmentView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request, message=None, code=None):
+        raise NotAuthenticated(detail="자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
         summary="수강생 등록 신청 API",
