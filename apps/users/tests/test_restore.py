@@ -3,11 +3,14 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from django.core.cache import cache
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.users.models import User, Withdrawal
+
+_LOCMEM_CACHE = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 
 def create_withdrawn_user(
@@ -60,6 +63,7 @@ class RestoreRequestViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+@override_settings(CACHES=_LOCMEM_CACHE)
 class RestoreViewTest(APITestCase):
     """POST /api/v1/accounts/recover 계정 복구 테스트"""
 
