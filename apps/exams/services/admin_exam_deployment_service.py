@@ -5,11 +5,12 @@ from typing import Any
 from django.core.serializers.json import DjangoJSONEncoder
 
 from apps.core.utils.base62 import Base62
+
 # TODO : 예외 폴더 생성 후 경로 변경
 from apps.exams.exceptions.exam_deploy_exceptions import (
     DeploymentConflictError,
     DeploymentNoQuestionsError,
-    DeploymentNotFoundError
+    DeploymentNotFoundError,
 )
 from apps.exams.models.exam_deployment_model import ExamDeployment
 from apps.exams.models.exam_model import Exam

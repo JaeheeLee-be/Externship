@@ -2,6 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
+
 class AdminExamDeploymentCreateSerializer(serializers.Serializer):
     exam_id = serializers.IntegerField()
     cohort_id = serializers.IntegerField()
