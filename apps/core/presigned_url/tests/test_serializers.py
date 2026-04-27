@@ -54,7 +54,6 @@ class TestPresignedUrlRequestSerializer(TestCase):
         self.assertEqual(serializer.validated_data["content_type"], "image/jpeg")
 
 
-
 class TestPresignedUrlResponseSerializer(TestCase):
 
     def setUp(self) -> None:

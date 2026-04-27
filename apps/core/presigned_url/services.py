@@ -2,11 +2,11 @@ import uuid
 
 from .s3_handler import get_s3_handler
 
+
 class PresignedUrlService:
 
     # presigned url, img_url을 반환하는 함수
-    def create_upload_urls(
-        self, file_name: str, path: str, content_type: str, expire: int = 600) -> dict:
+    def create_upload_urls(self, file_name: str, content_type: str, path: str, expire: int = 600) -> dict:
 
         s3_handler = get_s3_handler()
 
@@ -27,4 +27,3 @@ class PresignedUrlService:
     @staticmethod
     def _image_uuid() -> str:
         return str(uuid.uuid4())
-

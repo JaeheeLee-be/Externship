@@ -3,7 +3,7 @@ from typing import Any
 
 from rest_framework import exceptions, serializers, status
 
-from apps.core.constants import ALLOWED_SUFFIX
+from apps.core.presigned_url.constants import ALLOWED_SUFFIX
 
 
 class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
@@ -13,7 +13,6 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
 
     # file_name이 100자 제한이면, img_url이 최대 200자 쯤 나옴
     file_name = serializers.CharField(max_length=100)
-
 
     def validate(self, attrs: dict) -> dict:
         file_name = attrs["file_name"]
@@ -32,7 +31,6 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
         attrs["content_type"] = ALLOWED_SUFFIX[suffix]
 
         return attrs
-
 
 
 class PresignedUrlResponseSerializer(serializers.Serializer[Any]):
