@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.services.social_auth import SocialAuthService
-from apps.users.utils.social_exceptions import  SocialAuthError
+from apps.users.utils.social_exceptions import SocialAuthError
 
 
 def set_auth_cookies(response: Any, refresh: str) -> None:
@@ -57,7 +57,7 @@ class SocialCallbackView(APIView):
     permission_classes: list[Any] = []
 
     def get(self, request: HttpRequest, provider: str) -> HttpResponse:
-        frontend_url: str = settings.FRONTEND_REDIRECT_URI
+        frontend_url: str = getattr(settings, "FRONTEND_REDIRECT_URI", "")
 
         try:
             result = SocialAuthService.process_user(
@@ -67,19 +67,17 @@ class SocialCallbackView(APIView):
                 error=request.GET.get("error"),
             )
         except SocialAuthError as e:
-            params = urlencode({
-                "provider": provider,
-                "is_success": "false",
-                "error": str(e)
-            })
+            params = urlencode(
+                {
+                    "provider": provider,
+                    "is_success": "false",
+                }
+            )
             return redirect(f"{frontend_url}/social-callback?{params}")
 
-        params = urlencode({
-            "provider": provider,
-            "is_success": "true",
-            "access": result["access"],
-            "is_new_user": str(result["is_new_user"]).lower()
-        })
+        params = urlencode(
+            {"provider": provider, "is_success": "true", "is_new_user": str(result["is_new_user"]).lower()}
+        )
         response = redirect(f"{frontend_url}/social-callback?{params}")
         set_auth_cookies(response, result["refresh"])
         return response
