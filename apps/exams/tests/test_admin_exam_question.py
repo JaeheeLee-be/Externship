@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from django.urls import reverse
 from rest_framework import status
@@ -154,14 +154,12 @@ class TestAdminExamQuestionCreateView(APITestCase):
 
     def test_admin_check_limit_question_len(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
-        for i in range(20):
-            ExamQuestion.objects.create(
-                exam=self.exam,
-                question=f"test{i}",
-                answer={"answer": 1},
-                type=ExamQuestion.QuestionType.SHORT_ANSWER,
-                point=1,
-            )
+        ExamQuestion.objects.bulk_create(
+            [
+                ExamQuestion(exam=self.exam, question=f"test{i}", answer={"answer": 1}, type="ox", point=1)
+                for i in range(20)
+            ]
+        )
         response = self.client.post(self.create_url, self.data, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.data.get("error_detail"), self.error_409_create)
