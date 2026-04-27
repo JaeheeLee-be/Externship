@@ -14,7 +14,7 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
     # file_name이 100자 제한이면, img_url이 최대 200자 쯤 나옴
     file_name = serializers.CharField(max_length=100)
 
-    def validate(self, attrs: dict) -> dict:
+    def validate(self, attrs: dict[str, str]) -> dict[str, str]:
         file_name = attrs["file_name"]
 
         path = Path(file_name)

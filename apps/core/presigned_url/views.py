@@ -15,7 +15,17 @@ from apps.core.presigned_url.services import PresignedUrlService
 class PresignedUrlView(APIView):
     permission_classes: list[type[Any]] = []
     path: str
-    expire: int | None = 600
+    expire: int = 600
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        if not hasattr(cls, "path"):
+            raise TypeError(f"{cls.__name__}에 path 클래스 변수를 정의해야 합니다")
+        if not isinstance(cls.path, str):
+            raise TypeError(f"{cls.__name__} path는 str이어야 합니다.")
+        if not isinstance(cls.expire, int) and cls.expire is not None:
+            raise TypeError(f"{cls.__name__} expire는 int 또는 None이어야 합니다.")
 
     def put(self, request: Request) -> Response:
         request_serializer = PresignedUrlRequestSerializer(data=request.data)
@@ -28,5 +38,5 @@ class PresignedUrlView(APIView):
             expire=self.expire,
         )
 
-        response_serializer = PresignedUrlResponseSerializer(urls)
+        response_serializer = PresignedUrlResponseSerializer(instance=urls)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
