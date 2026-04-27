@@ -2,6 +2,7 @@ from drf_spectacular.utils import OpenApiExample, OpenApiResponse,extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -46,7 +47,7 @@ class SmsSendView(APIView):
             ),
         },
     )
-    def post(self,request):
+    def post(self,request:Request)->Response:
         serializer = SmsSendSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"error_detail": serializer.errors},status=status.HTTP_400_BAD_REQUEST)
@@ -95,7 +96,7 @@ class SmsVerificationView(APIView):
             ),
         },
     )
-    def post(self,request):
+    def post(self,request:Request)->Response:
         serializer = SmsVerifySerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"error_detail": serializer.errors},status=status.HTTP_400_BAD_REQUEST)

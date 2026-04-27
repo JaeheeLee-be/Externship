@@ -1,9 +1,9 @@
 import secrets
 
 from django.conf import settings
-from twilio.rest import Client
+from twilio.rest import Client # type: ignore[import-untyped]
 from django.core.cache import cache
-from twilio.base.exceptions import TwilioRestException
+from twilio.base.exceptions import TwilioRestException # type: ignore[import-untyped]
 from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from apps.users.utils.purpose_enum import SmsPurpose
@@ -16,7 +16,7 @@ class SmsVerificationService:
 
 
     @classmethod
-    def phone_format_change(cls,phone_number:str):
+    def phone_format_change(cls,phone_number:str) ->str:
         # 01012345678 -> 1012345678
         clean_phone = phone_number.lstrip('0')
         if not clean_phone.startswith('+82'):
@@ -25,7 +25,7 @@ class SmsVerificationService:
 
 
     @classmethod
-    def send_verification_sms(cls,phone_number:str,purpose:SmsPurpose):
+    def send_verification_sms(cls,phone_number:str,purpose:SmsPurpose)->None:
         if purpose == SmsPurpose.SIGNUP:
             if User.objects.filter(phone_number=phone_number).exists():
                 raise ValidationError("이미 등록된 전화번호 입니다")
@@ -76,10 +76,9 @@ class SmsVerificationService:
 
             # Twilio 서버에서 인증 성공('approved')
             if verification_check.status == 'approved':
-                # 성공 토큰 생성 (URL Safe 32자)
                 sms_token = secrets.token_urlsafe(32)
-                token_key = f"sms_verify_token_{sms_token}"
-                data = {"phone_number": phone_number, "purpose": purpose}
+                token_key = f"purpose_{purpose}_sms_verify_token_{sms_token}"
+                data = {"phone_number": phone_number}
                 try:
                     # Redis에 저장 (용도별로 구분하여 저장, 10분 유효)
                     cache.set(token_key, data, timeout=600)
