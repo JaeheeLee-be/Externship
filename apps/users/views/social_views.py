@@ -29,7 +29,6 @@ def set_auth_cookies(response: Any, refresh: str) -> None:
 
 class SocialLoginView(APIView):
 
-
     authentication_classes: list[Any] = []
     permission_classes: list[Any] = []
 
@@ -43,7 +42,6 @@ class SocialLoginView(APIView):
 
 
 class SocialCallbackView(APIView):
-
 
     authentication_classes: list[Any] = []
     permission_classes: list[Any] = []

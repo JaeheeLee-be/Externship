@@ -84,10 +84,8 @@ class KakaoOAuthService:
         else:
             birthday = None
 
-
         raw_gender = account.get("gender")
         gender = cls._GENDER_MAP.get(raw_gender) if raw_gender else None
-
 
         raw_phone = account.get("phone_number", "")
         phone_number = cls._normalize_phone(raw_phone) if raw_phone else None

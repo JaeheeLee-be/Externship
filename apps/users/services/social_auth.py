@@ -51,7 +51,6 @@ class SocialAuthService:
         user_info = cls._get_user_info(provider, code, state)
         return cls._login_and_register(provider, user_info)
 
-
     @classmethod
     def _get_user_info(cls, provider: str, code: str, state: str = "") -> _UserInfo:
 
@@ -63,7 +62,6 @@ class SocialAuthService:
             return NaverOAuthService.get_user_info_by_code(code, state)
 
         raise UnsupportedProviderError()
-
 
     @classmethod
     def _login_and_register(cls, provider: str, user_info: _UserInfo) -> dict[str, Any]:
@@ -77,14 +75,11 @@ class SocialAuthService:
         except SocialUsers.DoesNotExist:
             pass
 
-
         if not user_info.email:
             raise EmailNotProvidedError()
 
-
         if User.objects.filter(email=user_info.email).exists():
             raise EmailAlreadyRegisteredError()
-
 
         user = cls._create_social_user(user_info)
         SocialUsers.objects.create(
@@ -93,8 +88,6 @@ class SocialAuthService:
             provider_id=user_info.provider_id,
         )
         return cls._generate_token_result(user, is_new_user=True)
-
-
 
     @classmethod
     def _create_social_user(cls, user_info: _UserInfo) -> User:

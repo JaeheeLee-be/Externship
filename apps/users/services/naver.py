@@ -21,7 +21,6 @@ class NaverUserInfo:
 
 class NaverOAuthService:
 
-
     AUTH_URL = "https://nid.naver.com/oauth2.0/authorize"
     TOKEN_URL = "https://nid.naver.com/oauth2.0/token"
     USER_INFO_URL = "https://openapi.naver.com/v1/nid/me"
@@ -77,12 +76,10 @@ class NaverOAuthService:
 
         user_data = data.get("response", {})
 
-
         raw_phone = user_data.get("mobile", "")
         phone_number = raw_phone.replace("-", "") if raw_phone else None
 
         gender = user_data.get("gender") or None
-
 
         birthyear = user_data.get("birthyear", "")
         birthday_mmdd = user_data.get("birthday", "")
