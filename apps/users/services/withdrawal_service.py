@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
