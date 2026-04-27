@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, Never
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -16,7 +16,7 @@ from apps.users.services.enrollment_service import create_enrollment
 class EnrollmentView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def permission_denied(self, request, message=None, code=None):
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) ->Never :
         raise NotAuthenticated(detail="자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(

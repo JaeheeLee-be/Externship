@@ -46,9 +46,7 @@ class EnrollmentTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
             StudentEnrollmentRequests.objects.filter(
-                user=self.user, 
-                cohort_id=self.cohort.id, 
-                status="pending"
+                user=self.user, cohort_id=self.cohort.id, status="pending"
             ).exists()
         )
 
