@@ -15,7 +15,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="exam",
             name="subject",
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to="posts.subject"),
+            field=models.ForeignKey(
+                default=1, on_delete=django.db.models.deletion.CASCADE, related_name="exams", to="posts.subject"
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -23,5 +25,14 @@ class Migration(migrations.Migration):
             name="cohort",
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to="posts.cohort"),
             preserve_default=False,
+        ),
+        migrations.AlterModelOptions(
+            name="exam",
+            options={"ordering": ["-created_at", "title"]},
+        ),
+        migrations.AlterField(
+            model_name="exam",
+            name="title",
+            field=models.CharField(max_length=50, unique=True),
         ),
     ]
