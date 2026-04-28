@@ -8,7 +8,7 @@ class ExampleView(PresignedUrlView):
     path: str
     expire: int
 
-    def handel_request(self, request: Request) -> Response:
+    def handle_request(self, request: Request) -> Response:
         response = super().handle_request(request)
 
         img_url = response.data["img_url"]
