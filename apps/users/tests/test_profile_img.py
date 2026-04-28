@@ -1,49 +1,9 @@
 from django.urls import reverse
-from moto import mock_aws
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-import apps.core.presigned_url.s3_handler as s3_handler_module
 from apps.core.utils.test_factories import create_test_user
 from apps.users.models import User
-
-
-class ProfileImagePresignedUrlViewTest(APITestCase):
-    user: User
-
-    @classmethod
-    def setUpTestData(cls) -> None:
-        cls.user = create_test_user("presigned")
-
-    def setUp(self) -> None:
-        self.client = APIClient()
-        self.url = reverse("users:profile-image-presigned-url")
-        s3_handler_module.s3_handler = None
-
-    @mock_aws
-    def test_success(self) -> None:
-        """[성공] 200 + presigned_url, img_url, key 반환"""
-        self.client.force_authenticate(user=self.user)
-        response = self.client.put(self.url, {"file_name": "photo.png"}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("presigned_url", response.data)
-        self.assertIn("img_url", response.data)
-        self.assertIn("key", response.data)
-        self.assertTrue(response.data["key"].startswith("uploads/images/profiles/"))
-
-    def test_unsupported_extension_returns_400(self) -> None:
-        """[실패] gif, pdf 등 미지원 확장자"""
-        self.client.force_authenticate(user=self.user)
-        response = self.client.put(self.url, {"file_name": "photo.gif"}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error_detail", response.data)
-
-    def test_unauthenticated_returns_401(self) -> None:
-        """[실패] Authorization 헤더 없음"""
-        response = self.client.put(self.url, {"file_name": "photo.png"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class ProfileImageViewTest(APITestCase):

@@ -6,27 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.models import User
-from apps.users.serializers.profile_image_serializer import (
-    PresignedUrlRequestSerializer,
-    ProfileImageUpdateSerializer,
-)
-from apps.users.services.profile_image_service import (
-    generate_profile_presigned_url,
-    update_profile_image,
-)
-
-
-class ProfileImagePresignedUrlView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(tags=["accounts"], summary="프로필 이미지 업로드용 Presigned URL 발급")
-    def put(self, request: Request) -> Response:
-        serializer = PresignedUrlRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        result = generate_profile_presigned_url(serializer.validated_data["file_name"])
-        return Response(result, status=status.HTTP_200_OK)
+from apps.users.serializers.profile_image_serializer import ProfileImageUpdateSerializer
+from apps.users.services.profile_image_service import update_profile_image
 
 
 class ProfileImageView(APIView):
