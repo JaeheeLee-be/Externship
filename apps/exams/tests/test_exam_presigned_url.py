@@ -72,11 +72,13 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
 
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error_detail"], "관리자 권한이 필요합니다.")
 
     def test_presigned_url_as_anonymous(self) -> None:
         response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
 
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["error_detail"], "로그인이 필요합니다.")
 
     # 파일 관련 에러 검증
     def test_presigned_url_no_name(self) -> None:
@@ -84,21 +86,25 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"), {"file_name": self.no_name})
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
 
     def test_presigned_url_no_subfix(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(reverse("presigned-url"), {"file_name": self.no_subfix})
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
 
     def test_presigned_url_invalid_subfix(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(reverse("presigned-url"), {"file_name": "test_file.test"})
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
 
     def test_presigned_url_no_file(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(reverse("presigned-url"))
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "파일을 첨부해주세요.")
