@@ -66,7 +66,7 @@ class QuestionNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
     def get_options(self, obj: ExamQuestion) -> list[Any]:
         if not obj.options_json:
             return []
-        return json.loads(obj.options_json)
+        return list(json.loads(obj.options_json))
 
     class Meta:
         model = ExamQuestion
