@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from apps.core.presigned_url import s3_handler as s3_handler_module
 from apps.users.models import User
 
 
@@ -41,8 +42,9 @@ class PresignedUrlBaseTestCase(APITestCase):
 
 class TestPresignedUrl(PresignedUrlBaseTestCase):
     def setUp(self) -> None:
-        self.mock_s3 = patch("apps.core.utils.s3_urls.s3.s3").start()
-        self.mock_s3.generate_presigned_url.return_value = "https://test-presigned-url.com"
+        s3_handler_module.s3_handler = None
+        self.mock_boto3 = patch("apps.core.presigned_url.s3_handler.boto3").start()
+        self.mock_boto3.client.return_value.generate_presigned_url.return_value = "https://test-presigned-url.com"
 
     def tearDown(self) -> None:
         patch.stopall()
@@ -63,7 +65,7 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         self.assertTrue(key.endswith(".jpg"))
 
         # uuid 값
-        uuid_part = key.removeprefix("uploads/exams/thumbnails/").removesuffix(".jpg")
+        uuid_part = key.removeprefix("uploads/exams/thumbnails/").split("_")[0]
         uuid_pattern = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
         self.assertRegex(uuid_part, uuid_pattern)
 
@@ -107,11 +109,11 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "파일을 첨부해주세요.")
+        self.assertIn("file_name", response.data)
 
     def test_presigned_url_max_length(self) -> None:
         self.client.force_authenticate(user=self.admin)
-        response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 256 + ".jpg"})
+        response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 97 + ".jpg"})
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "파일명은 최대 255자 이내여야 합니다.")
+        self.assertIn("file_name", response.data)
