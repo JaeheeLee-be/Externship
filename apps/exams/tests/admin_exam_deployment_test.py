@@ -68,12 +68,8 @@ class DeploymentBaseTestCase(TestCase):
             start_date="2026-07-01",
             end_date="2026-12-31",
         )
-        cls.subject1 = Subject.objects.create(
-            course=cls.course, title="Python", number_of_days=30, number_of_hours=120
-        )
-        cls.subject2 = Subject.objects.create(
-            course=cls.course, title="Django", number_of_days=20, number_of_hours=80
-        )
+        cls.subject1 = Subject.objects.create(course=cls.course, title="Python", number_of_days=30, number_of_hours=120)
+        cls.subject2 = Subject.objects.create(course=cls.course, title="Django", number_of_days=20, number_of_hours=80)
         cls.exam1 = Exam.objects.create(subject=cls.subject1, title="Python 시험")
         cls.exam2 = Exam.objects.create(subject=cls.subject2, title="Django 시험")
         cls.exam_no_questions = Exam.objects.create(subject=cls.subject1, title="문제 없음")
