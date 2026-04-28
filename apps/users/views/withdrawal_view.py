@@ -5,15 +5,15 @@ from typing import Never, Optional, cast
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.models import User
-from apps.users.serializers.withdrawal_serializer import WithdrawalSerializer
-from apps.users.services.withdrawal_service import withdraw_user
-from apps.users.utils.withdrawal_exceptions import WithdrawalBadRequestError
+from apps.users.serializers.withdrawal_serializer import RestoreSerializer, WithdrawalSerializer
+from apps.users.services.withdrawal_service import restore_user_by_token, withdraw_user
+from apps.users.utils.withdrawal_exceptions import WithdrawalBadRequestError, WithdrawalNotFoundError
 
 
 class WithdrawalView(APIView):
@@ -25,6 +25,9 @@ class WithdrawalView(APIView):
         message: Optional[str] = None,
         code: Optional[str] = None,
     ) -> Never:
+        # DRF 기본 동작은 미인증 요청도 403으로 반환하므로 오버라이드
+        # 토큰 자체가 없는 경우 → 401 NotAuthenticated (API 명세 메시지 기준)
+        # 토큰은 있으나 권한 없는 경우 → 403 PermissionDenied
         if request.authenticators and not request.successful_authenticator:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise PermissionDenied("접근 권한이 없습니다.")
@@ -60,3 +63,42 @@ class WithdrawalView(APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RestoreView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=["accounts"],
+        summary="계정 복구",
+        description="이메일 인증 후 발급된 email_token으로 계정을 복구합니다. 토큰은 10분간 유효합니다.",
+        request=RestoreSerializer,
+        responses={
+            200: OpenApiResponse(description="계정 복구 완료"),
+            400: inline_serializer(
+                name="RestoreValidationError",
+                fields={"error_detail": serializers.CharField()},
+            ),
+            404: inline_serializer(
+                name="RestoreNotFound",
+                fields={"error_detail": serializers.CharField()},
+            ),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = RestoreSerializer(data=request.data)
+        # email_token의 존재 여부 및 purpose=recovery 검증은 RestoreSerializer.validate_email_token에서 처리
+        # 이메일 인증 코드 발송/검증은 팀원의 EmailSendView, EmailVerificationView에 위임
+        if not serializer.is_valid():
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # 서비스에서 캐시 조회 → 유저 조회(is_active=False) → 계정 복구
+            # 복구 완료 후 is_active=True가 되므로 같은 토큰으로 재시도 시 DoesNotExist → DeletedUserError
+            restore_user_by_token(serializer.validated_data["email_token"])
+        except WithdrawalBadRequestError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except WithdrawalNotFoundError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "계정복구가 완료되었습니다."}, status=status.HTTP_200_OK)

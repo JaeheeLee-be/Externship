@@ -9,10 +9,11 @@ from apps.users.models import User, Withdrawal
 
 @shared_task  # type: ignore[misc]
 def delete_expired_withdrawn_users() -> int:
+    # 조회와 삭제 사이에 다른 작업(ex. 계정 복구)이 끼어드는 것을 방지하기 위해 트랜잭션으로 묶음 (피드백 반영)
     with transaction.atomic():
         expired_withdrawals = Withdrawal.objects.filter(
             due_date__lte=timezone.localdate(),
-            user__isnull=False,
+            user__isnull=False,  # user가 이미 NULL인 Withdrawal은 제외 (이미 삭제된 기록)
         ).values_list("user_id", flat=True)
 
         user_ids = list(expired_withdrawals)
