@@ -97,13 +97,14 @@ class SmsVerificationView(APIView):
     )
     def post(self, request: Request) -> Response:
         serializer = SmsVerifySerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        phone_number = serializer.validated_data["phone_number"]
-        code = serializer.validated_data["code"]
-
         try:
-            sms_token = SmsVerificationService.verify_sms_code(phone_number, code)
+            serializer.is_valid(raise_exception=True)
+
+            phone_number = serializer.validated_data["phone_number"]
+            code = serializer.validated_data["code"]
+            purpose = SmsPurpose(serializer.validated_data.pop("purpose"))
+
+            sms_token = SmsVerificationService.verify_sms_code(phone_number, code, purpose)
             return Response({"detail": "sms 인증이 성공했습니다", "sms_token": sms_token})
         except ValidationError as e:
-            return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": e.detail}, status=status.HTTP_400_BAD_REQUEST)

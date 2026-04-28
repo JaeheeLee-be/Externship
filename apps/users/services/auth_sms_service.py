@@ -19,10 +19,9 @@ class SmsVerificationService:
     @classmethod
     def phone_format_change(cls, phone_number: str) -> str:
         # 01012345678 -> 1012345678
-        clean_phone = phone_number.lstrip("0")
-        if not clean_phone.startswith("+82"):
-            return f"+82{clean_phone}"
-        return phone_number
+        if phone_number.startswith("+82"):
+            return phone_number
+        return f"+82{phone_number.lstrip('0')}"
 
     @classmethod
     def send_verification_sms(cls, phone_number: str, purpose: SmsPurpose) -> None:
@@ -36,33 +35,48 @@ class SmsVerificationService:
 
         elif purpose == SmsPurpose.PHONE_CHANGE:
             if not User.objects.filter(phone_number=phone_number).exists():
-                raise ValidationError("복구 가능한 계정이 없습니다")
+                raise ValidationError("변경가능한 번호가 아닙니다")
 
         cache_key = f"sms_code_{phone_number}"
-        cache_data = {"purpose": purpose.value}  # type: ignore[misc]
+        # 캐시 저장 용도
+        cache_data = {"purpose": purpose.value}
         # cache 저장 설정
         try:
             cache.set(cache_key, cache_data, timeout=180)
         except Exception as e:
+            cache.delete(cache_key)
             raise ValidationError(f"error: {e}  서버 오류가 발생했습니다")
         formatted_phone = cls.phone_format_change(phone_number)
 
         try:
             cls.client.verify.v2.services(cls.service_sid).verifications.create(to=formatted_phone, channel="sms")
         except TwilioRestException as e:
+            cache.delete(cache_key)
             # 번호 형식이 잘못되었거나 Twilio 설정 문제 시 발생
             raise ValidationError(f"SMS 발송 실패: {e.msg}")
 
     @classmethod
-    def verify_sms_code(cls, phone_number: str, code: str) -> str:
+    def verify_sms_code(cls, phone_number: str, code: str, purpose: str) -> str:
         """
         사용자가 입력한 코드를 Twilio에 보내서 확인하고,
         성공 시 다음 단계용 sms_token을 발급합니다.
         """
         formatted_phone = cls.phone_format_change(phone_number)
         cache_key = f"sms_code_{phone_number}"
-        cache_data = cache.get(cache_key)
-        purpose = cache_data.get("purpose")
+        cached_data = cache.get(cache_key)
+        if not cached_data:
+            raise ValidationError("인증 코드가 만료되었거나 발급되지 않았습니다.")
+
+        cached_purpose = cached_data.get("purpose")
+
+        try:
+            SmsPurpose(purpose)
+        except ValueError:
+            raise ValidationError("유효하지 않은 인증 용도입니다.")
+
+        # purpose 검증
+        if cached_purpose != purpose.value:
+            raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         try:
             verification_check = cls.client.verify.v2.services(cls.service_sid).verification_checks.create(
@@ -77,8 +91,11 @@ class SmsVerificationService:
                 try:
                     # Redis에 저장 (용도별로 구분하여 저장, 10분 유효)
                     cache.set(token_key, data, timeout=600)
+
                 except Exception as e:
-                    ValidationError(f"error: {e} 서버에 오유가 발생했습니다")
+                    raise ValidationError(f"error: {e} 서버에 오유가 발생했습니다")
+
+                cache.delete(cache_key)
 
                 return sms_token
 

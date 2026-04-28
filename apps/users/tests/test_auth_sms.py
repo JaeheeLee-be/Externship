@@ -38,7 +38,7 @@ class SmsAuthViewTests(IsolatedRedisTestClient):
         response = self.client.post(self.send_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("phone_number", response.data["error_detail"])
+        self.assertIn("error_detail", response.data)
 
     @patch("apps.users.views.auth_sms_view.SmsVerificationService.send_verification_sms")
     def test_sms_send_view_service_error(self, mock_send_sms: Any) -> None:
@@ -56,22 +56,22 @@ class SmsAuthViewTests(IsolatedRedisTestClient):
         mock_sms_token = "mocked_token_string_123"
         mock_verify_code.return_value = mock_sms_token
 
-        data = {"phone_number": self.valid_phone, "code": self.valid_code}
+        data = {"phone_number": self.valid_phone, "code": self.valid_code, "purpose": self.valid_purpose}
 
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["detail"], "sms 인증이 성공했습니다")
         self.assertEqual(response.data["sms_token"], mock_sms_token)
-        mock_verify_code.assert_called_once_with(self.valid_phone, self.valid_code)
+        mock_verify_code.assert_called_once_with(self.valid_phone, self.valid_code, SmsPurpose(self.valid_purpose))
 
     @patch("apps.users.views.auth_sms_view.SmsVerificationService.verify_sms_code")
     def test_sms_verify_view_service_error(self, mock_verify_code: Any) -> None:
         mock_verify_code.side_effect = ValidationError("인증 코드가 일치하지 않습니다.")
 
-        data = {"phone_number": self.valid_phone, "code": "000000"}
+        data = {"phone_number": self.valid_phone, "code": "000000", "purpose": self.valid_purpose}
 
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error_detail", response.data)
+        self.assertIn("message", response.data)

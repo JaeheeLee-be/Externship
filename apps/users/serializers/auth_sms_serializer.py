@@ -33,6 +33,9 @@ class SmsVerifySerializer(PhoneNumberBaseSerializer):
         min_length=6,
         error_messages={"required": "이 필드는 필수 항목입니다."},
     )
+    purpose = serializers.ChoiceField(
+        choices=SmsPurpose.choices,
+    )
 
     def validate_code(self, value: str) -> str:
         if not value.isdigit():
