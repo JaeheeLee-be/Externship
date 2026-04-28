@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Never, cast
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import exceptions, status
@@ -7,7 +7,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.posts.exceptions import CommentNotFoundError, CommentPermissionDeniedError, PostNotFoundError
+from apps.posts.exceptions import (
+    CommentNotFoundError,
+    CommentPermissionDeniedError,
+    PostNotFoundError,
+)
 from apps.posts.serializers.comment import (
     CommentCreateSerializer,
     PostCommentSerializer,
@@ -19,7 +23,7 @@ from apps.users.models import User
 class CommentListCreateView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def permission_denied(self, request, message=None, code=None):
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
         if not request.successful_authenticator:
             raise exceptions.NotAuthenticated(detail="자격 인증 데이터가 제공되지 않았습니다.", code=code)
         raise exceptions.PermissionDenied(detail="권한이 없습니다.", code=code)
@@ -82,7 +86,7 @@ class CommentListCreateView(APIView):
 class CommentDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def permission_denied(self, request, message=None, code=None):
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
         if not request.successful_authenticator:
             raise exceptions.NotAuthenticated(detail="자격 인증 데이터가 제공되지 않았습니다.", code=code)
         raise exceptions.PermissionDenied(detail="권한이 없습니다.", code=code)

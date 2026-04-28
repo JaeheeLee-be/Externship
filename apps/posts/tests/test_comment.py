@@ -35,18 +35,17 @@ class CommentListCreateViewGetTest(CommentBaseTest):
     def setUpTestData(cls) -> None:
         super().setUpTestData()
         cls.url = reverse("comment_list_create", kwargs={"post_id": cls.post.id})
+        for i in range(1, 16):
+            PostComment.objects.create(author=cls.author, post=cls.post, content=f"댓글{i}")
 
     def test_get_comments_success(self) -> None:
-        PostComment.objects.create(author=self.author, post=self.post, content="댓글 1")
-        PostComment.objects.create(author=self.author, post=self.post, content="댓글 2")
-
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(response.data["count"], 15)
         self.assertIn("next", response.data)
         self.assertIn("previous", response.data)
-        self.assertEqual(len(response.data["results"]), 2)
+        self.assertEqual(len(response.data["results"]), 10)
 
     def test_get_comments_post_not_found(self) -> None:
         url = reverse("comment_list_create", kwargs={"post_id": 99999})
@@ -56,17 +55,7 @@ class CommentListCreateViewGetTest(CommentBaseTest):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error_detail"], "해당 게시글을 찾을 수 없습니다.")
 
-    def test_get_comments_empty(self) -> None:
-        response = self.client.get(self.url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 0)
-        self.assertEqual(len(response.data["results"]), 0)
-
     def test_get_comments_pagination(self) -> None:
-        for i in range(15):
-            PostComment.objects.create(author=self.author, post=self.post, content=f"댓글 {i}")
-
         response = self.client.get(self.url, {"page": 1, "page_size": 10})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -76,11 +65,25 @@ class CommentListCreateViewGetTest(CommentBaseTest):
         self.assertIsNone(response.data["previous"])
 
     def test_get_comments_unauthenticated_success(self) -> None:
-        PostComment.objects.create(author=self.author, post=self.post, content="댓글")
-
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class CommentListCreateViewGetEmptyTest(CommentBaseTest):
+    url: str
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.url = reverse("comment_list_create", kwargs={"post_id": cls.post.id})
+
+    def test_get_comments_empty(self) -> None:
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(len(response.data["results"]), 0)
 
 
 class CommentListCreateViewPostTest(CommentBaseTest):
@@ -121,7 +124,7 @@ class CommentListCreateViewPostTest(CommentBaseTest):
 
     def test_create_comment_missing_content(self) -> None:
         self.client.force_authenticate(user=self.author)
-        payload = {}
+        payload: dict[str, object] = {}
 
         response = self.client.post(self.url, payload, format="json")
 
@@ -160,15 +163,14 @@ class CommentDetailViewDeleteTest(CommentBaseTest):
     comment: PostComment
     url: str
 
-    @classmethod
-    def setUpTestData(cls) -> None:
-        super().setUpTestData()
-        cls.comment = PostComment.objects.create(
-            author=cls.author,
-            post=cls.post,
-            content="삭제될 댓글"
+    def setUp(self) -> None:
+        super().setUp()
+        self.comment = PostComment.objects.create(
+            author=self.author,
+            post=self.post,
+            content="삭제될 댓글",
         )
-        cls.url = reverse("comment_detail", kwargs={"post_id": cls.post.id, "comment_id": cls.comment.id})
+        self.url = reverse("comment_detail", kwargs={"post_id": self.post.id, "comment_id": self.comment.id})
 
     def test_delete_comment_success(self) -> None:
         self.client.force_authenticate(user=self.author)
