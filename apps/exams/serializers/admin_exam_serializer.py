@@ -1,4 +1,5 @@
 import os
+from typing import Any
 from urllib.parse import urlparse
 
 from rest_framework import serializers
@@ -64,13 +65,13 @@ class ExamCreatePutSerializer(serializers.ModelSerializer[Exam]):
         extra_kwargs: dict[str, dict[str, list[object]]] = {"title": {"validators": []}}
 
 
-class SubjectNestedSerializer(serializers.ModelSerializer):
+class SubjectNestedSerializer(serializers.ModelSerializer[Subject]):
     class Meta:
         model = Subject
         fields = ["id", "title"]
 
 
-class QuestionNestedSerializer(serializers.ModelSerializer):
+class QuestionNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.ListField(source="options_json")
     correct_answer = serializers.JSONField(source="answer")
 
@@ -105,9 +106,9 @@ class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
         ]
 
 
-class ExamErrorSerializer(serializers.Serializer):
+class ExamErrorSerializer(serializers.Serializer[Any]):
     error_detail = serializers.CharField()
 
 
-class ExamDeleteResponseSerializer(serializers.Serializer):
+class ExamDeleteResponseSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
