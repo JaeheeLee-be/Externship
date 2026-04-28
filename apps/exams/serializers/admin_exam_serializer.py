@@ -1,20 +1,16 @@
-import os
-from urllib.parse import urlparse
+from typing import Any
 
 from rest_framework import serializers
 
-from apps.exams.models import Exam
+from apps.exams.models import Exam, ExamQuestion
+from apps.posts.models import Subject
 
 
 class ExamListSerializer(serializers.ModelSerializer[Exam]):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)
-    subject_name = serializers.SerializerMethodField()
-    # TODO: 디테일 제작 후 주석 해제
-    # detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_field="pk")
-
-    def get_subject_name(self, obj: Exam) -> str:
-        return str(obj.subject.title)
+    subject_name = serializers.CharField(source="subject.title", read_only=True)
+    detail_url = serializers.HyperlinkedIdentityField(view_name="exam-detail", lookup_url_kwarg="exam_id")
 
     class Meta:
         model = Exam
@@ -26,7 +22,7 @@ class ExamListSerializer(serializers.ModelSerializer[Exam]):
             "submit_count",
             "created_at",
             "updated_at",
-            # "detail_url", 디테일 만든 후 주석 해제
+            "detail_url",
         ]
         read_only_fields = [
             "id",
@@ -36,23 +32,13 @@ class ExamListSerializer(serializers.ModelSerializer[Exam]):
             "submit_count",
             "created_at",
             "updated_at",
-            # "detail_url", 디테일 만든 후 주석 해제
+            "detail_url",
         ]
 
 
-class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
+class ExamCreatePutSerializer(serializers.ModelSerializer[Exam]):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
-
-    def validate_thumbnail_image_url(self, value: str) -> str:
-        if value == "default_img_url":
-            return value
-        path = urlparse(value).path
-        ext = os.path.splitext(path)[-1].lstrip(".").lower()
-        allowed = ["jpg", "jpeg", "png", "webp", "gif"]
-        if ext not in allowed:
-            raise serializers.ValidationError("허용되지 않는 파일 형식입니다.")
-        return value
 
     class Meta:
         model = Exam
@@ -64,3 +50,52 @@ class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
         ]
         read_only_fields = ["id"]
         extra_kwargs: dict[str, dict[str, list[object]]] = {"title": {"validators": []}}
+
+
+class SubjectNestedSerializer(serializers.ModelSerializer[Subject]):
+    class Meta:
+        model = Subject
+        fields = ["id", "title"]
+
+
+class QuestionNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.ListField(source="options_json")
+    correct_answer = serializers.JSONField(source="answer")
+
+    class Meta:
+        model = ExamQuestion
+        fields = ["id", "type", "question", "prompt", "point", "options", "correct_answer", "explanation"]
+
+
+class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
+    subject = SubjectNestedSerializer(read_only=True)
+    questions = QuestionNestedSerializer(many=True, read_only=True, source="examquestion_set")
+
+    class Meta:
+        model = Exam
+        fields = [
+            "id",
+            "title",
+            "subject",
+            "questions",
+            "thumbnail_image_url",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "title",
+            "subject",
+            "questions",
+            "thumbnail_image_url",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ExamErrorSerializer(serializers.Serializer[Any]):
+    error_detail = serializers.CharField()
+
+
+class ExamDeleteResponseSerializer(serializers.Serializer[Any]):
+    id = serializers.IntegerField()
