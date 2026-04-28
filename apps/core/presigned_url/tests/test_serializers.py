@@ -16,7 +16,7 @@ class TestPresignedUrlRequestSerializer(TestCase):
         with self.assertRaises(APIException) as e:
             serializer = PresignedUrlRequestSerializer(data=data)
             serializer.is_valid(raise_exception=True)
-        self.assertEqual(str(e.exception.detail), "지원하지 않는 파일 형식입니다.")  # type: ignore
+        self.assertEqual(str(e.exception.detail), "지원하지 않는 파일 형식입니다.")
 
     # 화이트리스트에 없는 확장자가 들어온 경우 예외처리가 되는지
     def test_invalid_suffix(self) -> None:
@@ -25,7 +25,7 @@ class TestPresignedUrlRequestSerializer(TestCase):
         with self.assertRaises(APIException) as e:
             serializer = PresignedUrlRequestSerializer(data=data)
             serializer.is_valid(raise_exception=True)
-        self.assertEqual(str(e.exception.detail), "지원하지 않는 파일 형식입니다.")  # type: ignore
+        self.assertEqual(str(e.exception.detail), "지원하지 않는 파일 형식입니다.")
 
     # file_name의 길이 제한 테스트
     def test_max_length(self) -> None:
