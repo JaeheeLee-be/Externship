@@ -117,7 +117,7 @@ class ExamListCreateView(APIView):
         )
 
 
-class ExamDetailView(ErrorDataKeyMixin, APIView):
+class ExamDetailView(APIView):
     permission_classes = [IsRoleAdminUser]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
