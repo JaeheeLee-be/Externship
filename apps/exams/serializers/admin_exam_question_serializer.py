@@ -10,12 +10,13 @@ from apps.exams.models.exam_question_model import ExamQuestion
 
 class QuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
 class QuestionCreateSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(source="options_json",required=False)
+    options = serializers.JSONField(source="options_json", required=False)
     correct_answer = serializers.JSONField(source="answer")
 
     class Meta:
         model = ExamQuestion
         fields = ["type", "question", "prompt", "options", "blank_count", "correct_answer", "point", "explanation"]
+
 
 class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.JSONField(source="options_json", required=False)
