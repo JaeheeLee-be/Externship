@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -26,7 +28,7 @@ from apps.exams.services.admin_exam_deployment_service import (
 class AdminExamDeploymentCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if request.user and request.user.is_authenticated:
             raise PermissionDenied("쪽지시험 배포 생성 권한이 없습니다.")
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
@@ -58,7 +60,7 @@ class AdminExamDeploymentCreateView(APIView):
 class AdminExamDeploymentListView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if request.user and request.user.is_authenticated:
             raise PermissionDenied("쪽지시험 배포 목록 조회 권한이 없습니다.")
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
