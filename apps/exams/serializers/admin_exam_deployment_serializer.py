@@ -8,25 +8,25 @@ from apps.posts.models.course import Course
 from apps.posts.models.subject import Subject
 
 
-class SubjectSummarySerializer(serializers.ModelSerializer):
+class SubjectSummarySerializer(serializers.ModelSerializer[Subject]):
     class Meta:
         model = Subject
         fields = ["id", "title"]
 
 
-class ExamSummarySerializer(serializers.ModelSerializer):
+class ExamSummarySerializer(serializers.ModelSerializer[Exam]):
     class Meta:
         model = Exam
         fields = ["id", "title", "thumbnail_image_url"]
 
 
-class CourseSummarySerializer(serializers.ModelSerializer):
+class CourseSummarySerializer(serializers.ModelSerializer[Course]):
     class Meta:
         model = Course
         fields = ["id", "name", "tag"]
 
 
-class CohortSummarySerializer(serializers.ModelSerializer):
+class CohortSummarySerializer(serializers.ModelSerializer[Cohort]):
     course = CourseSummarySerializer()
     display = serializers.SerializerMethodField()
 
@@ -38,7 +38,7 @@ class CohortSummarySerializer(serializers.ModelSerializer):
         fields = ["id", "number", "display", "course"]
 
 
-class AdminExamDeploymentCreateSerializer(serializers.Serializer):
+class AdminExamDeploymentCreateSerializer(serializers.Serializer[Any]):
     exam_id = serializers.IntegerField()
     cohort_id = serializers.IntegerField()
     duration_time = serializers.IntegerField(default=60)
@@ -52,7 +52,7 @@ class AdminExamDeploymentCreateSerializer(serializers.Serializer):
         return data
 
 
-class AdminExamDeploymentListSerializer(serializers.Serializer):
+class AdminExamDeploymentListSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     submit_count = serializers.IntegerField()
     avg_score = serializers.FloatField(allow_null=True)
@@ -63,7 +63,7 @@ class AdminExamDeploymentListSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
 
 
-class AdminExamDeploymentListQuerySerializer(serializers.Serializer):
+class AdminExamDeploymentListQuerySerializer(serializers.Serializer[Any]):
     subject_id = serializers.IntegerField(required=False)
     cohort_id = serializers.IntegerField(required=False)
     search_keyword = serializers.CharField(required=False)
