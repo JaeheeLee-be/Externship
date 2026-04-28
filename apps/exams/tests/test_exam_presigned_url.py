@@ -118,4 +118,6 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 97 + ".jpg"})
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"]["file_name"][0], "이 필드의 글자 수가 100 이하인지 확인하십시오.")
+        self.assertEqual(
+            response.data["error_detail"]["file_name"][0], "이 필드의 글자 수가 100 이하인지 확인하십시오."
+        )
