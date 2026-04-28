@@ -11,9 +11,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.models import User
-from apps.users.serializers.withdrawal_serializer import RestoreSerializer, WithdrawalSerializer
+from apps.users.serializers.withdrawal_serializer import (
+    RestoreSerializer,
+    WithdrawalSerializer,
+)
 from apps.users.services.withdrawal_service import restore_user_by_token, withdraw_user
-from apps.users.utils.withdrawal_exceptions import WithdrawalBadRequestError, WithdrawalNotFoundError
+from apps.users.utils.withdrawal_exceptions import (
+    WithdrawalBadRequestError,
+    WithdrawalNotFoundError,
+)
 
 
 class WithdrawalView(APIView):
