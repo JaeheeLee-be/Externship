@@ -234,6 +234,3 @@ AWS_S3_CONFIG = Config(s3={"addressing_style": "virtual"})
 
 # FRONTEND_REDIRECT_URI
 FRONTEND_REDIRECT_URI = os.getenv("FRONTEND_REDIRECT_URI")
-
-
-
