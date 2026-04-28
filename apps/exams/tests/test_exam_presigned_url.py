@@ -108,3 +108,10 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["error_detail"], "파일을 첨부해주세요.")
+
+    def test_presigned_url_max_length(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 256 + ".jpg"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "파일명은 최대 255자 이내여야 합니다.")
