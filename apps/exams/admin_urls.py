@@ -21,4 +21,3 @@ urlpatterns = [
     path("", ExamListCreateView.as_view(), name="exam-list"),
     path("<int:exam_id>", ExamDetailView.as_view(), name="exam-detail"),
 ]
-
