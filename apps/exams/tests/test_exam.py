@@ -267,7 +267,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             {
                 "subject_id": self.subject_python.id,
                 "title": "new_exam",
-                "thumbnail_image_url": "https://example.com/image.gif",
+                "thumbnail_image_url": "https://example.com/image.abcd",
             },
             format="json",
         )
