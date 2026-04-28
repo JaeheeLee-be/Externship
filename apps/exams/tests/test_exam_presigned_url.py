@@ -1,0 +1,123 @@
+import re
+from unittest.mock import patch
+
+from django.urls import reverse
+from rest_framework.test import APITestCase
+
+from apps.core.presigned_url import s3_handler as s3_handler_module
+from apps.users.models import User
+
+
+class PresignedUrlBaseTestCase(APITestCase):
+    user: User
+    admin: User
+    no_name: str
+    no_subfix: str
+    file_name: str
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.user = User.objects.create_user(
+            email="test@test.com",
+            password="test1234!",
+            name="테스터",
+            nickname="tester",
+            phone_number="010-1234-5678",
+            is_active=True,
+            role="STUDENT",
+        )
+        cls.admin = User.objects.create_superuser(
+            email="admin@test.com",
+            password="test1234!",
+            name="관리자",
+            nickname="admin",
+            phone_number="010-2222-5678",
+            is_active=True,
+            role="ADMIN",
+        )
+        cls.no_name = ".jpg"
+        cls.no_subfix = "test_file"
+        cls.file_name = "test_file.jpg"
+
+
+class TestPresignedUrl(PresignedUrlBaseTestCase):
+    def setUp(self) -> None:
+        s3_handler_module.s3_handler = None
+        self.mock_boto3 = patch("apps.core.presigned_url.s3_handler.boto3").start()
+        self.mock_boto3.client.return_value.generate_presigned_url.return_value = "https://test-presigned-url.com"
+
+    def tearDown(self) -> None:
+        patch.stopall()
+
+    # 권한
+    def test_presigned_url_as_admin(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("presigned_url", response.data)
+        self.assertIn("img_url", response.data)
+        self.assertIn("key", response.data)
+
+        # key값
+        key = response.data["key"]
+        self.assertTrue(key.startswith("uploads/exams/thumbnails/"))
+        self.assertTrue(key.endswith(".jpg"))
+
+        # uuid 값
+        uuid_part = key.removeprefix("uploads/exams/thumbnails/").split("_")[0]
+        uuid_pattern = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+        self.assertRegex(uuid_part, uuid_pattern)
+
+    def test_presigned_url_as_user(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error_detail"], "이 작업을 수행할 권한(permission)이 없습니다.")
+
+    def test_presigned_url_as_anonymous(self) -> None:
+        response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.data["error_detail"], "자격 인증데이터(authentication credentials)가 제공되지 않았습니다."
+        )
+
+    # 파일 관련 에러 검증
+    def test_presigned_url_no_name(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"), {"file_name": self.no_name})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
+
+    def test_presigned_url_no_subfix(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"), {"file_name": self.no_subfix})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
+
+    def test_presigned_url_invalid_subfix(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"), {"file_name": "test_file.test"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "지원하지 않는 파일 형식입니다.")
+
+    def test_presigned_url_no_file(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("file_name", response.data["error_detail"])
+
+    def test_presigned_url_max_length(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 97 + ".jpg"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["error_detail"]["file_name"][0], "이 필드의 글자 수가 100 이하인지 확인하십시오."
+        )
