@@ -3,11 +3,11 @@ import uuid
 from typing import Any
 
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import transaction
+from django.db.models import Avg, Count, QuerySet
 
 from apps.core.utils.base62 import Base62
-
-# TODO : 예외 폴더 생성 후 경로 변경
-from apps.exams.exceptions.exam_deploy_exceptions import (
+from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentConflictError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
@@ -24,11 +24,11 @@ def create_access_code(length: int = 8) -> str:
             return code
 
 
+@transaction.atomic
 def create_deployment(validated_data: dict[str, Any]) -> ExamDeployment:
     exam_id = validated_data.pop("exam_id")
     cohort_id = validated_data.pop("cohort_id")
 
-    # API명세서 상에 404 표현을 위해 모델 시리얼라이즈를 사용하지 않고 서비스에서 검증하는 방식으로 진행
     try:
         exam = Exam.objects.get(id=exam_id)
     except Exam.DoesNotExist:
@@ -57,3 +57,39 @@ def create_deployment(validated_data: dict[str, Any]) -> ExamDeployment:
     )
 
     return deployment
+
+
+SORT_FIELD_MAP = {
+    "created_at": "created_at",
+    "submit_count": "submit_count",
+    "avg_score": "avg_score",
+}
+
+
+def get_deployment_list(validated_params: dict[str, Any]) -> QuerySet[ExamDeployment]:
+    subject_id = validated_params.get("subject_id")
+    cohort_id = validated_params.get("cohort_id")
+    search_keyword = validated_params.get("search_keyword")
+    sort = validated_params.get("sort", "created_at")
+    order = validated_params.get("order", "desc")
+
+    qs = ExamDeployment.objects.select_related("exam__subject", "cohort__course")
+
+    if subject_id:
+        qs = qs.filter(exam__subject_id=subject_id)
+    if cohort_id:
+        qs = qs.filter(cohort_id=cohort_id)
+    if search_keyword:
+        qs = qs.filter(exam__title__icontains=search_keyword)
+
+    # TODO : ExamSubmission.deployment ForeignKey에 related_name 추가 시 "examsubmission" → 해당 이름으로 변경
+    qs = qs.annotate(
+        submit_count=Count("examsubmission"),
+        avg_score=Avg("examsubmission__score"),
+    )
+
+    sort_field = SORT_FIELD_MAP.get(sort, "created_at")
+
+    qs = qs.order_by(f"-{sort_field}" if order == "desc" else sort_field)
+
+    return qs
