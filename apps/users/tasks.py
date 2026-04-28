@@ -13,7 +13,6 @@ def delete_expired_withdrawn_users() -> int:
     with transaction.atomic():
         expired_withdrawals = Withdrawal.objects.filter(
             due_date__lte=timezone.localdate(),
-            user__isnull=False,  # user가 이미 NULL인 Withdrawal은 제외 (이미 삭제된 기록)
         ).values_list("user_id", flat=True)
 
         user_ids = list(expired_withdrawals)
