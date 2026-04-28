@@ -11,6 +11,17 @@ from apps.posts.models.course import Course
 from apps.posts.models.subject import Subject
 from apps.users.models import User
 
+from apps.exams.exceptions.admin_exam_deployment_exception import (
+    DeploymentConflictError,
+    DeploymentNoQuestionsError,
+    DeploymentNotFoundError,
+)
+from apps.exams.services.admin_exam_deployment_service import (
+    create_access_code,
+    create_deployment,
+    get_deployment_list,
+)
+
 
 class DeploymentBaseTestCase(TestCase):
     admin_user: User
@@ -116,7 +127,7 @@ class AdminExamDeploymentCreateViewTest(DeploymentBaseTestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         super().setUpTestData()
-        cls.url = reverse("exam-deployment")
+        cls.url = reverse("exam-deployment-create")
         cls.valid_data = {
             "exam_id": cls.exam1.id,
             "cohort_id": cls.cohort2.id,
@@ -344,3 +355,90 @@ class AdminExamDeploymentListViewTest(DeploymentBaseTestCase):
         response = self.client.get(self.url, {"order": "invalid_order"})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class AdminExamDeploymentServiceTest(DeploymentBaseTestCase):
+    def test_create_access_code_returns_unique_code(self) -> None:
+        code = create_access_code()
+
+        self.assertIsInstance(code, str)
+        self.assertEqual(len(code), 8)
+        self.assertFalse(ExamDeployment.objects.filter(access_code=code).exists())
+
+    def test_create_deployment_service_success(self) -> None:
+        data = {
+            "exam_id": self.exam1.id,
+            "cohort_id": self.cohort2.id,
+            "duration_time": 60,
+            "open_at": "2026-08-01T09:00:00Z",
+            "close_at": "2026-08-01T11:00:00Z",
+        }
+
+        deployment = create_deployment(data)
+
+        self.assertEqual(deployment.exam, self.exam1)
+        self.assertEqual(deployment.cohort, self.cohort2)
+        self.assertTrue(deployment.questions_snapshot_json)
+        self.assertIsNotNone(deployment.access_code)
+
+    def test_create_deployment_service_raises_not_found_when_exam_not_found(self) -> None:
+        data = {
+            "exam_id": 99999,
+            "cohort_id": self.cohort1.id,
+            "duration_time": 60,
+            "open_at": "2026-08-01T09:00:00Z",
+            "close_at": "2026-08-01T11:00:00Z",
+        }
+
+        with self.assertRaises(DeploymentNotFoundError):
+            create_deployment(data)
+
+    def test_create_deployment_service_raises_not_found_when_cohort_not_found(self) -> None:
+        data = {
+            "exam_id": self.exam1.id,
+            "cohort_id": 99999,
+            "duration_time": 60,
+            "open_at": "2026-08-01T09:00:00Z",
+            "close_at": "2026-08-01T11:00:00Z",
+        }
+
+        with self.assertRaises(DeploymentNotFoundError):
+            create_deployment(data)
+
+    def test_create_deployment_service_raises_conflict_when_duplicate_exists(self) -> None:
+        data = {
+            "exam_id": self.exam1.id,
+            "cohort_id": self.cohort1.id,
+            "duration_time": 60,
+            "open_at": "2026-08-01T09:00:00Z",
+            "close_at": "2026-08-01T11:00:00Z",
+        }
+
+        with self.assertRaises(DeploymentConflictError):
+            create_deployment(data)
+
+    def test_create_deployment_service_raises_no_questions_when_exam_has_no_questions(self) -> None:
+        data = {
+            "exam_id": self.exam_no_questions.id,
+            "cohort_id": self.cohort2.id,
+            "duration_time": 60,
+            "open_at": "2026-08-01T09:00:00Z",
+            "close_at": "2026-08-01T11:00:00Z",
+        }
+
+        with self.assertRaises(DeploymentNoQuestionsError):
+            create_deployment(data)
+
+    def test_get_deployment_list_with_filters_and_asc_order(self) -> None:
+        qs = get_deployment_list(
+            {
+                "subject_id": self.subject1.id,
+                "cohort_id": self.cohort1.id,
+                "search_keyword": "Python",
+                "sort": "created_at",
+                "order": "asc",
+            }
+        )
+
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs.first(), self.deployment1)
