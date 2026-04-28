@@ -2,12 +2,10 @@ from django.urls import path
 
 from apps.core.presigned_url.views import PresignedUrlView
 from apps.core.utils.permissions import IsRoleAdminUser
-
 from apps.exams.views.admin_exam_deployment_view import (
     AdminExamDeploymentCreateView,
     AdminExamDeploymentListView,
 )
-
 from apps.exams.views.admin_exam_view import ExamListCreateView
 
 
