@@ -8,3 +8,7 @@ class PostPermissionDeniedError(Exception):
 
 class CommentNotFoundError(Exception):
     pass
+
+
+class CommentPermissionDeniedError(Exception):
+    pass
