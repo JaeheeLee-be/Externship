@@ -3,24 +3,23 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.exams.models.exam_deployment_model import ExamDeployment
-from apps.exams.models.exam_model import Exam
-from apps.exams.models.exam_question_model import ExamQuestion
-from apps.posts.models.cohort import Cohort
-from apps.posts.models.course import Course
-from apps.posts.models.subject import Subject
-from apps.users.models import User
-
 from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentConflictError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
 )
+from apps.exams.models.exam_deployment_model import ExamDeployment
+from apps.exams.models.exam_model import Exam
+from apps.exams.models.exam_question_model import ExamQuestion
 from apps.exams.services.admin_exam_deployment_service import (
     create_access_code,
     create_deployment,
     get_deployment_list,
 )
+from apps.posts.models.cohort import Cohort
+from apps.posts.models.course import Course
+from apps.posts.models.subject import Subject
+from apps.users.models import User
 
 
 class DeploymentBaseTestCase(TestCase):
