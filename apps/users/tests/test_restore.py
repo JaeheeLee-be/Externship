@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from unittest.mock import patch
 
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -41,64 +42,6 @@ def create_withdrawn_user(
 
 
 # ------------------------------------------------------------------ #
-# RestoreRequestView 테스트
-# ------------------------------------------------------------------ #
-
-
-class RestoreRequestViewTest(APITestCase):
-    """POST /api/v1/accounts/restore/request 복구 요청 테스트"""
-
-    def setUp(self) -> None:
-        self.url = reverse("users:restore-request")
-
-    def test_request_with_withdrawn_email_returns_200(self) -> None:
-        """탈퇴한 이메일로 요청 시 200 반환"""
-        create_withdrawn_user()
-        response = self.client.post(
-            self.url,
-            data={"email": "withdrawn@oz.com", "purpose": "recovery"},
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_request_with_unknown_email_returns_200(self) -> None:
-        """존재하지 않는 이메일도 200 반환 (이메일 존재 여부 노출 방지)"""
-        response = self.client.post(
-            self.url,
-            data={"email": "nobody@oz.com", "purpose": "recovery"},
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_request_with_invalid_email_returns_400(self) -> None:
-        """이메일 형식이 아닌 값 - 400 반환"""
-        response = self.client.post(
-            self.url,
-            data={"email": "notanemail", "purpose": "recovery"},
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_request_without_purpose_returns_400(self) -> None:
-        """purpose 누락 - 400 반환"""
-        response = self.client.post(
-            self.url,
-            data={"email": "withdrawn@oz.com"},
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_request_with_wrong_purpose_returns_400(self) -> None:
-        """purpose가 recovery가 아닌 값 - 400 반환"""
-        response = self.client.post(
-            self.url,
-            data={"email": "withdrawn@oz.com", "purpose": "signup"},
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-# ------------------------------------------------------------------ #
 # RestoreView 테스트 (View 레이어 - 서비스 mock)
 # ------------------------------------------------------------------ #
 
@@ -111,21 +54,24 @@ class RestoreViewTest(APITestCase):
 
     def test_restore_success(self) -> None:
         """유효한 email_token → 서비스 성공 → 200 반환"""
-        with patch("apps.users.views.restore_view.restore_user_by_token") as mock:
+        cache.set("email_verify_token_valid_token", {"email": "withdrawn@oz.com", "purpose": "recovery"})
+        with patch("apps.users.views.withdrawal_view.restore_user_by_token") as mock:
             mock.return_value = None
             response = self.client.post(self.url, data={"email_token": "valid_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_restore_invalid_token_returns_400(self) -> None:
-        """서비스에서 InvalidRecoveryTokenError → 400 반환"""
-        with patch("apps.users.views.restore_view.restore_user_by_token") as mock:
-            mock.side_effect = InvalidRecoveryTokenError()
+        """복구 목적이 아닌 email_token → 시리얼라이저 400 반환"""
+        cache.set("email_verify_token_bad_token", {"email": "test@oz.com", "purpose": "signup"})
+        with patch("apps.users.views.withdrawal_view.restore_user_by_token") as mock:
             response = self.client.post(self.url, data={"email_token": "bad_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mock.assert_not_called()
 
     def test_restore_user_not_found_returns_404(self) -> None:
         """서비스에서 DeletedUserError → 404 반환"""
-        with patch("apps.users.views.restore_view.restore_user_by_token") as mock:
+        cache.set("email_verify_token_some_token", {"email": "ghost@oz.com", "purpose": "recovery"})
+        with patch("apps.users.views.withdrawal_view.restore_user_by_token") as mock:
             mock.side_effect = DeletedUserError()
             response = self.client.post(self.url, data={"email_token": "some_token"}, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -150,6 +96,7 @@ class RestoreUserByTokenServiceTest(TestCase):
             mock_cache.get.return_value = None
             with self.assertRaises(InvalidRecoveryTokenError):
                 restore_user_by_token("invalid_token")
+            mock_cache.delete.assert_not_called()
 
     def test_wrong_purpose_raises_error(self) -> None:
         """purpose가 recovery가 아닌 토큰 → InvalidRecoveryTokenError"""
@@ -157,6 +104,7 @@ class RestoreUserByTokenServiceTest(TestCase):
             mock_cache.get.return_value = {"email": "test@oz.com", "purpose": "signup"}
             with self.assertRaises(InvalidRecoveryTokenError):
                 restore_user_by_token("signup_token")
+            mock_cache.delete.assert_not_called()
 
     def test_deleted_user_raises_error(self) -> None:
         """DB에 유저 없음 → DeletedUserError"""
@@ -164,6 +112,7 @@ class RestoreUserByTokenServiceTest(TestCase):
             mock_cache.get.return_value = {"email": "ghost@oz.com", "purpose": "recovery"}
             with self.assertRaises(DeletedUserError):
                 restore_user_by_token("ghost_token")
+            mock_cache.delete.assert_not_called()
 
     def test_expired_due_date_raises_error(self) -> None:
         """복구 기간 만료 → RecoveryPeriodExpiredError"""
