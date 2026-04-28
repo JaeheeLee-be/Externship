@@ -1,9 +1,8 @@
 from typing import Any
 
 from django.db import transaction
-from rest_framework.exceptions import NotFound, PermissionDenied
 
-from apps.core.utils.exceptions import ConflictException
+from apps.qna.exceptions import ConflictException, NotFoundException,PermissionDeniedException
 from apps.qna.models.answer_models import Answer, AnswerImage
 from apps.qna.models.question_models import Question
 from apps.users.models import User
@@ -14,7 +13,7 @@ class AnswerService:
         try:
             return Question.objects.get(pk=question_id)
         except Question.DoesNotExist:
-            raise NotFound("해당 질문을 찾을 수 없습니다.")
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
 
     def answer_create(self, user: User, question_id: int, **validated_data: Any) -> Answer:
         with transaction.atomic():
@@ -40,9 +39,9 @@ class AnswerAcceptService:
             try:
                 answer = Answer.objects.select_for_update().select_related("question").get(pk=answer_id)
             except Answer.DoesNotExist:
-                raise NotFound("해당 답변을 찾을 수 없습니다.")
+                raise NotFoundException("해당 질문 또는 답변을 찾을 수 없습니다.")
             if answer.question.author_id != user.id:
-                raise PermissionDenied("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
+                raise PermissionDeniedException("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
             if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
                 raise ConflictException("이미 채택된 답변이 존재합니다.")
             answer.is_adopted = True
