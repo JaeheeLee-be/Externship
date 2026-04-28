@@ -26,13 +26,8 @@ class WithdrawalView(APIView):
         code: Optional[str] = None,
     ) -> Never:
         if request.authenticators and not request.successful_authenticator:
-            raise NotAuthenticated("인증이 필요합니다.")
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise PermissionDenied("접근 권한이 없습니다.")
-
-    def handle_exception(self, exc: Exception) -> Response:
-        if hasattr(exc, "detail") and hasattr(exc, "status_code"):
-            return Response({"error_detail": exc.detail}, status=exc.status_code)
-        return super().handle_exception(exc)
 
     @extend_schema(
         tags=["accounts"],

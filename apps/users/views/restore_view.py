@@ -22,11 +22,6 @@ from apps.users.utils.withdrawal_exceptions import (
 class RestoreRequestView(APIView):
     permission_classes = [AllowAny]
 
-    def handle_exception(self, exc: Exception) -> Response:
-        if hasattr(exc, "detail") and hasattr(exc, "status_code"):
-            return Response({"error_detail": exc.detail}, status=exc.status_code)
-        return super().handle_exception(exc)
-
     @extend_schema(
         tags=["accounts"],
         summary="계정 복구 요청",
@@ -58,11 +53,6 @@ class RestoreRequestView(APIView):
 
 class RestoreView(APIView):
     permission_classes = [AllowAny]
-
-    def handle_exception(self, exc: Exception) -> Response:
-        if hasattr(exc, "detail") and hasattr(exc, "status_code"):
-            return Response({"error_detail": exc.detail}, status=exc.status_code)
-        return super().handle_exception(exc)
 
     @extend_schema(
         tags=["accounts"],
