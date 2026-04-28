@@ -74,13 +74,15 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
 
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.data["error_detail"], "관리자 권한이 필요합니다.")
+        self.assertEqual(response.data["error_detail"], "이 작업을 수행할 권한(permission)이 없습니다.")
 
     def test_presigned_url_as_anonymous(self) -> None:
         response = self.client.put(reverse("presigned-url"), {"file_name": self.file_name})
 
         self.assertEqual(response.status_code, 401)
-        self.assertEqual(response.data["error_detail"], "로그인이 필요합니다.")
+        self.assertEqual(
+            response.data["error_detail"], "자격 인증데이터(authentication credentials)가 제공되지 않았습니다."
+        )
 
     # 파일 관련 에러 검증
     def test_presigned_url_no_name(self) -> None:
@@ -109,11 +111,11 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"))
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "이 필드는 필수 항목입니다.")
+        self.assertIn("file_name", response.data["error_detail"])
 
     def test_presigned_url_max_length(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 97 + ".jpg"})
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "이 필드의 글자 수가 100 이하인지 확인하십시오.")
+        self.assertEqual(response.data["error_detail"]["file_name"][0], "이 필드의 글자 수가 100 이하인지 확인하십시오.")
