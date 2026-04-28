@@ -63,7 +63,7 @@ class QuestionNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.SerializerMethodField()
     correct_answer = serializers.JSONField(source="answer")
 
-    def get_options(self, obj: ExamQuestion) -> list:
+    def get_options(self, obj: ExamQuestion) -> list[Any]:
         if not obj.options_json:
             return []
         return json.loads(obj.options_json)
