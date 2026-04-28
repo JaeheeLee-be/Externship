@@ -1,11 +1,16 @@
+from typing import Any
+
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-
-from apps.core.utils.s3 import PresignedUrlView
 from rest_framework.test import APIRequestFactory
 
+from apps.core.utils.s3 import PresignedUrlView
+
+
 class TestS3(TestCase):
+    view: Any
+    factory: APIRequestFactory
 
     @classmethod
     def setUpTestData(cls) -> None:
