@@ -39,7 +39,7 @@ class SmsVerificationService:
 
         cache_key = f"sms_code_{phone_number}"
         # 캐시 저장 용도
-        cache_data = {"purpose": purpose.value}
+        cache_data = {"purpose": purpose.value} # type: ignore[misc]
         # cache 저장 설정
         try:
             cache.set(cache_key, cache_data, timeout=180)
@@ -56,7 +56,7 @@ class SmsVerificationService:
             raise ValidationError(f"SMS 발송 실패: {e.msg}")
 
     @classmethod
-    def verify_sms_code(cls, phone_number: str, code: str, purpose: str) -> str:
+    def verify_sms_code(cls, phone_number: str, code: str, purpose: SmsPurpose) -> str:
         """
         사용자가 입력한 코드를 Twilio에 보내서 확인하고,
         성공 시 다음 단계용 sms_token을 발급합니다.
@@ -75,7 +75,7 @@ class SmsVerificationService:
             raise ValidationError("유효하지 않은 인증 용도입니다.")
 
         # purpose 검증
-        if cached_purpose != purpose.value:
+        if cached_purpose != purpose.value: # type: ignore[misc]
             raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         try:

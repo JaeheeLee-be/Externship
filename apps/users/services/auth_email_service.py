@@ -83,7 +83,7 @@ class EmailVerificationService:
         cached_purpose = cached_data.get("purpose")
 
         # purpose 검증
-        if cached_purpose != purpose.value:
+        if cached_purpose != purpose.value: # type: ignore[misc]
             raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         # 코드 확인
