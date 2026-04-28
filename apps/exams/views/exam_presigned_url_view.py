@@ -3,6 +3,7 @@ from typing import NoReturn
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
+from rest_framework.response import Response
 
 from apps.core.presigned_url.serializers import PresignedUrlResponseSerializer
 from apps.core.presigned_url.views import PresignedUrlView
@@ -37,9 +38,10 @@ class ExamPresignedUrlView(PresignedUrlView):
             403: ExamErrorResponseSerializer,
         },
     )
-    def handle_request(self, request: Request):
+    # 에러메시지 error_detail로 출력하기 위해 추가
+    def handle_request(self, request: Request) -> Response:
         ExamPresignedUrlRequestSerializer(data=request.data).is_valid(raise_exception=True)
         return super().handle_request(request)
 
-    def put(self, request: Request):
+    def put(self, request: Request) -> Response:
         return self.handle_request(request)
