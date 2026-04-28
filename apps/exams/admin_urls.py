@@ -7,6 +7,8 @@ from apps.exams.views.admin_exam_deployment_view import (
     AdminExamDeploymentListView,
 )
 from apps.exams.views.admin_exam_view import ExamListCreateView
+from apps.exams.views.admin_exam_deployment_view import AdminExamDeploymentCreateView
+from apps.exams.views.admin_exam_view import ExamDetailView, ExamListCreateView
 
 
 class ExamImageUploadView(PresignedUrlView):
@@ -19,4 +21,5 @@ urlpatterns = [
     path("deployments/list/", AdminExamDeploymentListView.as_view(), name="exam-deployment-list"),
     path("presigned-url", ExamImageUploadView.as_view(), name="presigned-url"),
     path("", ExamListCreateView.as_view(), name="exam-list"),
+    path("<int:exam_id>", ExamDetailView.as_view(), name="exam-detail"),
 ]
