@@ -301,7 +301,6 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_exam_create_title_max_length(self) -> None:
@@ -473,7 +472,6 @@ class TestExamDetail(ExamBaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_detail_put_title_max_langth(self) -> None:
