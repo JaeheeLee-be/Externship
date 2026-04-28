@@ -2,8 +2,8 @@ from typing import Optional
 
 from django.db.models import Count, Q, QuerySet
 
-from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
-from apps.exams.models import Exam
+from apps.exams.exceptions.exam_exception import ExamDeleteConflict, ExamTitleConflict, SubjectNotFound
+from apps.exams.models import Exam, ExamDeployment
 from apps.posts.models import Subject
 
 ALLOWED_SORT_FIELDS = {
@@ -80,3 +80,14 @@ def put_exam(exam_id: int, title: str, subject_id: int, thumbnail_image_url: str
     exam.thumbnail_image_url = thumbnail_image_url
     exam.save()
     return exam
+
+def delete_exam(exam_id: int) -> None:
+    try:
+        exam = Exam.objects.get(pk=exam_id)
+    except Exam.DoesNotExist:
+        raise ValueError("삭제하려는 쪽지시험 정보를 찾을 수 없습니다.")
+
+    if ExamDeployment.objects.filter(exam=exam).exists():
+        raise ExamDeleteConflict()
+
+    exam.delete()

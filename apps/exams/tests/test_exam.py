@@ -2,8 +2,8 @@ from django.db import IntegrityError
 from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
 
-from apps.exams.models import Exam, ExamQuestion
-from apps.posts.models import Course, Subject
+from apps.exams.models import Exam, ExamDeployment, ExamQuestion
+from apps.posts.models import Cohort, Course, Subject
 from apps.users.models import User
 
 
@@ -17,6 +17,8 @@ class ExamBaseTestCase(APITestCase):
     exam2: Exam
     question1: ExamQuestion
     question2: ExamQuestion
+    cohort: Cohort
+    deployment: ExamDeployment
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -75,6 +77,20 @@ class ExamBaseTestCase(APITestCase):
             type="multiple_choice",
             answer={"answer": ["test_answer1", "test_answer2"]},
             point=2,
+        )
+        cls.cohort = Cohort.objects.create(
+            course=cls.course,
+            number=1,
+            max_student=30,
+            start_date="2024-01-01",
+            end_date="2024-12-31",
+        )
+        cls.deployment = ExamDeployment.objects.create(
+            exam=cls.exam2,
+            cohort=cls.cohort,
+            access_code="test-code",
+            open_at="2024-01-01T00:00:00Z",
+            close_at="2024-12-31T23:59:59Z",
         )
 
 
@@ -476,4 +492,46 @@ class TestExamDetail(ExamBaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(Exam.objects.count(), 2)
+
+    # 쪽지시험 삭제: 권한
+    def test_detail_delete_as_admin(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.delete(reverse("exam-detail", kwargs={"exam_id": self.exam1.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], self.exam1.id)
+        self.assertEqual(Exam.objects.count(), 1)
+
+    def test_detail_delete_as_user(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(reverse("exam-detail", kwargs={"exam_id": self.exam1.id}))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error_detail"], "쪽지시험 삭제 권한이 없습니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    def test_detail_delete_unauthorized(self) -> None:
+        response = self.client.delete(reverse("exam-detail", kwargs={"exam_id": self.exam1.id}))
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    # 쪽지시험 삭제: not found
+    def test_detail_delete_not_found(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.delete(reverse("exam-detail", kwargs={"exam_id": self.exam1.id + 9999}))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error_detail"], "삭제하려는 쪽지시험 정보를 찾을 수 없습니다.")
+        self.assertEqual(Exam.objects.count(), 2)
+
+    # 쪽지시험 삭제: 배포 존재 시 409
+    def test_detail_delete_conflict_with_deployment(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.delete(reverse("exam-detail", kwargs={"exam_id": self.exam2.id}))
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["error_detail"], "쪽지시험 삭제 중 충돌이 발생했습니다.")
         self.assertEqual(Exam.objects.count(), 2)

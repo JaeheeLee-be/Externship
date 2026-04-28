@@ -12,15 +12,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
-from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
+from apps.exams.exceptions.exam_exception import ExamDeleteConflict, ExamTitleConflict, SubjectNotFound
 from apps.exams.serializers.admin_exam_serializer import (
     ExamCreatePutSerializer,
+    ExamDeleteResponseSerializer,
     ExamDetailSerializer,
     ExamErrorSerializer,
     ExamListSerializer,
 )
 from apps.exams.services.admin_exam_service import (
     create_exam,
+    delete_exam,
     get_exam,
     get_exam_list,
     put_exam,
@@ -183,3 +185,23 @@ class ExamDetailView(ErrorDataKeyMixin, APIView):
         except ValueError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(ExamCreatePutSerializer(exam, context={"request": request}).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["exams"],
+        summary="쪽지 시험 삭제",
+        responses={
+            200: ExamDeleteResponseSerializer,
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403: OpenApiResponse(response=ExamErrorSerializer, description="쪽지시험 삭제 권한이 없습니다."),
+            404: OpenApiResponse(response=ExamErrorSerializer, description="삭제하려는 쪽지시험 정보를 찾을 수 없습니다."),
+            409: OpenApiResponse(response=ExamErrorSerializer, description="쪽지시험 삭제 중 충돌이 발생했습니다."),
+        },
+    )
+    def delete(self, request: Request, exam_id: int) -> Response:
+        try:
+            delete_exam(exam_id)
+        except ExamDeleteConflict as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
+        except ValueError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ExamDeleteResponseSerializer({"id": exam_id}).data, status=status.HTTP_200_OK)

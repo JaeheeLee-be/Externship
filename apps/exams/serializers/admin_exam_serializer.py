@@ -107,3 +107,7 @@ class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
 
 class ExamErrorSerializer(serializers.Serializer):
     error_detail = serializers.CharField()
+
+
+class ExamDeleteResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
