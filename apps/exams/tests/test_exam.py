@@ -291,14 +291,12 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(Exam.objects.count(), 2)
 
     # 쪽지시험 생성: 유효하지 않은 요청
-    def test_exam_create_invalid_thumbnail_extension(self) -> None:
+    def test_exam_create_missing_subject_id(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.post(
             reverse("exam-list"),
             {
-                "subject_id": self.subject_python.id,
                 "title": "new_exam",
-                "thumbnail_image_url": "https://example.com/image.abcd",
             },
             format="json",
         )
@@ -465,14 +463,12 @@ class TestExamDetail(ExamBaseTestCase):
         self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
-    def test_detail_put_invalid_thumbnail_extension(self) -> None:
+    def test_detail_put_missing_subject_id(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(
             reverse("exam-detail", kwargs={"exam_id": self.exam1.id}),
             {
                 "title": "updated_exam",
-                "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.abcd",
             },
         )
 
