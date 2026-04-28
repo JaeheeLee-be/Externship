@@ -1,9 +1,16 @@
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import (
+    NotAuthenticated,
+    NotFound,
+    PermissionDenied,
+    ValidationError,
+)
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.utils.exceptions import ConflictException
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
 from apps.qna.serializers.answer_serializers import (
@@ -49,10 +56,25 @@ class AnswerAcceptView(APIView):
     permission_classes = [IsAuthenticated]
     service = AnswerAcceptService()
 
+    def handle_exception(self, exc: Exception) -> Response:
+        if isinstance(exc, NotAuthenticated):
+            return Response(
+                {"error_detail": "로그인한 사용자만 답변을 채택할 수 있습니다."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        return super().handle_exception(exc)
+
     @answer_accept_schema
     def post(self, request: AuthenticatedRequest, answer_id: int) -> Response:
-        answer = self.service.answer_accept(
-            user=request.user,
-            answer_id=answer_id,
-        )
+        try:
+            answer = self.service.answer_accept(
+                user=request.user,
+                answer_id=answer_id,
+            )
+        except NotFound as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except ConflictException as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         return Response(AnswerAcceptResponseSerializer(answer).data, status=status.HTTP_200_OK)
