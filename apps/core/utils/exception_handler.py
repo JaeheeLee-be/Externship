@@ -9,6 +9,8 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
     if response is not None:
         if "detail" in response.data:
             response.data["error_detail"] = response.data.pop("detail")
+        elif "error_detail" in response.data:
+            pass
         else:
             response.data = {"error_detail": response.data}
     return response
