@@ -1,18 +1,16 @@
-from typing import Any, NoReturn
+from typing import NoReturn
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import (
     NotAuthenticated,
     PermissionDenied,
-    ValidationError,
 )
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.utils.mixins import ErrorDataKeyMixin
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.exceptions.exam_exception import ExamTitleConflict, SubjectNotFound
 from apps.exams.serializers.admin_exam_serializer import (
@@ -22,7 +20,7 @@ from apps.exams.serializers.admin_exam_serializer import (
 from apps.exams.services.admin_exam_service import create_exam, get_exam_list
 
 
-class ExamListCreateView(ErrorDataKeyMixin, APIView):
+class ExamListCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
