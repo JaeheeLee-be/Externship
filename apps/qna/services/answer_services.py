@@ -2,7 +2,11 @@ from typing import Any
 
 from django.db import transaction
 
-from apps.qna.exceptions import ConflictException, NotFoundException,PermissionDeniedException
+from apps.qna.exceptions import (
+    ConflictException,
+    NotFoundException,
+    PermissionDeniedException,
+)
 from apps.qna.models.answer_models import Answer, AnswerImage
 from apps.qna.models.question_models import Question
 from apps.users.models import User

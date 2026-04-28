@@ -1,15 +1,19 @@
-from rest_framework.exceptions import (
-    ValidationError, PermissionDenied, NotAuthenticated,
-)
-from typing import Any
-from rest_framework.permissions import IsAuthenticated
+from typing import Any, NoReturn
+
 from rest_framework import status
+from rest_framework.exceptions import (
+    NotAuthenticated,
+    PermissionDenied,
+    ValidationError,
+)
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
-from apps.qna.exceptions import BaseCustomException
 from apps.core.utils.types import AuthenticatedRequest
+from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
@@ -28,12 +32,10 @@ class AnswerView(APIView):
     permission_classes = [IsStudentUser]
     service = AnswerService()
 
-    def permission_denied(self, request: AuthenticatedRequest, message: str | None = None,code: str | None = None) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if request.user.is_authenticated:
             raise PermissionDenied(detail="답변 작성 권한이 없습니다.")
         raise NotAuthenticated("로그인한 사용자만 답변을 작성할 수 있습니다.")
-
-
 
     @answer_create_schema
     def post(self, request: AuthenticatedRequest, question_id: int) -> Response:
@@ -61,10 +63,8 @@ class AnswerAcceptView(APIView):
     permission_classes = [IsAuthenticated]
     service = AnswerAcceptService()
 
-    def permission_denied(self, request: AuthenticatedRequest, message: str | None = None,code: str | None = None) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         raise NotAuthenticated("로그인한 사용자만 답변을 채택할 수 있습니다.")
-
-
 
     @answer_accept_schema
     def post(self, request: AuthenticatedRequest, answer_id: int) -> Response:

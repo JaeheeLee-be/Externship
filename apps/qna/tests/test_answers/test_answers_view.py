@@ -45,6 +45,12 @@ class AnswersViewTestCase(BaseTestCase):
     post 테스트
     """
 
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.user.role = "STUDENT"
+        cls.user.save()
+
     def setUp(self) -> None:
         self.client = APIClient()
 

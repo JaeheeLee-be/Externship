@@ -7,7 +7,6 @@ class BaseCustomException(Exception):
         super().__init__(self.message)
 
 
-
 class NotFoundException(BaseCustomException):
     status_code = 404
     default_message = "해당 질문 또는 답변을 찾을 수 없습니다."
