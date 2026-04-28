@@ -17,7 +17,7 @@ from apps.exams.services.exam_presigned_url_service import presigned_url_generat
 class PresignedUrlView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None):
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> None:
         if not request.user.is_authenticated:
             raise NotAuthenticated("로그인이 필요합니다.")
         raise PermissionDenied("관리자 권한이 필요합니다.")
