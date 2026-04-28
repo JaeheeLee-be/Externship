@@ -29,7 +29,7 @@ class PresignedUrlView(APIView):
             raise TypeError(f"{cls.__name__}: expire는 int여야 합니다.")
 
     # post, put 메서드의 공용 함수
-    def _handle_request(self, request: Request) -> Response:
+    def handle_request(self, request: Request) -> Response:
         request_serializer = PresignedUrlRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -44,7 +44,7 @@ class PresignedUrlView(APIView):
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request: Request) -> Response:
-        return self._handle_request(request)
+        return self.handle_request(request)
 
     def post(self, request: Request) -> Response:
-        return self._handle_request(request)
+        return self.handle_request(request)
