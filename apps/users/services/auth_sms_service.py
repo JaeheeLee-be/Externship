@@ -39,7 +39,7 @@ class SmsVerificationService:
 
         cache_key = f"sms_code_{phone_number}"
         # 캐시 저장 용도
-        cache_data = {"purpose": purpose.value} # type: ignore[misc]
+        cache_data = {"purpose": purpose.value}  # type: ignore[misc]
         # cache 저장 설정
         try:
             cache.set(cache_key, cache_data, timeout=180)
@@ -75,7 +75,7 @@ class SmsVerificationService:
             raise ValidationError("유효하지 않은 인증 용도입니다.")
 
         # purpose 검증
-        if cached_purpose != purpose.value: # type: ignore[misc]
+        if cached_purpose != purpose.value:  # type: ignore[misc]
             raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         try:
