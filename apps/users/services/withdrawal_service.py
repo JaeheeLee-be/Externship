@@ -57,14 +57,14 @@ def withdraw_user(user: User, reason: str, reason_detail: str = "") -> Withdrawa
 
 
 def restore_user(user: User) -> None:
-    if user.is_active:
-        raise AlreadyActiveError()
-    withdrawal = Withdrawal.objects.filter(user=user).first()
-    if withdrawal is None:
-        raise WithdrawalRecordNotFoundError()
-    if withdrawal.due_date <= timezone.localdate():
-        raise RecoveryPeriodExpiredError()
     with transaction.atomic():
+        if user.is_active:
+            raise AlreadyActiveError()
+        withdrawal = Withdrawal.objects.filter(user=user).first()
+        if withdrawal is None:
+            raise WithdrawalRecordNotFoundError()
+        if withdrawal.due_date <= timezone.localdate():
+            raise RecoveryPeriodExpiredError()
         withdrawal.delete()
         user.is_active = True
         user.save(update_fields=["is_active", "updated_at"])

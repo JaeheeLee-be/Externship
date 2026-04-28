@@ -15,7 +15,8 @@ def delete_expired_withdrawn_users() -> int:
             due_date__lte=timezone.localdate(),
         ).values_list("user_id", flat=True)
 
-        user_ids = list(expired_withdrawals)
+        # user가 이미 NULL인 Withdrawal은 삭제 대상에서 제외
+        user_ids = [uid for uid in expired_withdrawals if uid is not None]
         count = len(user_ids)
 
         if user_ids:

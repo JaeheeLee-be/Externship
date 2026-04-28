@@ -4,7 +4,7 @@ from typing import Never, Optional, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -31,12 +31,9 @@ class WithdrawalView(APIView):
         message: Optional[str] = None,
         code: Optional[str] = None,
     ) -> Never:
-        # DRF 기본 동작은 미인증 요청도 403으로 반환하므로 오버라이드
-        # 토큰 자체가 없는 경우 → 401 NotAuthenticated (API 명세 메시지 기준)
-        # 토큰은 있으나 권한 없는 경우 → 403 PermissionDenied
-        if request.authenticators and not request.successful_authenticator:
-            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
-        raise PermissionDenied("접근 권한이 없습니다.")
+        # IsAuthenticated는 미인증 시에만 실패하므로 항상 401 반환
+        # request.authenticators 체크는 permission 클래스에서 이미 지원
+        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
         tags=["accounts"],
