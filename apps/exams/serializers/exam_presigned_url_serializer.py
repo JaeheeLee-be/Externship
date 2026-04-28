@@ -9,6 +9,7 @@ from apps.core.presigned_url.serializers import PresignedUrlRequestSerializer
 class ExamErrorResponseSerializer(serializers.Serializer[dict[str, Any]]):
     error_detail = serializers.CharField()
 
+
 # 에러메시지 error_detail로 출력하기 위해 추가
 class ExamPresignedUrlRequestSerializer(PresignedUrlRequestSerializer):
     def to_internal_value(self, data: Any) -> Any:
