@@ -12,7 +12,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
-from apps.exams.exceptions.exam_exception import ExamDeleteConflict, ExamTitleConflict, SubjectNotFound
+from apps.exams.exceptions.exam_exception import (
+    ExamDeleteConflict,
+    ExamTitleConflict,
+    SubjectNotFound,
+)
 from apps.exams.serializers.admin_exam_serializer import (
     ExamCreatePutSerializer,
     ExamDeleteResponseSerializer,
@@ -193,7 +197,9 @@ class ExamDetailView(APIView):
             200: ExamDeleteResponseSerializer,
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(response=ExamErrorSerializer, description="쪽지시험 삭제 권한이 없습니다."),
-            404: OpenApiResponse(response=ExamErrorSerializer, description="삭제하려는 쪽지시험 정보를 찾을 수 없습니다."),
+            404: OpenApiResponse(
+                response=ExamErrorSerializer, description="삭제하려는 쪽지시험 정보를 찾을 수 없습니다."
+            ),
             409: OpenApiResponse(response=ExamErrorSerializer, description="쪽지시험 삭제 중 충돌이 발생했습니다."),
         },
     )

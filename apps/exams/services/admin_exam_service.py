@@ -2,7 +2,11 @@ from typing import Optional
 
 from django.db.models import Count, Q, QuerySet
 
-from apps.exams.exceptions.exam_exception import ExamDeleteConflict, ExamTitleConflict, SubjectNotFound
+from apps.exams.exceptions.exam_exception import (
+    ExamDeleteConflict,
+    ExamTitleConflict,
+    SubjectNotFound,
+)
 from apps.exams.models import Exam, ExamDeployment
 from apps.posts.models import Subject
 
@@ -80,6 +84,7 @@ def put_exam(exam_id: int, title: str, subject_id: int, thumbnail_image_url: str
     exam.thumbnail_image_url = thumbnail_image_url
     exam.save()
     return exam
+
 
 def delete_exam(exam_id: int) -> None:
     try:
