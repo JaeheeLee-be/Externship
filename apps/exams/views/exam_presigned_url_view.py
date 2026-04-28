@@ -13,7 +13,6 @@ from apps.exams.serializers.exam_presigned_url_serializer import (
 from apps.exams.services.exam_presigned_url_service import presigned_url_generation
 
 
-# TODO: 권한 에러메시지 detail에서 error_detail로 수정하는 믹스인 추가
 class PresignedUrlView(APIView):
     permission_classes = [IsRoleAdminUser]
 
