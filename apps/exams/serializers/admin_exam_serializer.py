@@ -46,15 +46,16 @@ class ExamCreateSerializer(serializers.ModelSerializer[Exam]):
     subject_id = serializers.IntegerField()
     thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
 
-    def validate_thumbnail_image_url(self, value: str) -> str:
-        if value == "default_img_url":
-            return value
-        path = urlparse(value).path
-        ext = os.path.splitext(path)[-1].lstrip(".").lower()
-        allowed = ["jpg", "jpeg", "png", "webp"]
-        if ext not in allowed:
-            raise serializers.ValidationError("허용되지 않는 파일 형식입니다.")
-        return value
+    # TODO: 프리사인드 추가후 변경
+    # def validate_thumbnail_image_url(self, value: str) -> str:
+    #     if value == "default_img_url":
+    #         return value
+    #     path = urlparse(value).path
+    #     ext = os.path.splitext(path)[-1].lstrip(".").lower()
+    #     allowed = ["jpg", "jpeg", "png", "webp"]
+    #     if ext not in allowed:
+    #         raise serializers.ValidationError("허용되지 않는 파일 형식입니다.")
+    #     return value
 
     class Meta:
         model = Exam
