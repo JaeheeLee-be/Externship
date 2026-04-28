@@ -8,7 +8,8 @@ from apps.core.presigned_url.serializers import PresignedUrlResponseSerializer
 from apps.core.presigned_url.views import PresignedUrlView
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.serializers.exam_presigned_url_serializer import (
-    ExamErrorResponseSerializer, ExamPresignedUrlRequestSerializer,
+    ExamErrorResponseSerializer,
+    ExamPresignedUrlRequestSerializer,
 )
 
 
