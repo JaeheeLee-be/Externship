@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -17,7 +19,7 @@ from apps.exams.services.exam_presigned_url_service import presigned_url_generat
 class PresignedUrlView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:
             raise NotAuthenticated("로그인이 필요합니다.")
         raise PermissionDenied("관리자 권한이 필요합니다.")
