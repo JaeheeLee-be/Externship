@@ -1,10 +1,8 @@
 import os
-from typing import cast
 from urllib.parse import urlparse
 
 from rest_framework import serializers
 
-from apps.exams.exceptions.exam_exception import ExamTitleConflict
 from apps.exams.models import Exam
 
 
