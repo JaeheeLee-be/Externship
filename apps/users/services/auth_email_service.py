@@ -106,3 +106,4 @@ class EmailVerificationService:
         cache.delete(cache_key)
 
         return verify_token
+ ###
