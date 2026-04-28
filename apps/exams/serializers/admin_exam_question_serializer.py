@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from rest_framework import serializers
@@ -5,41 +6,31 @@ from rest_framework import serializers
 from apps.exams.models.exam_question_model import ExamQuestion
 
 
-class PointValidateMixin:
-    def validate_point(self, value: Any) -> Any:
-        if value <= 0:
-            raise serializers.ValidationError("배점은 0보다 작거나 같을 수 없습니다.")
-        return value
+class QuestionCreateSerializer(serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.JSONField(source="options_json",required=False)
+    correct_answer = serializers.JSONField(source="answer")
 
-
-class QuestionCreateSerializer(PointValidateMixin, serializers.ModelSerializer[ExamQuestion]):
     class Meta:
         model = ExamQuestion
-        fields = ["question", "type", "prompt", "blank_count", "options_json", "answer", "point", "explanation"]
+        fields = ["type", "question", "prompt", "options", "blank_count", "correct_answer", "point", "explanation"]
 
-
-class QuestionUpdateSerializer(PointValidateMixin, serializers.ModelSerializer[ExamQuestion]):
-    question = serializers.CharField(required=False)
-    type = serializers.CharField(required=False)
-    prompt = serializers.CharField(required=False)
-    blank_count = serializers.IntegerField(required=False)
-    options_json = serializers.CharField(required=False)
-    answer = serializers.JSONField(required=False)
-    point = serializers.IntegerField(required=False)
-    explanation = serializers.CharField(required=False)
+class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.JSONField(source="options_json", required=False)
+    correct_answer = serializers.JSONField(source="answer", required=False)
 
     class Meta:
         model = ExamQuestion
         fields = [
-            "question",
             "type",
+            "question",
             "prompt",
+            "options",
             "blank_count",
-            "options_json",
-            "answer",
+            "correct_answer",
             "point",
             "explanation",
         ]
+        extra_kwargs = {field: {"required": False} for field in fields}
 
 
 class QuestionDeleteResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
@@ -53,9 +44,17 @@ class QuestionDeleteResponseSerializer(serializers.ModelSerializer[ExamQuestion]
 
 
 class QuestionResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.SerializerMethodField()
+    correct_answer = serializers.JSONField(source="answer")
+
     class Meta:
         model = ExamQuestion
-        fields = ["question", "type", "prompt", "blank_count", "options_json", "answer", "point", "explanation"]
+        fields = ["type", "question", "prompt", "options", "blank_count", "correct_answer", "point", "explanation"]
+
+    def get_options(self, obj: ExamQuestion) -> Any:
+        if obj.options_json:
+            return json.loads(obj.options_json)
+        return None
 
 
 class QuestionUpdateResponseSerializer(QuestionResponseSerializer):

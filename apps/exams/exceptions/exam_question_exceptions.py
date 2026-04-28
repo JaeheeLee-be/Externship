@@ -1,5 +1,5 @@
 class ExamQuestionCreateNotFound(Exception):
-    def __init__(self, message: str = "쪽지시험 문제 등록 권한이 없습니다."):
+    def __init__(self, message: str = "생성하려는 문제 정보를 찾을 수 없습니다."):
         super().__init__(message)
 
 

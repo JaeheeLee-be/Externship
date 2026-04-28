@@ -1,6 +1,9 @@
-from typing import Any, Dict
+import json
+from typing import Any, Dict, Literal
 
-from apps.exams.excpections.exam_question_exceptions import (
+from django.db import transaction
+
+from apps.exams.exceptions.exam_question_exceptions import (
     ExamQuestionCreateConflict,
     ExamQuestionCreateNotFound,
     ExamQuestionUpdateConflict,
@@ -10,40 +13,50 @@ from apps.exams.models.exam_model import Exam
 from apps.exams.models.exam_question_model import ExamQuestion
 
 
-class QuestionService:
+class AdminQuestionService:
 
-    def __init__(self, exam_id: int):
-        exam = Exam.objects.prefetch_related("examquestion_set").select_for_update().filter(id=exam_id).first()
+    def __init__(self, exam_id: int, method: Literal["create", "update", "delete"]):
+        self.exam_id = exam_id
+        self.method = method
+        self.atomic = transaction.atomic()
+
+    def __enter__(self) -> "AdminQuestionService":
+        self.atomic.__enter__()
+        exam = Exam.objects.prefetch_related("examquestion_set").select_for_update().filter(id=self.exam_id).first()
         if not exam:
-            raise ExamQuestionCreateNotFound()
+            self.atomic.__exit__(None, None, None)
+            if self.method == "create":
+                raise ExamQuestionCreateNotFound()
+            raise ExamQuestionUpdateNotFound()
         self.exam = exam
         self.questions = list(self.exam.examquestion_set.all())
+        self.len_of_questions = len(self.questions)
+        self.total_point = sum(question.point for question in self.questions)
+        return self
 
-    @property
-    def len_of_questions(self) -> int:
-        return len(self.questions)
-
-    @property
-    def total_point(self) -> int:
-        return sum(question.point for question in self.questions)
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: Any) -> None:
+        self.atomic.__exit__(exc_type, exc_value, traceback)
 
     def create_question(self, data: Dict[str, Any]) -> ExamQuestion:
+        if "options_json" in data:
+            data["options_json"] = json.dumps(data["options_json"])
         if self.len_of_questions >= 20:
             raise ExamQuestionCreateConflict()
         if self.total_point + data["point"] > 100:
             raise ExamQuestionCreateConflict()
-        question = ExamQuestion.objects.create(exam=self.exam, **data)
-        self.questions.append(question)
-        return question
+        new_question = ExamQuestion(exam=self.exam, **data)
+        new_question.save()
+        return new_question
 
     def update_question(self, data: Dict[str, Any], question_id: int) -> ExamQuestion:
+        if "options_json" in data:
+            data["options_json"] = json.dumps(data["options_json"])
         target_question = next((question for question in self.questions if question.id == question_id), None)
         if not target_question:
             raise ExamQuestionUpdateNotFound()
-        if "point" in data:
-            if self.total_point + data["point"] - target_question.point > 100:
-                raise ExamQuestionUpdateConflict()
+        if self.total_point + data.get("point", target_question.point) - target_question.point > 100:
+            raise ExamQuestionUpdateConflict()
         for k, v in data.items():
             setattr(target_question, k, v)
-        target_question.save()
+        target_question.save(update_fields=list(data.keys()))
         return target_question

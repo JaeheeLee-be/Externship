@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from django.urls import reverse
 from rest_framework import status
@@ -79,7 +79,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         )
         cls.data = {
             "question": "test",
-            "answer": {"answer": 1},
+            "correct_answer": [{"answer": 1}],
             "type": ExamQuestion.QuestionType.SHORT_ANSWER,
             "point": 5,
         }
@@ -90,16 +90,16 @@ class TestAdminExamQuestionCreateView(APITestCase):
             type=ExamQuestion.QuestionType.SHORT_ANSWER,
             point=1,
         )
-        cls.fail_point_data = {"question": "test_2", "answer": {"answer": 2}, "type": "ox", "point": 10}
+        cls.fail_point_data = {"question": "test_2", "correct_answer": {"answer": 2}, "type": "ox", "point": 10}
         cls.update_data = {
             "question": "mod_test",
-            "answer": {"answer": 5},
+            "correct_answer": [{"answer": 5}],
             "type": ExamQuestion.QuestionType.SHORT_ANSWER,
             "point": 5,
         }
         cls.update_fail_point_data = {
             "question": "mod_test",
-            "answer": {"answer": 5},
+            "correct_answer": [{"answer": 5}],
             "type": ExamQuestion.QuestionType.SHORT_ANSWER,
             "point": 9,
         }
