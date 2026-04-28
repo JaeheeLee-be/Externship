@@ -17,7 +17,7 @@ class SubjectSummarySerializer(serializers.ModelSerializer):
 class ExamSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam
-        fields = ["id", "title", "thumbnail_img_url"]
+        fields = ["id", "title", "thumbnail_image_url"]
 
 
 class CourseSummarySerializer(serializers.ModelSerializer):
