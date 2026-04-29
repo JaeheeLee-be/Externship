@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
 
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
+from apps.exams.serializers.admin_exam_serializer import ExamDetailSerializer
 from apps.posts.models import Cohort, Course, Subject
 from apps.users.models import User
 
@@ -17,6 +18,7 @@ class ExamBaseTestCase(APITestCase):
     exam2: Exam
     question1: ExamQuestion
     question2: ExamQuestion
+    question3: ExamQuestion
     cohort: Cohort
     deployment: ExamDeployment
 
@@ -78,6 +80,16 @@ class ExamBaseTestCase(APITestCase):
             answer={"answer": ["test_answer1", "test_answer2"]},
             point=2,
         )
+        cls.question3 = ExamQuestion.objects.create(
+            exam=cls.exam1,
+            question="test_question3",
+            type="fill_blank",
+            prompt="___ ___ ___question",
+            blank_count=3,
+            options_json='["it", "is", "blank"]',
+            answer={"answer": ["it", "is", "blank"]},
+            point=3,
+        )
         cls.cohort = Cohort.objects.create(
             course=cls.course,
             number=1,
@@ -92,6 +104,15 @@ class ExamBaseTestCase(APITestCase):
             open_at="2024-01-01T00:00:00Z",
             close_at="2024-12-31T23:59:59Z",
         )
+
+# 시리얼라이저 테스트
+class TestExamSerializer(ExamBaseTestCase):
+    def test_exam_get_detail(self) -> None:
+        serializer = ExamDetailSerializer(self.exam1)
+        self.assertEqual(serializer.data["title"], "test_exam")
+        self.assertEqual(serializer.data["questions"][0], self.question3.id)
+        self.assertEqual(serializer.data["questions"]["options"], ["it", "is", "blank"])
+
 
 
 # 모델 테스트
