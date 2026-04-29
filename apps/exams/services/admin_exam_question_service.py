@@ -6,6 +6,7 @@ from django.db import transaction
 from apps.exams.exceptions.exam_question_exceptions import (
     ExamQuestionCreateConflict,
     ExamQuestionCreateNotFound,
+    ExamQuestionDeleteNotFound,
     ExamQuestionUpdateConflict,
     ExamQuestionUpdateNotFound,
 )
@@ -27,7 +28,10 @@ class AdminQuestionService:
             self.atomic.__exit__(None, None, None)
             if self.method == "create":
                 raise ExamQuestionCreateNotFound()
-            raise ExamQuestionUpdateNotFound()
+            elif self.method == "update":
+                raise ExamQuestionUpdateNotFound()
+            elif self.method == "delete":
+                raise ExamQuestionDeleteNotFound()
         self.exam = exam
         self.questions = list(self.exam.examquestion_set.all())
         self.len_of_questions = len(self.questions)
@@ -59,4 +63,12 @@ class AdminQuestionService:
         for k, v in data.items():
             setattr(target_question, k, v)
         target_question.save(update_fields=list(data.keys()))
+        return target_question
+
+    def delete_question(self, question_id: int) -> ExamQuestion:
+        target_question = next((question for question in self.questions if question.id == question_id), None)
+        if not target_question:
+            raise ExamQuestionDeleteNotFound()
+        target_question.delete()
+        self.questions.remove(target_question)
         return target_question

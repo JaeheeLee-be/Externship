@@ -11,12 +11,14 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.exceptions.exam_question_exceptions import (
     ExamQuestionCreateConflict,
     ExamQuestionCreateNotFound,
+    ExamQuestionDeleteNotFound,
     ExamQuestionUpdateConflict,
     ExamQuestionUpdateNotFound,
 )
 from apps.exams.serializers.admin_exam_question_serializer import (
     QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
+    QuestionDeleteResponseSerializer,
     QuestionUpdateResponseSerializer,
     QuestionUpdateSerializer,
 )
@@ -42,9 +44,7 @@ class AdminQuestionCreateView(APIView):
     def post(self, request: Request, exam_id: int) -> Response:
         serializer = QuestionCreateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                {"error_detail": "유효하지 않은 문제 등록 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
             data = serializer.validated_data
             with AdminQuestionService(exam_id, "create") as service:
@@ -60,7 +60,7 @@ class AdminQuestionCreateView(APIView):
     tags=["exams_question"],
     summary="쪽지시험 문제 수정",
 )
-class AdminQuestionUpdateView(APIView):
+class AdminQuestionDetailView(APIView):
     permission_classes = [IsRoleAdminUser]
 
     def permission_denied(
@@ -68,14 +68,14 @@ class AdminQuestionUpdateView(APIView):
     ) -> NoReturn:
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
-        raise PermissionDenied("쪽지시험 문제 수정 권한이 없습니다.")
+        if request.method == "PUT":
+            raise PermissionDenied("쪽지시험 문제 수정 권한이 없습니다.")
+        raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
 
     def put(self, request: Request, exam_id: int, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                {"error_detail": "유효하지 않은 문제 수정 데이터 입니다"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
             mod_data = serializer.validated_data
             with AdminQuestionService(exam_id, "update") as service:
@@ -85,3 +85,11 @@ class AdminQuestionUpdateView(APIView):
         except ExamQuestionUpdateNotFound as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(QuestionUpdateResponseSerializer(mod_question).data, status=status.HTTP_200_OK)
+
+    def delete(self, request: Request, exam_id: int, question_id: int) -> Response:
+        try:
+            with AdminQuestionService(exam_id, "delete") as service:
+                target_question = service.delete_question(question_id)
+        except ExamQuestionDeleteNotFound as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(QuestionDeleteResponseSerializer(target_question).data, status=status.HTTP_200_OK)

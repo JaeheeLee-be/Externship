@@ -16,3 +16,8 @@ class ExamQuestionUpdateNotFound(Exception):
 class ExamQuestionUpdateConflict(Exception):
     def __init__(self, message: str = "시험 문제 수 제한 또는 총 배점을 초과하여 문제를 수정할 수 없습니다."):
         super().__init__(message)
+
+
+class ExamQuestionDeleteNotFound(Exception):
+    def __init__(self, message: str = "삭제할 문제 정보를 찾을 수 없습니다."):
+        super().__init__(message)
