@@ -5,14 +5,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.posts.exceptions import CourseNotFoundError
 from apps.posts.serializers.course_crud import (
-    # CourseActionResponseSerializer,
+    CourseActionResponseSerializer,
     CourseDetailResponseSerializer,
     CourseListResponseSerializer,
     CourseRequestSerializer,
 )
 from apps.posts.services import course_crud as coursecrud_service
-from posts.exceptions import CourseNotFoundError
 
 
 class CourseListView(APIView):
@@ -24,7 +24,8 @@ class CourseListView(APIView):
         responses={200: CourseListResponseSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
-        courses = coursecrud_service.list_courses()
+        # 2. 함수 이름을 get_course_list로 수정 (mypy 에러 2번 해결)
+        courses = coursecrud_service.get_course_list()
         return Response(
             CourseListResponseSerializer(courses, many=True).data,
             status=status.HTTP_200_OK,
@@ -40,7 +41,7 @@ class CourseCreateView(APIView):
         request=CourseRequestSerializer,
         responses={
             201: CourseDetailResponseSerializer,
-            # 400: CourseActionResponseSerializer,
+            400: CourseActionResponseSerializer,
         },
     )
     def post(self, request: Request) -> Response:
@@ -67,13 +68,17 @@ class CourseDetailView(APIView):
         summary="과정 상세 조회",
         responses={
             200: CourseDetailResponseSerializer,
-            # 404: CourseActionResponseSerializer,
+            404: CourseActionResponseSerializer,
         },
     )
-
     def get(self, request: Request, course_id: int) -> Response:
         try:
-            course = coursecrud_service.get_course(course_id) #미완성
+            # 3. 함수 이름을 get_course_detail로 수정 (mypy 에러 4번 해결)
+            course = coursecrud_service.get_course_detail(course_id)
+            return Response(  # return 추가 (mypy 에러 3번 해결)
+                CourseDetailResponseSerializer(course).data,
+                status=status.HTTP_200_OK,
+            )
         except CourseNotFoundError as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -125,6 +130,7 @@ class CourseDeleteView(APIView):
     def delete(self, request: Request, course_id: int) -> Response:
         coursecrud_service.delete_course(course_id)
 
+        # CourseActionResponseSerializer 사용을 위해 딕셔너리 형태로 전달
         return Response(
             CourseActionResponseSerializer({"detail": "과정이 삭제되었습니다."}).data,
             status=status.HTTP_200_OK,

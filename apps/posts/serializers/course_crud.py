@@ -1,5 +1,7 @@
 from typing import Any
+
 from rest_framework import serializers
+
 from apps.posts.models.course import Course
 
 
@@ -27,3 +29,7 @@ class CourseDetailResponseSerializer(serializers.ModelSerializer[Course]):
     class Meta:
         model = Course
         fields = ["id", "name", "tag", "description", "thumbnail_img_url", "created_at", "updated_at"]
+
+
+class CourseActionResponseSerializer(serializers.Serializer[Any]):
+    detail = serializers.CharField(help_text="응답 메시지")

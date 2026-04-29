@@ -1,9 +1,13 @@
+from typing import Any
+
+from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
-from apps.posts.models.course import Course
+
 from apps.posts.exceptions import CourseAlreadyExistsError
+from apps.posts.models.course import Course
 
 
-def get_course_list():
+def get_course_list() -> QuerySet[Course]:
     # 과정 목록조회 검증
     return Course.objects.all().order_by("id")
 
@@ -13,7 +17,7 @@ def get_course_detail(course_id: int) -> Course:
     return get_object_or_404(Course, id=course_id)
 
 
-def create_course(validated_data: dict) -> Course:
+def create_course(validated_data: dict[str, Any]) -> Course:
     # 과정 등록 검증
     name = validated_data["name"]
 
@@ -23,7 +27,7 @@ def create_course(validated_data: dict) -> Course:
     return Course.objects.create(**validated_data)
 
 
-def update_course(course_id: int, validated_data: dict) -> Course:
+def update_course(course_id: int, validated_data: dict[str, Any]) -> Course:
     # 과정 수정 검증
     course = get_object_or_404(Course, id=course_id)
 
@@ -38,6 +42,6 @@ def delete_course(course_id: int) -> None:
     # 과정 삭제 검증
     course = get_object_or_404(Course, id=course_id)
 
-    # 추후 기수/유저 연결되면 추가
+    # 추후 다른 거 연결되면 추가 가능성 O
 
     course.delete()
