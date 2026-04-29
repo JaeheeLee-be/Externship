@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from typing import Any
+import uuid
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -11,16 +12,16 @@ from apps.users.services.admin_account_service import AdminAccountService
 
 URL = "/api/v1/admin/accounts"
 
-_counter = itertools.count(1)
+
 
 
 def make_user(**kwargs: Any) -> User:
-    n = next(_counter)
+    uid = uuid.uuid4().hex[0:8]
     defaults: dict[str, Any] = {
-        "email": f"testuser{n}@test.com",
-        "nickname": f"유저{n}",
+        "email": f"testuser{uid}@test.com",
+        "nickname": f"유저{uid}",
         "name": "이름",
-        "phone_number": f"010{n:08d}",
+        "phone_number": f"010{uid[:8]}",
         "role": "USER",
         "is_active": True,
     }
@@ -115,7 +116,7 @@ class AdminAccountListTest(APITestCase):
 class AdminAccountFilterTest(APITestCase):
     def setUp(self) -> None:
         self.admin = make_user(role="ADMIN")
-        self.search_target = make_user(email=f"findme{next(_counter)}@test.com", nickname="검색전용닉네임")
+        self.search_target = make_user(email="findme_unique@test.com", nickname="검색전용닉네임")
         make_user(role="USER", is_active=False)
         make_user(role="STUDENT")
         self.client.force_authenticate(user=self.admin)
