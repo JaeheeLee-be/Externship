@@ -10,8 +10,8 @@ from .exam_model import Exam
 class ExamDeployment(TimeStampModel):
 
     class ExamStatus(models.TextChoices):
-        ON = "activate", "활성화"
-        OFF = "deactivate", "비활성화"
+        ON = "Activated", "활성화"
+        OFF = "Deactivated", "비활성화"
 
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
