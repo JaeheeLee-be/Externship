@@ -23,7 +23,7 @@ ALLOWED_SORT_FIELDS = {
 
 def get_exam_list(
     *,
-    subject_id: Optional[int] = None,
+    subject_id: Optional[int | str] = None,
     search_keyword: Optional[str] = None,
     sort: Optional[str] = None,
     order: Optional[str] = None,
