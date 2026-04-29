@@ -94,7 +94,7 @@ class EmailVerificationService:
         verify_token = secrets.token_urlsafe(32)
 
         # 승인 토큰 캐쉬 저장 유효 10분
-        token_key = f"purpose_{purpose}_email_verify_token_{verify_token}"
+        token_key = f"email_verify_token_{verify_token}"
         data = {"email": email, "purpose": purpose}
 
         try:
@@ -106,6 +106,3 @@ class EmailVerificationService:
         cache.delete(cache_key)
 
         return verify_token
-
-
-###

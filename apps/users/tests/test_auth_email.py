@@ -74,7 +74,7 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
 
         # 토큰 발급 및 기존 캐시 삭제 확인
         verify_token = response.data["email_token"]
-        token_key = f"purpose_{purpose}_email_verify_token_{verify_token}"
+        token_key = f"email_verify_token_{verify_token}"
 
         cached_data = cache.get(token_key)
         self.assertIsNotNone(cached_data)  # 캐시가 존재하는지 확인

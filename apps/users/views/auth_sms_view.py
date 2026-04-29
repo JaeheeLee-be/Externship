@@ -107,4 +107,4 @@ class SmsVerificationView(APIView):
             sms_token = SmsVerificationService.verify_sms_code(phone_number, code, purpose)
             return Response({"detail": "sms 인증이 성공했습니다", "sms_token": sms_token})
         except ValidationError as e:
-            return Response({"message": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
