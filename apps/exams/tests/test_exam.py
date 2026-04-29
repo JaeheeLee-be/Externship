@@ -111,7 +111,7 @@ class TestExamSerializer(ExamBaseTestCase):
     def test_exam_get_detail(self) -> None:
         serializer = ExamDetailSerializer(self.exam1)
         self.assertEqual(serializer.data["title"], "test_exam")
-        self.assertEqual(serializer.data["questions"]["options"], ["it", "is", "blank"])
+        self.assertEqual(serializer.data["questions"][2]["options"], ["it", "is", "blank"])
 
 
 # 모델 테스트
