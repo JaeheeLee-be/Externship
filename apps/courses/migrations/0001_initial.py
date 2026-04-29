@@ -13,57 +13,62 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name="Cohort",
-            fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("number", models.PositiveSmallIntegerField()),
-                ("max_student", models.PositiveSmallIntegerField()),
-                ("start_date", models.DateField()),
-                ("end_date", models.DateField()),
-                (
-                    "status",
-                    models.CharField(
-                        choices=[("SUBMITTED", "대기"), ("ACCEPTED", "승인"), ("REJECTED", "거절")],
-                        default="SUBMITTED",
-                        max_length=20,
-                    ),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.CreateModel(
+                    name="Cohort",
+                    fields=[
+                        ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                        ("created_at", models.DateTimeField(auto_now_add=True)),
+                        ("updated_at", models.DateTimeField(auto_now=True)),
+                        ("number", models.PositiveSmallIntegerField()),
+                        ("max_student", models.PositiveSmallIntegerField()),
+                        ("start_date", models.DateField()),
+                        ("end_date", models.DateField()),
+                        (
+                            "status",
+                            models.CharField(
+                                choices=[("SUBMITTED", "대기"), ("ACCEPTED", "승인"), ("REJECTED", "거절")],
+                                default="SUBMITTED",
+                                max_length=20,
+                            ),
+                        ),
+                        (
+                            "course",
+                            models.ForeignKey(
+                                on_delete=django.db.models.deletion.CASCADE, related_name="cohorts", to="posts.course"
+                            ),
+                        ),
+                    ],
+                    options={
+                        "db_table": "cohorts",
+                        "unique_together": {("course", "number")},
+                    },
                 ),
-                (
-                    "course",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="cohorts", to="posts.course"
-                    ),
+                migrations.CreateModel(
+                    name="Subject",
+                    fields=[
+                        ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                        ("created_at", models.DateTimeField(auto_now_add=True)),
+                        ("updated_at", models.DateTimeField(auto_now=True)),
+                        ("title", models.CharField(max_length=30)),
+                        ("number_of_days", models.PositiveSmallIntegerField()),
+                        ("number_of_hours", models.PositiveSmallIntegerField()),
+                        ("thumbnail_img_url", models.CharField(blank=True, max_length=255, null=True)),
+                        ("status", models.BooleanField(default=True)),
+                        (
+                            "course",
+                            models.ForeignKey(
+                                on_delete=django.db.models.deletion.CASCADE, related_name="subjects", to="posts.course"
+                            ),
+                        ),
+                    ],
+                    options={
+                        "db_table": "subjects",
+                        "unique_together": {("course", "title")},
+                    },
                 ),
             ],
-            options={
-                "db_table": "cohorts",
-                "unique_together": {("course", "number")},
-            },
-        ),
-        migrations.CreateModel(
-            name="Subject",
-            fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("title", models.CharField(max_length=30)),
-                ("number_of_days", models.PositiveSmallIntegerField()),
-                ("number_of_hours", models.PositiveSmallIntegerField()),
-                ("thumbnail_img_url", models.CharField(blank=True, max_length=255, null=True)),
-                ("status", models.BooleanField(default=True)),
-                (
-                    "course",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="subjects", to="posts.course"
-                    ),
-                ),
-            ],
-            options={
-                "db_table": "subjects",
-                "unique_together": {("course", "title")},
-            },
+            database_operations=[],
         ),
     ]

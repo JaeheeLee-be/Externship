@@ -12,18 +12,23 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterUniqueTogether(
-            name="subject",
-            unique_together=None,
-        ),
-        migrations.RemoveField(
-            model_name="subject",
-            name="course",
-        ),
-        migrations.DeleteModel(
-            name="Cohort",
-        ),
-        migrations.DeleteModel(
-            name="Subject",
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterUniqueTogether(
+                    name="subject",
+                    unique_together=None,
+                ),
+                migrations.RemoveField(
+                    model_name="subject",
+                    name="course",
+                ),
+                migrations.DeleteModel(
+                    name="Cohort",
+                ),
+                migrations.DeleteModel(
+                    name="Subject",
+                ),
+            ],
+            database_operations=[],
         ),
     ]
