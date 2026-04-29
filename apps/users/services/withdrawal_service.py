@@ -8,7 +8,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.users.models import User, Withdrawal
-from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.utils.purpose_enum import AuthPurpose
 from apps.users.utils.withdrawal_exceptions import (
     AlreadyActiveError,
     AlreadyWithdrawnError,
