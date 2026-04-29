@@ -54,17 +54,11 @@ class AdminExamDeploymentCreateSerializer(serializers.Serializer[Any]):
         now = timezone.now()
 
         if data["open_at"] < now:
-            raise serializers.ValidationError(
-                {"open_at": ["시작 시간은 현재 시간 이후여야 합니다."]}
-            )
+            raise serializers.ValidationError({"open_at": ["시작 시간은 현재 시간 이후여야 합니다."]})
         if data["close_at"] < now:
-            raise serializers.ValidationError(
-                {"close_at": ["종료 시간은 현재 시간 이후여야 합니다."]}
-            )
+            raise serializers.ValidationError({"close_at": ["종료 시간은 현재 시간 이후여야 합니다."]})
         if data["open_at"] >= data["close_at"]:
-            raise serializers.ValidationError(
-                {"open_at": ["시작 시간은 종료 시간보다 빨라야 합니다."]}
-            )
+            raise serializers.ValidationError({"open_at": ["시작 시간은 종료 시간보다 빨라야 합니다."]})
         return data
 
 
