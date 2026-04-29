@@ -78,8 +78,9 @@ class ExamListCreateView(APIView):
         },
     )
     def get(self, request: Request) -> Response:
+
         queryset = get_exam_list(
-            subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
+            subject_id=request.query_params.get("subject_id"),
             search_keyword=request.query_params.get("search_keyword"),
             sort=request.query_params.get("sort"),
             order=request.query_params.get("order"),

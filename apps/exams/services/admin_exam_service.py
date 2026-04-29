@@ -37,6 +37,11 @@ def get_exam_list(
         )
     )
 
+    try:
+        subject_id = int(subject_id)
+    except (TypeError, ValueError):
+        subject_id = None
+
     if subject_id:
         queryset = queryset.filter(subject__id=subject_id)
     if search_keyword:

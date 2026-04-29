@@ -180,6 +180,13 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
 
+    def test_get_exam_list_with_subject_insert_text(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"subject_id": "text"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 2)
+
     # 쪽지시험 목록 조회: 검색
     def test_get_exam_list_with_search_title(self) -> None:
         self.client.force_authenticate(user=self.admin)
