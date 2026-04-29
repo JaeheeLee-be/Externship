@@ -6,29 +6,29 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.serializers.auth_email_serializer import (
-    EmailRequestSerializer,
-    EmailVerifySerializer,
+from apps.users.serializers.auth_sms_serializer import (
+    SmsSendSerializer,
+    SmsVerifySerializer,
 )
-from apps.users.services.auth_email_service import EmailVerificationService
-from apps.users.utils.purpose_enum import AuthPurpose
+from apps.users.services.auth_sms_service import SmsVerificationService
+from apps.users.utils.purpose_enum import SmsPurpose
 
 
-class EmailSendView(APIView):
+class SmsSendView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts (이메일 인증)"],
-        summary="이메일 인증 코드 발송 API",
-        description="회원가입, 비밀번호 찾기, 계정 복구 등 용도(purpose)에 맞는 6자리 이메일 인증 코드를 발송합니다.",
-        request=EmailRequestSerializer,
+        tags=["Accounts (sms 인증)"],
+        summary="sms 인증 코드 발송 API",
+        description="회원가입, 이메일 찾기, 전화번호 변경 등 용도(purpose)에 맞는 6자리 sms 인증 코드를 발송합니다.",
+        request=SmsSendSerializer,
         responses={
             200: OpenApiResponse(
                 description="발송 성공",
                 examples=[
                     OpenApiExample(
                         name="성공 응답",
-                        value={"detail": "이메일 인증 코드가 전송되었습니다."},
+                        value={"message": "sms 인증 코드가 전송되었습니다."},
                     )
                 ],
             ),
@@ -37,7 +37,7 @@ class EmailSendView(APIView):
                 examples=[
                     OpenApiExample(
                         name="실패 응답 (이메일 발송 실패)",
-                        value={"error_detail": {"email": ["이메일 발송에 실패했습니다. 이메일 주소를 확인해주세요."]}},
+                        value={"error_detail": {"email": ["sms 발송에 실패했습니다. 이메일 주소를 확인해주세요."]}},
                     ),
                     OpenApiExample(
                         name="실패 응답 (형식 오류)",
@@ -48,29 +48,29 @@ class EmailSendView(APIView):
         },
     )
     def post(self, request: Request) -> Response:
-        serializer = EmailRequestSerializer(data=request.data)
+        serializer = SmsSendSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        email = serializer.validated_data["email"]
-        purpose = AuthPurpose(serializer.validated_data["purpose"])
+        phone_number = serializer.validated_data["phone_number"]
+        purpose = SmsPurpose(serializer.validated_data["purpose"])
 
         try:
-            EmailVerificationService.send_verification_email(email, purpose)
+            SmsVerificationService.send_verification_sms(phone_number, purpose)
 
-            return Response({"detail": "이메일 인증 코드가 전송되었습니다"}, status=status.HTTP_200_OK)
+            return Response({"message": "회원가입을 위한 휴대폰 인증 코드가 전송되었습니다"})
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EmailVerificationView(APIView):
+class SmsVerificationView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts (이메일 인증)"],
-        summary="이메일 인증 코드 검증 API",
-        description="사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 email_token을 반환합니다.",
-        request=EmailVerifySerializer,
+        tags=["Accounts (sms 인증)"],
+        summary="sms 인증 코드 검증 API",
+        description="사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 sms_token을 반환합니다.",
+        request=SmsVerifySerializer,
         responses={
             200: OpenApiResponse(
                 description="검증 성공",
@@ -78,8 +78,8 @@ class EmailVerificationView(APIView):
                     OpenApiExample(
                         name="성공 응답",
                         value={
-                            "detail": "이메일 인증에 성공하였습니다.",
-                            "email_token": "aB3dE5g7h8i9j0k1l2m3n4o5p6q7r8s9",
+                            "message": "sms 인증에 성공하였습니다.",
+                            "sms_token": "aB3dE5g7h8i9j0k1l2m3n4o5p6q7r8s9",
                         },
                     )
                 ],
@@ -95,26 +95,16 @@ class EmailVerificationView(APIView):
             ),
         },
     )
-
-    ## 이메일 검증 인증 코드 검증 뷰
     def post(self, request: Request) -> Response:
-        serializer = EmailVerifySerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        email = serializer.validated_data["email"]
-        code = serializer.validated_data["code"]
-        purpose = AuthPurpose(serializer.validated_data["purpose"])
-
-        # service token 발급
+        serializer = SmsVerifySerializer(data=request.data)
         try:
-            email_token = EmailVerificationService.verification_code(email, code, purpose)
+            serializer.is_valid(raise_exception=True)
 
-            return Response(
-                {
-                    "detail": "이메일 인증에 성공하였습니다",
-                    "email_token": email_token,
-                },
-                status=status.HTTP_200_OK,
-            )
+            phone_number = serializer.validated_data["phone_number"]
+            code = serializer.validated_data["code"]
+            purpose = SmsPurpose(serializer.validated_data["purpose"])
+
+            sms_token = SmsVerificationService.verify_sms_code(phone_number, code, purpose)
+            return Response({"message": "회원가입을 위한 휴대폰 인증에 성공했습니다.", "sms_token": sms_token})
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)

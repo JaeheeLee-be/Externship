@@ -8,7 +8,7 @@ from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
-from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.utils.purpose_enum import AuthPurpose
 
 User = get_user_model()
 
@@ -39,7 +39,7 @@ class EmailVerificationService:
         # Base62 코드 생성
         code = Base62.uuid_encode(uuid.uuid4(), length=6)
         # Redis 저장
-        cache_key = f"email_code_{email}"
+        cache_key = f"email_code_{email}_{purpose.value}"  # type: ignore[misc]
         cache_data = {"code": code, "purpose": purpose.value}  # type: ignore[misc]
         # cache 저장 설정
         try:
@@ -47,7 +47,7 @@ class EmailVerificationService:
         except Exception as e:
             raise ValidationError(f"error: {e}  인증 코드 생성 중 서버 오류가 발생했습니다")
 
-        # 이메일 발송
+        # 이메일 발송 #######
         subject = f"[오즈코딩스쿨] 이메일 인증 코드를 확인해 주세요"
         message = f"인증 코드 : {code} 3분 이내에 입력해 주세요"
 
@@ -61,10 +61,11 @@ class EmailVerificationService:
             )
 
         except Exception:
+            cache.delete(cache_key)
             raise ValidationError("이메일 발송 실패 했습니다")
 
     @classmethod
-    def verification_code(cls, email: str, code: str) -> str:
+    def verification_code(cls, email: str, code: str, purpose: AuthPurpose) -> str:
         """
         사용자 입력한 코드를 Redis 대조 후 일치 시 토큰을 발급
 
@@ -73,25 +74,34 @@ class EmailVerificationService:
         :return: 인증 실패시 ValidationError 성공시  토큰 발급
         """
 
-        cache_key = f"email_code_{email}"
+        cache_key = f"email_code_{email}_{purpose.value}"  # type: ignore[misc]
         cached_data = cache.get(cache_key)
 
+        if not cached_data:
+            raise ValidationError("인증코드가 만료되거나 발급되지 않았습니다.")
+
+        # purpose 검증
+        cached_purpose = cached_data.get("purpose")
+        if cached_purpose != purpose.value:  # type: ignore[misc]
+            raise ValidationError("인증 용도가 일치하지 않습니다.")
+
         # 코드 확인
-        if not cached_data or cached_data.get("code") != code:
-            raise ValidationError("인증코드가 만료되거나 일치하지 않습니다")
-
-        # 삭제시 검증
-        if not cache.delete(cache_key):
-            raise ValidationError({"code": "이미 사용된 인증 코드입니다."})
-
-        purpose = cached_data.get("purpose")
+        if cached_data.get("code") != code:
+            raise ValidationError("인증코드가 만료되거나 일치하지 않습니다.")
 
         # 인증 성공시 토큰 발급
         verify_token = secrets.token_urlsafe(32)
 
         # 승인 토큰 캐쉬 저장 유효 10분
         token_key = f"email_verify_token_{verify_token}"
-        data = {"email": email, "purpose": purpose}
-        cache.set(token_key, data, timeout=600)
+        data = {"email": email, "purpose": purpose.value}  # type:ignore[misc]
+
+        try:
+            cache.set(token_key, data, timeout=600)
+
+        except Exception:
+            raise ValidationError("토큰 발급 중 서버 오류가 발생했습니다.")
+
+        cache.delete(cache_key)
 
         return verify_token
