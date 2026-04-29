@@ -1,4 +1,4 @@
-from apps.posts.serializers.comment import (
+from apps.posts.serializers.comment_serializer import (
     CommentCreateSerializer,
     PostCommentSerializer,
 )
