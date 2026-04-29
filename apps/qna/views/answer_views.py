@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
+from apps.core.utils.s3 import PresignedUrlView
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
@@ -21,17 +22,16 @@ from apps.qna.serializers.answer_serializers import (
 )
 from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
 
-from apps.qna.services.answer_services import AnswerService
-from apps.core.utils.s3 import PresignedUrlView
-from typing import Any
 
 class AnswerPresignedUrlView(PresignedUrlView):
     """post를 불러와 오버라이드 -> 결과적으로 put만 실행"""
-    permission_classes: list[type[Any]] = [IsAuthenticated]
+
+    permission_classes: list[type[Any]] = [IsStudentUser]
     path = "uploads/images/answers/"
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class AnswerView(APIView):
     """
