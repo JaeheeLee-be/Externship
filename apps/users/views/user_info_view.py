@@ -1,8 +1,7 @@
 from typing import Never, cast
 
-from botocore.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from moto.dynamodb.models.dynamo_type import serializer
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import IsAuthenticated
