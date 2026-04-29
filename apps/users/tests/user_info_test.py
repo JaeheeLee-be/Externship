@@ -1,4 +1,3 @@
-# apps/users/tests/test_user_info_view.py
 from datetime import date
 
 from django.urls import reverse
@@ -17,9 +16,10 @@ class UserInfoViewTest(APITestCase):
     cohort: Cohort
     url: str
 
+    # 내 정보 조회 테스트
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.url = reverse("users:me")  # url name은 너 url 설정에 맞게 수정
+        cls.url = reverse("users:me")  # url name은 url 설정에 맞게 수정
 
         # 일반 유저 (수강생 등록 X)
         cls.user = User.objects.create_user(
@@ -126,3 +126,128 @@ class UserInfoViewTest(APITestCase):
         response = self.client.get(self.url)
 
         self.assertNotIn("password", response.data)
+
+    # 내 정보 수정 테스트
+    def test_patch_user_info_success(self) -> None:
+        """정상적인 정보 수정"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={
+                "nickname": "새닉네임",
+                "name": "새이름",
+                "birthday": "1990-01-01",
+                "gender": "F",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # 응답 필드 검증 (명세서 응답 스키마)
+        data = response.data
+        self.assertEqual(data["nickname"], "새닉네임")
+        self.assertEqual(data["name"], "새이름")
+        self.assertEqual(data["birthday"], "1990-01-01")
+        self.assertEqual(data["gender"], "F")
+        self.assertIn("updated_at", data)
+
+        # DB 반영 확인
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.nickname, "새닉네임")
+        self.assertEqual(self.user.name, "새이름")
+
+    def test_patch_partial_update(self) -> None:
+        """일부 필드만 수정 - 나머지는 그대로"""
+        self.client.force_authenticate(user=self.user)
+        original_name = self.user.name
+
+        response = self.client.patch(
+            self.url,
+            data={"nickname": "닉네임만수정"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.nickname, "닉네임만수정")
+        self.assertEqual(self.user.name, original_name)
+
+    def test_patch_duplicate_nickname(self) -> None:
+        """다른 유저의 닉네임으로 변경 시 409"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={"nickname": "수강닉"},  # student_user의 닉네임
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("error_detail", response.data)
+        self.assertEqual(response.data["error_detail"], "중복된 닉네임이 존재합니다.")
+
+    def test_patch_same_nickname_allowed(self) -> None:
+        """본인 닉네임 그대로 보내도 통과"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={"nickname": self.user.nickname},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_patch_invalid_nickname_format(self) -> None:
+        """닉네임 정규식 위반 (특수문자)"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={"nickname": "닉@#$"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_invalid_name_format(self) -> None:
+        """이름 정규식 위반 (숫자 포함)"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={"name": "이름123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_future_birthday(self) -> None:
+        """미래 생일 차단"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={"birthday": "2099-01-01"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_invalid_gender(self) -> None:
+        """잘못된 gender enum"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            self.url,
+            data={"gender": "X"},  # M, F만 허용
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_unauthenticated(self) -> None:
+        """비로그인 시 401"""
+        response = self.client.patch(
+            self.url,
+            data={"nickname": "새닉"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("error_detail", response.data)
