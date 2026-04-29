@@ -54,12 +54,12 @@ def get_exam_list(
     return queryset
 
 
-def create_exam(subject_id: int, title: str, thumbnail_image_url: str = "default_img_url") -> Exam:
+def create_exam(subject_id: int, title: str, thumbnail_img_url: str = "default_img_url") -> Exam:
     if not Subject.objects.filter(id=subject_id).exists():
         raise SubjectNotFound()
     if Exam.objects.filter(title=title).exists():
         raise ExamTitleConflict()
-    return Exam.objects.create(subject_id=subject_id, title=title, thumbnail_image_url=thumbnail_image_url)
+    return Exam.objects.create(subject_id=subject_id, title=title, thumbnail_img_url=thumbnail_img_url)
 
 
 def get_exam(exam_id: int) -> Exam:
@@ -69,7 +69,7 @@ def get_exam(exam_id: int) -> Exam:
         raise ValueError("해당 쪽지시험 정보를 찾을 수 없습니다.")
 
 
-def put_exam(exam_id: int, title: str, subject_id: int, thumbnail_image_url: str) -> Exam:
+def put_exam(exam_id: int, title: str, subject_id: int, thumbnail_img_url: str) -> Exam:
     try:
         exam = Exam.objects.get(pk=exam_id)
     except Exam.DoesNotExist:
@@ -81,7 +81,7 @@ def put_exam(exam_id: int, title: str, subject_id: int, thumbnail_image_url: str
 
     exam.title = title
     exam.subject_id = subject_id
-    exam.thumbnail_image_url = thumbnail_image_url
+    exam.thumbnail_img_url = thumbnail_img_url
     exam.save()
     return exam
 
