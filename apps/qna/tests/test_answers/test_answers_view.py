@@ -91,6 +91,12 @@ class AnswerAcceptViewTestCase(BaseTestCase):
     답변 채택에 대한 test code
     """
 
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.user.role = "STUDENT"
+        cls.user.save()
+
     def setUp(self) -> None:
         """작성자와 다른 유저가 답변을 달 수 있어 더미 데이터 생성"""
         self.client = APIClient()
