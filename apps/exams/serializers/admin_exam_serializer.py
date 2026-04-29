@@ -1,9 +1,14 @@
+import json
 from typing import Any
 
 from rest_framework import serializers
 
 from apps.exams.models import Exam, ExamQuestion
 from apps.posts.models import Subject
+
+
+class ExamListQuerySerializer(serializers.Serializer[Any]):
+    subject_id = serializers.IntegerField(required=False)
 
 
 class ExamListSerializer(serializers.ModelSerializer[Exam]):
@@ -59,8 +64,13 @@ class SubjectNestedSerializer(serializers.ModelSerializer[Subject]):
 
 
 class QuestionNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.ListField(source="options_json")
+    options = serializers.SerializerMethodField()
     correct_answer = serializers.JSONField(source="answer")
+
+    def get_options(self, obj: ExamQuestion) -> Any:
+        if not obj.options_json:
+            return []
+        return json.loads(obj.options_json)
 
     class Meta:
         model = ExamQuestion
@@ -95,6 +105,10 @@ class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
 
 class ExamErrorSerializer(serializers.Serializer[Any]):
     error_detail = serializers.CharField()
+
+
+class ExamValidationErrorSerializer(serializers.Serializer[Any]):
+    error_detail = serializers.DictField()
 
 
 class ExamDeleteResponseSerializer(serializers.Serializer[Any]):
