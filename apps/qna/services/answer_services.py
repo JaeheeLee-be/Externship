@@ -47,7 +47,7 @@ class AnswerAcceptService:
             if answer.question.author_id != user.id:
                 raise PermissionDeniedException("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
             if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
-                raise ConflictException("이미 채택된 답변이 존재합니다.")
+                raise ConflictException()
             answer.is_adopted = True
             answer.save()
         return answer
