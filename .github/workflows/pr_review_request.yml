@@ -27,34 +27,43 @@ jobs:
 
       - name: Send Discord Notification
         if: ${{ steps.map.outputs.mentions != '' }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          MENTIONS: ${{ steps.map.outputs.mentions }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          REPO: ${{ github.repository }}
+          UPDATED_AT: ${{ github.event.pull_request.updated_at }}
         run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL secret is empty; skipping notification."
+            exit 0
+          fi
+
+          payload=$(jq -n \
+            --arg mentions "$MENTIONS" \
+            --arg pr_number "$PR_NUMBER" \
+            --arg pr_title "$PR_TITLE" \
+            --arg pr_url "$PR_URL" \
+            --arg repo "$REPO" \
+            --arg updated_at "$UPDATED_AT" \
+            '{
+              embeds: [{
+                title: "🔔 PR 리뷰 요청",
+                description: "새로운 리뷰 요청이 있습니다!",
+                color: 5814783,
+                fields: [
+                  {name: "Reviewers", value: $mentions},
+                  {name: "PR Link", value: ("[#" + $pr_number + " " + $pr_title + "](" + $pr_url + ")")},
+                  {name: "Repository", value: ("[" + $repo + "](https://github.com/" + $repo + ")")}
+                ],
+                footer: {text: "GitHub → Discord Notification"},
+                timestamp: $updated_at
+              }]
+            }')
+
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d '{
-                 "embeds": [
-                   {
-                     "title": "🔔 PR 리뷰 요청",
-                     "description": "새로운 리뷰 요청이 있습니다!",
-                     "color": 5814783,
-                     "fields": [
-                       {
-                         "name": "Reviewers",
-                         "value": "'"${{ steps.map.outputs.mentions }}"'"
-                       },
-                       {
-                         "name": "PR Link",
-                         "value": "[#${{ github.event.pull_request.number }} ${{github.event.pull_request.title}}](${{ github.event.pull_request.html_url }})"
-                       },
-                       {
-                         "name": "Repository",
-                         "value": "[${{ github.repository }}](https://github.com/${{ github.repository }})"
-                       }
-                     ],
-                     "footer": {
-                       "text": "GitHub → Discord Notification"
-                     },
-                     "timestamp": "${{ github.event.pull_request.updated_at }}"
-                   }
-                 ]
-               }' \
-               "${{ secrets.DISCORD_WEBHOOK_URL }}"
+               -d "$payload" \
+               "$DISCORD_WEBHOOK_URL"
