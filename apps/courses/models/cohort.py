@@ -6,9 +6,9 @@ from apps.posts.models.course import Course
 
 
 class StatusChoices(models.TextChoices):
-    SUBMITTED = "SUBMITTED", "대기"
-    ACCEPTED = "ACCEPTED", "승인"
-    REJECTED = "REJECTED", "거절"
+    PREPARING = "PREPARING", "준비중"
+    IN_PROGRESS = "IN_PROGRESS", "진행중"
+    FINISHED = "FINISHED", "종료"
 
 
 class Cohort(TimeStampModel):
@@ -18,7 +18,7 @@ class Cohort(TimeStampModel):
     start_date = models.DateField()
     end_date = models.DateField()
 
-    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.SUBMITTED)
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.PREPARING)
 
     class Meta:
         db_table = "cohorts"
