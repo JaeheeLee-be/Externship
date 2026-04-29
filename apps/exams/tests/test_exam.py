@@ -105,6 +105,7 @@ class ExamBaseTestCase(APITestCase):
             close_at="2024-12-31T23:59:59Z",
         )
 
+
 # 시리얼라이저 테스트
 class TestExamSerializer(ExamBaseTestCase):
     def test_exam_get_detail(self) -> None:
@@ -112,7 +113,6 @@ class TestExamSerializer(ExamBaseTestCase):
         self.assertEqual(serializer.data["title"], "test_exam")
         self.assertEqual(serializer.data["questions"][0], self.question3.id)
         self.assertEqual(serializer.data["questions"]["options"], ["it", "is", "blank"])
-
 
 
 # 모델 테스트
