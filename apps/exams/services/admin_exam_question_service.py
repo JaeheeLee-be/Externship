@@ -44,8 +44,8 @@ class AdminQuestionService:
             raise ExamQuestionCreateConflict()
         if self.total_point + data["point"] > 100:
             raise ExamQuestionCreateConflict()
-        new_question = ExamQuestion(exam=self.exam, **data)
-        new_question.save()
+        new_question = ExamQuestion.objects.create(exam=self.exam, **data)
+        self.questions.append(new_question)
         return new_question
 
     def update_question(self, data: Dict[str, Any], question_id: int) -> ExamQuestion:
