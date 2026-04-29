@@ -1,4 +1,4 @@
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from rest_framework import status
 from rest_framework.exceptions import (
