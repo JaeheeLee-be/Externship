@@ -1,5 +1,3 @@
-from typing import List
-
 import json
 from typing import Any
 
@@ -8,7 +6,6 @@ from rest_framework import serializers
 from apps.exams.models.exam_question_model import ExamQuestion
 
 
-class QuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
 class QuestionCreateSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.JSONField(source="options_json", required=False)
     correct_answer = serializers.JSONField(source="answer")
