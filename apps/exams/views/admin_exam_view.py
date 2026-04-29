@@ -22,6 +22,7 @@ from apps.exams.serializers.admin_exam_serializer import (
     ExamDeleteResponseSerializer,
     ExamDetailSerializer,
     ExamErrorSerializer,
+    ExamListQuerySerializer,
     ExamListSerializer,
     ExamValidationErrorSerializer,
 )
@@ -78,9 +79,12 @@ class ExamListCreateView(APIView):
         },
     )
     def get(self, request: Request) -> Response:
+        query_serializer = ExamListQuerySerializer(data=request.query_params)
+        if not query_serializer.is_valid():
+            return Response({"error_detail": query_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         queryset = get_exam_list(
-            subject_id=request.query_params.get("subject_id"),
+            subject_id=query_serializer.validated_data.get("subject_id"),
             search_keyword=request.query_params.get("search_keyword"),
             sort=request.query_params.get("sort"),
             order=request.query_params.get("order"),

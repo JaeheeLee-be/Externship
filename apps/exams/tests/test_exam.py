@@ -184,8 +184,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(reverse("exam-list"), {"subject_id": "text"})
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(response.status_code, 400)
 
     # 쪽지시험 목록 조회: 검색
     def test_get_exam_list_with_search_title(self) -> None:

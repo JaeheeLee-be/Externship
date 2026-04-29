@@ -7,6 +7,10 @@ from apps.exams.models import Exam, ExamQuestion
 from apps.posts.models import Subject
 
 
+class ExamListQuerySerializer(serializers.Serializer):
+    subject_id = serializers.IntegerField(required=False)
+
+
 class ExamListSerializer(serializers.ModelSerializer[Exam]):
     question_count = serializers.IntegerField(read_only=True)
     submit_count = serializers.IntegerField(read_only=True)

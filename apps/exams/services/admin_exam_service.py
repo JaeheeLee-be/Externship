@@ -23,7 +23,7 @@ ALLOWED_SORT_FIELDS = {
 
 def get_exam_list(
     *,
-    subject_id: Optional[int | str] = None,
+    subject_id: Optional[int] = None,
     search_keyword: Optional[str] = None,
     sort: Optional[str] = None,
     order: Optional[str] = None,
@@ -36,11 +36,6 @@ def get_exam_list(
             "title",
         )
     )
-
-    try:
-        subject_id = int(subject_id) if subject_id is not None else None
-    except ValueError:
-        subject_id = None
 
     if subject_id:
         queryset = queryset.filter(subject__id=subject_id)
