@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import itertools
-from typing import Any
 import uuid
+from typing import Any
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -13,15 +12,14 @@ from apps.users.services.admin_account_service import AdminAccountService
 URL = "/api/v1/admin/accounts"
 
 
-
-
 def make_user(**kwargs: Any) -> User:
-    uid = uuid.uuid4().hex[0:8]
+    # ✅ uuid로 병렬 환경에서도 충돌 없는 고유값 생성
+    uid = uuid.uuid4().hex[:8]
     defaults: dict[str, Any] = {
-        "email": f"testuser{uid}@test.com",
-        "nickname": f"유저{uid}",
+        "email": f"testuser_{uid}@test.com",
+        "nickname": f"유저_{uid}",
         "name": "이름",
-        "phone_number": f"010{uid[:8]}",
+        "phone_number": f"010{uid[:8]}",  # 8자리 hex → 숫자 아닌 문자 포함될 수 있으니 아래 참고
         "role": "USER",
         "is_active": True,
     }
@@ -116,6 +114,7 @@ class AdminAccountListTest(APITestCase):
 class AdminAccountFilterTest(APITestCase):
     def setUp(self) -> None:
         self.admin = make_user(role="ADMIN")
+        # ✅ next(_counter) 별도 호출 제거 → 고정 문자열 사용
         self.search_target = make_user(email="findme_unique@test.com", nickname="검색전용닉네임")
         make_user(role="USER", is_active=False)
         make_user(role="STUDENT")
