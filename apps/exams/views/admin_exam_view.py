@@ -22,7 +22,9 @@ from apps.exams.serializers.admin_exam_serializer import (
     ExamDeleteResponseSerializer,
     ExamDetailSerializer,
     ExamErrorSerializer,
+    ExamListQuerySerializer,
     ExamListSerializer,
+    ExamValidationErrorSerializer,
 )
 from apps.exams.services.admin_exam_service import (
     create_exam,
@@ -77,8 +79,12 @@ class ExamListCreateView(APIView):
         },
     )
     def get(self, request: Request) -> Response:
+        query_serializer = ExamListQuerySerializer(data=request.query_params)
+        if not query_serializer.is_valid():
+            return Response({"error_detail": query_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
         queryset = get_exam_list(
-            subject_id=int(request.query_params["subject_id"]) if request.query_params.get("subject_id") else None,
+            subject_id=query_serializer.validated_data.get("subject_id"),
             search_keyword=request.query_params.get("search_keyword"),
             sort=request.query_params.get("sort"),
             order=request.query_params.get("order"),
@@ -91,11 +97,14 @@ class ExamListCreateView(APIView):
     @extend_schema(
         tags=["exams"],
         summary="쪽지 시험 생성",
-        description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp만 가능합니다.",
+        description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.",
         request=ExamCreatePutSerializer,
         responses={
             201: ExamCreatePutSerializer,
-            400: OpenApiResponse(description="유효하지 않은 시험 생성 요청입니다."),
+            400: OpenApiResponse(
+                description="유효하지 않은 시험 생성 요청입니다.",
+                response=ExamValidationErrorSerializer,
+            ),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 생성 권한이 없습니다."),
             404: OpenApiResponse(description="해당 과목 정보를 찾을 수 없습니다."),
@@ -106,9 +115,7 @@ class ExamListCreateView(APIView):
         try:
             serializer = ExamCreatePutSerializer(data=request.data, context={"request": request})
             if not serializer.is_valid():
-                return Response(
-                    {"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
             exam = create_exam(**serializer.validated_data)
         except ExamTitleConflict as e:
@@ -154,13 +161,13 @@ class ExamDetailView(APIView):
     @extend_schema(
         tags=["exams"],
         summary="쪽지 시험 수정",
-        description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp만 가능합니다.",
+        description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.",
         request=ExamCreatePutSerializer,
         responses={
             200: ExamCreatePutSerializer,
             400: OpenApiResponse(
                 description="유효하지 않은 요청 데이터입니다.",
-                response=ExamErrorSerializer,
+                response=ExamValidationErrorSerializer,
             ),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 수정 권한이 없습니다."),
@@ -178,9 +185,7 @@ class ExamDetailView(APIView):
         try:
             serializer = ExamCreatePutSerializer(data=request.data, context={"request": request})
             if not serializer.is_valid():
-                return Response(
-                    {"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
             exam = put_exam(exam_id=exam_id, **serializer.validated_data)
         except ExamTitleConflict as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)

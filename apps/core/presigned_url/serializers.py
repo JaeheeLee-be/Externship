@@ -24,7 +24,7 @@ class PresignedUrlRequestSerializer(serializers.Serializer[Any]):
         suffix = path.suffix.lower()
 
         if suffix not in ALLOWED_SUFFIX:
-            error = APIException(detail={"error_detail": "지원하지 않는 파일 형식입니다."})
+            error = APIException(detail="지원하지 않는 파일 형식입니다.")
             error.status_code = status.HTTP_400_BAD_REQUEST
             raise error
 

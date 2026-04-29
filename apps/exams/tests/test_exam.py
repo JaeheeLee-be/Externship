@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient, APITestCase
 
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
+from apps.exams.serializers.admin_exam_serializer import ExamDetailSerializer
 from apps.posts.models import Cohort, Course, Subject
 from apps.users.models import User
 
@@ -17,6 +18,7 @@ class ExamBaseTestCase(APITestCase):
     exam2: Exam
     question1: ExamQuestion
     question2: ExamQuestion
+    question3: ExamQuestion
     cohort: Cohort
     deployment: ExamDeployment
 
@@ -78,6 +80,16 @@ class ExamBaseTestCase(APITestCase):
             answer={"answer": ["test_answer1", "test_answer2"]},
             point=2,
         )
+        cls.question3 = ExamQuestion.objects.create(
+            exam=cls.exam1,
+            question="test_question3",
+            type="fill_blank",
+            prompt="___ ___ ___question",
+            blank_count=3,
+            options_json='["it", "is", "blank"]',
+            answer={"answer": ["it", "is", "blank"]},
+            point=3,
+        )
         cls.cohort = Cohort.objects.create(
             course=cls.course,
             number=1,
@@ -92,6 +104,14 @@ class ExamBaseTestCase(APITestCase):
             open_at="2024-01-01T00:00:00Z",
             close_at="2024-12-31T23:59:59Z",
         )
+
+
+# 시리얼라이저 테스트
+class TestExamSerializer(ExamBaseTestCase):
+    def test_exam_get_detail(self) -> None:
+        serializer = ExamDetailSerializer(self.exam1)
+        self.assertEqual(serializer.data["title"], "test_exam")
+        self.assertEqual(serializer.data["questions"][2]["options"], ["it", "is", "blank"])
 
 
 # 모델 테스트
@@ -159,6 +179,12 @@ class TestExamBaseAPI(ExamBaseTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
+
+    def test_get_exam_list_with_subject_insert_text(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"subject_id": "text"})
+
+        self.assertEqual(response.status_code, 400)
 
     # 쪽지시험 목록 조회: 검색
     def test_get_exam_list_with_search_title(self) -> None:
@@ -301,7 +327,6 @@ class TestExamBaseAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_exam_create_title_max_length(self) -> None:
@@ -473,7 +498,6 @@ class TestExamDetail(ExamBaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_detail_put_title_max_langth(self) -> None:
