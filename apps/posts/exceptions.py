@@ -12,7 +12,3 @@ class CommentNotFoundError(Exception):
 
 class CommentPermissionDeniedError(Exception):
     pass
-
-
-class InvalidFileExtensionError(Exception):
-    pass
