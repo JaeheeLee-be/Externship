@@ -2,7 +2,6 @@ from typing import Never, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -21,7 +20,7 @@ class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
-        raise NotAuthenticatedError
+        raise NotAuthenticatedError()
 
     @extend_schema(
         tags=["Accounts (회원관리)"],
