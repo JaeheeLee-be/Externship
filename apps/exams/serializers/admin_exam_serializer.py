@@ -7,7 +7,7 @@ from apps.exams.models import Exam, ExamQuestion
 from apps.posts.models import Subject
 
 
-class ExamListQuerySerializer(serializers.Serializer):
+class ExamListQuerySerializer(serializers.Serializer[Any]):
     subject_id = serializers.IntegerField(required=False)
 
 
