@@ -1,8 +1,12 @@
 from typing import Any
 
 from django.db import transaction
-from rest_framework.exceptions import NotFound
 
+from apps.qna.exceptions import (
+    ConflictException,
+    NotFoundException,
+    PermissionDeniedException,
+)
 from apps.qna.models.answer_models import Answer, AnswerImage
 from apps.qna.models.question_models import Question
 from apps.users.models import User
@@ -13,7 +17,7 @@ class AnswerService:
         try:
             return Question.objects.get(pk=question_id)
         except Question.DoesNotExist:
-            raise NotFound("해당 질문을 찾을 수 없습니다.")
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
 
     def answer_create(self, user: User, question_id: int, **validated_data: Any) -> Answer:
         with transaction.atomic():
@@ -25,4 +29,25 @@ class AnswerService:
             AnswerImage.objects.bulk_create(
                 [AnswerImage(img_url=img, answer=answer) for img in validated_data.get("img_urls", [])]
             )
+        return answer
+
+
+class AnswerAcceptService:
+    """
+    답변 채택 로직
+    """
+
+    def answer_accept(self, user: User, answer_id: int) -> Answer:
+        """질문을 작성한 작성자만 채택이 가능 하며 이미 채택된 답글이 있으면 에러 발생"""
+        with transaction.atomic():
+            try:
+                answer = Answer.objects.select_for_update().select_related("question").get(pk=answer_id)
+            except Answer.DoesNotExist:
+                raise NotFoundException("해당 질문 또는 답변을 찾을 수 없습니다.")
+            if answer.question.author_id != user.id:
+                raise PermissionDeniedException("본인이 작성한 질문의 답변만 채택할 수 있습니다.")
+            if Answer.objects.filter(question_id=answer.question_id, is_adopted=True).exists():
+                raise ConflictException()
+            answer.is_adopted = True
+            answer.save()
         return answer

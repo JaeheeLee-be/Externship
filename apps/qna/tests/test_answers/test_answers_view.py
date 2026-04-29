@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
+from apps.qna.models.answer_models import Answer
 from apps.qna.models.question_models import Question, QuestionCategory
 from apps.users.models import User
 
@@ -44,6 +45,12 @@ class AnswersViewTestCase(BaseTestCase):
     post 테스트
     """
 
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.user.role = "STUDENT"
+        cls.user.save()
+
     def setUp(self) -> None:
         self.client = APIClient()
 
@@ -74,5 +81,98 @@ class AnswersViewTestCase(BaseTestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse("question_answers", kwargs={"question_id": 99999})
         response = self.client.post(url, {"content": "testcontent", "img_urls": []}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class AnswerAcceptViewTestCase(BaseTestCase):
+    """
+    POST api/v1/qna/answers/{answer_id}/accept
+    답변 채택에 대한 test code
+    """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.user.role = "STUDENT"
+        cls.user.save()
+
+    def setUp(self) -> None:
+        """작성자와 다른 유저가 답변을 달 수 있어 더미 데이터 생성"""
+        self.client = APIClient()
+        self.user2 = User.objects.create_user(
+            name="name",
+            email="test2@test.com",
+            nickname="test2",
+            phone_number="01022222222",
+            gender="Male",
+            birthday="2000-01-01",
+            is_active=True,
+            role="USER",
+            password="testpassword",
+        )
+        self.user3 = User.objects.create_user(
+            name="name",
+            email="test3@test.com",
+            nickname="test3",
+            phone_number="01033333333",
+            gender="Male",
+            birthday="2000-01-01",
+            is_active=True,
+            role="USER",
+            password="testpassword",
+        )
+        self.answer2 = Answer.objects.create(
+            content="testcontent2",
+            author=self.user2,
+            question=self.question,
+        )
+        self.answer3 = Answer.objects.create(
+            content="testcontent3",
+            author=self.user3,
+            question=self.question,
+        )
+
+    def test_answer_accept(self) -> None:
+        """채택 핸들러 test code -> 200"""
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answer_accept", kwargs={"answer_id": self.answer2.id})
+        response = self.client.post(url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["is_adopted"])
+        self.assertEqual(response.data["question_id"], self.question.id)
+        self.assertEqual(response.data["answer_id"], self.answer2.id)
+
+    def test_answer_accept_invalid(self) -> None:
+        """답변이 이미 채택된 답변에 대한 test code -> 409"""
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answer_accept", kwargs={"answer_id": self.answer3.id})
+        self.client.post(url, format="json")
+
+        response = self.client.post(url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_answer_accept_unauthorized(self) -> None:
+        """로그인 하지 않은 유저가 채택 했을떄 test code -> 401"""
+        url = reverse("answer_accept", kwargs={"answer_id": self.answer2.id})
+        response = self.client.post(url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_answer_accept_question_user_not_match(self) -> None:
+        """질문 작성자와 채택할 유저가 같이 않을떄 -> 403"""
+        self.client.force_authenticate(user=self.user2)
+        url = reverse("answer_accept", kwargs={"answer_id": self.answer3.id})
+        response = self.client.post(url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_answer_accept_question_not_found(self) -> None:
+        """채택할 답변에 대한 질문을 못 찾을떄 test code -> 404"""
+        self.client.force_authenticate(user=self.user)
+        url = reverse("answer_accept", kwargs={"answer_id": 99999})
+        response = self.client.post(url, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
