@@ -38,8 +38,8 @@ def get_exam_list(
     )
 
     try:
-        subject_id = int(subject_id)
-    except (TypeError, ValueError):
+        subject_id = int(subject_id) if subject_id is not None else None
+    except ValueError:
         subject_id = None
 
     if subject_id:
