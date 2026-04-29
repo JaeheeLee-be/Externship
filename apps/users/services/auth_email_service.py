@@ -65,7 +65,7 @@ class EmailVerificationService:
             raise ValidationError("이메일 발송 실패 했습니다")
 
     @classmethod
-    def verification_code(cls, email: str, code: str, purpose: AuthPurpose) -> str:
+    def verification_code(cls, email: str, code: str) -> str:
         """
         사용자 입력한 코드를 Redis 대조 후 일치 시 토큰을 발급
 
@@ -76,13 +76,16 @@ class EmailVerificationService:
 
         cache_key = f"email_code_{email}"
         cached_data = cache.get(cache_key)
-        cached_purpose = cached_data.get("purpose")
 
         if not cached_data:
             raise ValidationError("인증코드가 만료되거나 발급되지 않았습니다.")
 
+        cached_purpose = cached_data.get("purpose")
+
         # purpose 검증
-        if cached_purpose != purpose.value:  # type: ignore[misc]
+        try:
+            purpose = AuthPurpose(cached_purpose)
+        except ValueError:
             raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         # 코드 확인
@@ -94,7 +97,7 @@ class EmailVerificationService:
 
         # 승인 토큰 캐쉬 저장 유효 10분
         token_key = f"email_verify_token_{verify_token}"
-        data = {"email": email, "purpose": purpose.value}
+        data = {"email": email, "purpose": purpose.value}  # type:ignore[misc]
 
         try:
             cache.set(token_key, data, timeout=600)

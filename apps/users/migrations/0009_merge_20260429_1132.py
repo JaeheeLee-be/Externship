@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("users", "0005_alter_user_gender"),
+        ("users", "0005_alter_withdrawal_reason_detail_alter_withdrawal_user"),
         ("users", "0008_cohortstudents_cohort_learningcoachs_course_and_more"),
     ]
 

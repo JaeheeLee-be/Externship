@@ -18,7 +18,7 @@ class SmsVerificationService:
 
     @classmethod
     def phone_format_change(cls, phone_number: str) -> str:
-        # 01012345678 -> 1012345678
+        # 01012345678 -> +821012345678
         if phone_number.startswith("+82"):
             return phone_number
         return f"+82{phone_number.lstrip('0')}"
@@ -56,7 +56,7 @@ class SmsVerificationService:
             raise ValidationError(f"SMS 발송 실패: {e.msg}")
 
     @classmethod
-    def verify_sms_code(cls, phone_number: str, code: str, purpose: SmsPurpose) -> str:
+    def verify_sms_code(cls, phone_number: str, code: str) -> str:
         """
         사용자가 입력한 코드를 Twilio에 보내서 확인하고,
         성공 시 다음 단계용 sms_token을 발급합니다.
@@ -69,13 +69,10 @@ class SmsVerificationService:
 
         cached_purpose = cached_data.get("purpose")
 
-        try:
-            SmsPurpose(purpose)
-        except ValueError:
-            raise ValidationError("유효하지 않은 인증 용도입니다.")
-
         # purpose 검증
-        if cached_purpose != purpose.value:  # type: ignore[misc]
+        try:
+            purpose = SmsPurpose(cached_purpose)
+        except ValueError:
             raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         try:
@@ -93,7 +90,7 @@ class SmsVerificationService:
                     cache.set(token_key, data, timeout=600)
 
                 except Exception as e:
-                    raise ValidationError(f"error: {e} 서버에 오유가 발생했습니다")
+                    raise ValidationError(f"error: {e} 서버에 오류가 발생했습니다")
 
                 cache.delete(cache_key)
 

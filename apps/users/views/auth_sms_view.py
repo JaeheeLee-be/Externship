@@ -58,7 +58,7 @@ class SmsSendView(APIView):
         try:
             SmsVerificationService.send_verification_sms(phone_number, purpose)
 
-            return Response({"detail": "sms 인증코드가 전송되었습니다"})
+            return Response({"detail": "회원가입을 위한 휴대폰 인증 코드가 전송되었습니다"})
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -102,9 +102,8 @@ class SmsVerificationView(APIView):
 
             phone_number = serializer.validated_data["phone_number"]
             code = serializer.validated_data["code"]
-            purpose = SmsPurpose(serializer.validated_data.pop("purpose"))
 
-            sms_token = SmsVerificationService.verify_sms_code(phone_number, code, purpose)
-            return Response({"detail": "sms 인증이 성공했습니다", "sms_token": sms_token})
+            sms_token = SmsVerificationService.verify_sms_code(phone_number, code)
+            return Response({"detail": "회원가입을 위한 휴대폰 인증에 성공했습니다.", "sms_token": sms_token})
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)

@@ -58,7 +58,7 @@ class EmailSendView(APIView):
         try:
             EmailVerificationService.send_verification_email(email, purpose)
 
-            return Response({"detail": "이메일 인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
+            return Response({"detail": "이메일 인증 코드가 전송되었습니다"}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -103,15 +103,14 @@ class EmailVerificationView(APIView):
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         email = serializer.validated_data["email"]
         code = serializer.validated_data["code"]
-        purpose = AuthPurpose(serializer.validated_data.pop("purpose"))
 
         # service token 발급
         try:
-            email_token = EmailVerificationService.verification_code(email, code, purpose)
+            email_token = EmailVerificationService.verification_code(email, code)
 
             return Response(
                 {
-                    "detail": "이메일 인증이 성공했습니다",
+                    "detail": "이메일 인증에 성공하였습니다",
                     "email_token": email_token,
                 },
                 status=status.HTTP_200_OK,
