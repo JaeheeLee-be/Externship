@@ -24,3 +24,4 @@ class ExamDeployment(TimeStampModel):
 
     class Meta:
         db_table = "exam_deployments"
+        unique_together = [("exam", "cohort")]
