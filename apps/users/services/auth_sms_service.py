@@ -87,7 +87,7 @@ class SmsVerificationService:
             if verification_check.status == "approved":
                 sms_token = secrets.token_urlsafe(32)
                 token_key = f"sms_verify_token_{sms_token}"
-                data = {"phone_number": phone_number, "purpose": purpose.value} # type: ignore[misc]
+                data = {"phone_number": phone_number, "purpose": purpose.value}  # type: ignore[misc]
                 try:
                     # Redis에 저장 (용도별로 구분하여 저장, 10분 유효)
                     cache.set(token_key, data, timeout=600)
