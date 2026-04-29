@@ -26,8 +26,12 @@ def create_access_code(length: int = 8) -> str:
 
 @transaction.atomic
 def create_deployment(validated_data: dict[str, Any]) -> ExamDeployment:
-    exam_id = validated_data.pop("exam_id")
-    cohort_id = validated_data.pop("cohort_id")
+    exam_id = validated_data["exam_id"]
+    cohort_id = validated_data["cohort_id"]
+
+    deployment_data = validated_data.copy()
+    deployment_data.pop("exam_id")
+    deployment_data.pop("cohort_id")
 
     try:
         exam = Exam.objects.get(id=exam_id)
@@ -49,7 +53,7 @@ def create_deployment(validated_data: dict[str, Any]) -> ExamDeployment:
     access_code = create_access_code()
 
     deployment = ExamDeployment.objects.create(
-        **validated_data,
+        **deployment_data,
         exam=exam,
         cohort=cohort,
         questions_snapshot_json=snapshot,

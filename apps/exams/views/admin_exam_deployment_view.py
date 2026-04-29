@@ -17,6 +17,7 @@ from apps.exams.exceptions.admin_exam_deployment_exception import (
 from apps.exams.serializers.admin_exam_deployment_serializer import (
     AdminExamDeploymentCreateSerializer,
     AdminExamDeploymentListQuerySerializer,
+    AdminExamDeploymentListResponseSerializer,
     AdminExamDeploymentListSerializer,
 )
 from apps.exams.services.admin_exam_deployment_service import (
@@ -25,12 +26,22 @@ from apps.exams.services.admin_exam_deployment_service import (
 )
 
 
-class AdminExamDeploymentCreateView(APIView):
+class AdminExamDeploymentView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+    def permission_denied(
+        self,
+        request: Request,
+        message: str | None = None,
+        code: str | None = None,
+    ) -> NoReturn:
         if request.user and request.user.is_authenticated:
-            raise PermissionDenied("쪽지시험 배포 생성 권한이 없습니다.")
+            if request.method == "POST":
+                raise PermissionDenied("쪽지시험 배포 생성 권한이 없습니다.")
+            if request.method == "GET":
+                raise PermissionDenied("쪽지시험 배포 목록 조회 권한이 없습니다.")
+            raise PermissionDenied("권한이 없습니다.")
+
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
@@ -41,43 +52,42 @@ class AdminExamDeploymentCreateView(APIView):
     )
     def post(self, request: Request) -> Response:
         serializer = AdminExamDeploymentCreateSerializer(data=request.data)
+
         if not serializer.is_valid():
-            return Response({"error_detail": "유효하지 않은 배포 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error_detail": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             deployment = create_deployment(serializer.validated_data)
         except DeploymentNoQuestionsError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except DeploymentNotFoundError as e:
-            return Response(
-                {"error_detail": str(e)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except DeploymentConflictError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
+
         return Response({"pk": deployment.id}, status=status.HTTP_201_CREATED)
-
-
-class AdminExamDeploymentListView(APIView):
-    permission_classes = [IsRoleAdminUser]
-
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
-        if request.user and request.user.is_authenticated:
-            raise PermissionDenied("쪽지시험 배포 목록 조회 권한이 없습니다.")
-        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
         tags=["exams-deployments"],
         summary="쪽지시험 배포 목록 조회",
-        responses={200: AdminExamDeploymentListSerializer},
+        responses={200: AdminExamDeploymentListResponseSerializer},
     )
     def get(self, request: Request) -> Response:
         query_serializer = AdminExamDeploymentListQuerySerializer(data=request.query_params)
+
         if not query_serializer.is_valid():
-            return Response({"error_detail": "유효하지 않은 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error_detail": query_serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         qs = get_deployment_list(query_serializer.validated_data)
 
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(qs, request)
         serializer = AdminExamDeploymentListSerializer(page, many=True)
+
         return paginator.get_paginated_response(serializer.data)
