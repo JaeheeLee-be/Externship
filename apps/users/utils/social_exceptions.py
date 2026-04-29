@@ -6,6 +6,11 @@ class SocialAuthError(Exception):
     pass
 
 
+class InvalidProfileImageExtensionError(Exception):
+
+    pass
+
+
 class UnsupportedProviderError(SocialAuthError):
 
     def __init__(self) -> None:
