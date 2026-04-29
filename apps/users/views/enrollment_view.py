@@ -20,6 +20,7 @@ class EnrollmentView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
+        tags=["Accounts (회원관리)"],
         summary="수강생 등록 신청 API",
         description="로그인한 유저만 과정과 기수를 선택하여 수강생 등록 신청할 수 있습니다",
         request=EnrollmentSerializer,
