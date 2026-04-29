@@ -9,6 +9,8 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.qna.serializers.category_serializers import (
     AdminCategoryCreateResponseSerializer,
     AdminCategoryCreateSerializer,
+    AdminCategoryListQuerySerializer,
+    AdminCategoryListSerializer,
 )
 from apps.qna.services.admin_category_services import CategoryService
 
@@ -21,9 +23,10 @@ ERROR_STATUS_MAP = {
 }
 
 
-class AdminCategoryCreateAPIView(APIView):
+class AdminCategoryListCreateAPIView(APIView):
     permission_classes = [IsRoleAdminUser]
 
+    # 생성
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = AdminCategoryCreateSerializer(data=request.data)
 
@@ -46,3 +49,31 @@ class AdminCategoryCreateAPIView(APIView):
 
         response_serializer = AdminCategoryCreateResponseSerializer(category)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    # 조회
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = AdminCategoryListQuerySerializer(data=request.query_params)
+
+        if not serializer.is_valid():
+            return Response(
+                {"error_detail": "유효하지 않은 목록 조회 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = serializer.validated_data
+        categories, total_count = CategoryService.get_category_list(
+            page=data["page"],
+            page_size=data["page_size"],
+            search_keyword=data.get("search_keyword"),
+            category_type=data.get("category_type"),
+        )
+
+        return Response(
+            {
+                "page": data["page"],
+                "page_size": data["page_size"],
+                "total_count": total_count,
+                "categories": AdminCategoryListSerializer(categories, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )

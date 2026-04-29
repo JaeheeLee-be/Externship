@@ -16,8 +16,9 @@ class AdminCategoryListAPITest(APITestCase):
         cls.user = User.objects.create_user(
             email="testadmin@example.com",
             password="test1234",
+            role="ADMIN",
         )
-        cls.url = "/api/v1/admin/qna/categories/"
+        cls.url = "/api/v1/admin/qna/categories"
 
     def setUp(self) -> None:
         self.client = APIClient()
@@ -32,7 +33,7 @@ class AdminCategoryListAPITest(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(len(response.data["categories"]), 3)
 
     # category_type 필터 조회 성공
     def test_filter_admin_category_list_by_category_type(self) -> None:
@@ -43,9 +44,9 @@ class AdminCategoryListAPITest(APITestCase):
         response = self.client.get(self.url, {"category_type": "large"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["category_type"], "large")
-        self.assertEqual(response.data[0]["name"], "백엔드")
+        self.assertEqual(len(response.data["categories"]), 1)
+        self.assertEqual(response.data["categories"][0]["category_type"], "large")
+        self.assertEqual(response.data["categories"][0]["name"], "백엔드")
 
     # keyword 검색 조회 성공
     def test_filter_admin_category_list_by_keyword(self) -> None:
@@ -53,10 +54,10 @@ class AdminCategoryListAPITest(APITestCase):
         QuestionCategory._default_manager.create(name="프론트엔드", parent=None)
         QuestionCategory._default_manager.create(name="백엔드심화", parent=large)
 
-        response = self.client.get(self.url, {"keyword": "백엔드"})
+        response = self.client.get(self.url, {"search_keyword": "백엔드"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data["categories"]), 2)
 
     # 부모 / 자식 카테고리명 포함 여부 확인
     def test_admin_category_list_includes_parent_and_children(self) -> None:
@@ -68,18 +69,18 @@ class AdminCategoryListAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        large_item = next(item for item in response.data if item["name"] == "백엔드")
-        middle_item = next(item for item in response.data if item["name"] == "프레임워크")
-        small_item = next(item for item in response.data if item["name"] == "Django")
+        large_item = next(item for item in response.data["categories"] if item["name"] == "백엔드")
+        middle_item = next(item for item in response.data["categories"] if item["name"] == "프레임워크")
+        small_item = next(item for item in response.data["categories"] if item["name"] == "Django")
 
-        self.assertIsNone(large_item["parent_name"])
-        self.assertIn("프레임워크", large_item["child_names"])
+        self.assertIsNone(large_item["parent_category"])
+        self.assertIn("프레임워크", large_item["child_categories"])
 
-        self.assertEqual(middle_item["parent_name"], "백엔드")
-        self.assertIn("Django", middle_item["child_names"])
+        self.assertEqual(middle_item["parent_category"], "백엔드")
+        self.assertIn("Django", middle_item["child_categories"])
 
-        self.assertEqual(small_item["parent_name"], "프레임워크")
-        self.assertEqual(small_item["child_names"], [])
+        self.assertEqual(small_item["parent_category"], "프레임워크")
+        self.assertEqual(small_item["child_categories"], [])
 
     # 로그인 안 된 경우 실패
     def test_fail_when_not_authenticated(self) -> None:
