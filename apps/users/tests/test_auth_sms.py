@@ -28,7 +28,7 @@ class SmsAuthViewTests(IsolatedRedisTestClient):
         response = self.client.post(self.send_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["detail"], "회원가입을 위한 휴대폰 인증 코드가 전송되었습니다")
+        self.assertEqual(response.data["message"], "회원가입을 위한 휴대폰 인증 코드가 전송되었습니다")
 
         mock_send_sms.assert_called_once_with(self.valid_phone, SmsPurpose(self.valid_purpose))
 
@@ -61,7 +61,7 @@ class SmsAuthViewTests(IsolatedRedisTestClient):
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["detail"], "회원가입을 위한 휴대폰 인증에 성공했습니다.")
+        self.assertEqual(response.data["message"], "회원가입을 위한 휴대폰 인증에 성공했습니다.")
         self.assertEqual(response.data["sms_token"], mock_sms_token)
         mock_verify_code.assert_called_once_with(self.valid_phone, self.valid_code, SmsPurpose(self.valid_purpose))
 

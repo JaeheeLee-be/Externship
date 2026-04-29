@@ -28,7 +28,7 @@ class SmsSendView(APIView):
                 examples=[
                     OpenApiExample(
                         name="성공 응답",
-                        value={"detail": "sms 인증 코드가 전송되었습니다."},
+                        value={"message": "sms 인증 코드가 전송되었습니다."},
                     )
                 ],
             ),
@@ -58,7 +58,7 @@ class SmsSendView(APIView):
         try:
             SmsVerificationService.send_verification_sms(phone_number, purpose)
 
-            return Response({"detail": "회원가입을 위한 휴대폰 인증 코드가 전송되었습니다"})
+            return Response({"message": "회원가입을 위한 휴대폰 인증 코드가 전송되었습니다"})
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -78,7 +78,7 @@ class SmsVerificationView(APIView):
                     OpenApiExample(
                         name="성공 응답",
                         value={
-                            "detail": "sms 인증에 성공하였습니다.",
+                            "message": "sms 인증에 성공하였습니다.",
                             "sms_token": "aB3dE5g7h8i9j0k1l2m3n4o5p6q7r8s9",
                         },
                     )
