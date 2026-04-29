@@ -47,7 +47,7 @@ class EmailVerificationService:
         except Exception as e:
             raise ValidationError(f"error: {e}  인증 코드 생성 중 서버 오류가 발생했습니다")
 
-        # 이메일 발송
+        # 이메일 발송 #######
         subject = f"[오즈코딩스쿨] 이메일 인증 코드를 확인해 주세요"
         message = f"인증 코드 : {code} 3분 이내에 입력해 주세요"
 
@@ -76,11 +76,10 @@ class EmailVerificationService:
 
         cache_key = f"email_code_{email}"
         cached_data = cache.get(cache_key)
+        cached_purpose = cached_data.get("purpose")
 
         if not cached_data:
             raise ValidationError("인증코드가 만료되거나 발급되지 않았습니다.")
-
-        cached_purpose = cached_data.get("purpose")
 
         # purpose 검증
         if cached_purpose != purpose.value:  # type: ignore[misc]
@@ -95,7 +94,7 @@ class EmailVerificationService:
 
         # 승인 토큰 캐쉬 저장 유효 10분
         token_key = f"email_verify_token_{verify_token}"
-        data = {"email": email, "purpose": purpose}
+        data = {"email": email, "purpose": purpose.value}
 
         try:
             cache.set(token_key, data, timeout=600)
