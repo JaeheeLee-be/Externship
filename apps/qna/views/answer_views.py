@@ -6,7 +6,6 @@ from rest_framework.exceptions import (
     PermissionDenied,
     ValidationError,
 )
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -60,10 +59,12 @@ class AnswerAcceptView(APIView):
     답변 채택에 관한 view
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStudentUser]
     service = AnswerAcceptService()
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if request.user.is_authenticated:
+            raise PermissionDenied(detail="답변 채택 권한이 없습니다.")
         raise NotAuthenticated("로그인한 사용자만 답변을 채택할 수 있습니다.")
 
     @answer_accept_schema
