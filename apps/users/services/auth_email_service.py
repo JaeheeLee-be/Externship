@@ -39,7 +39,7 @@ class EmailVerificationService:
         # Base62 코드 생성
         code = Base62.uuid_encode(uuid.uuid4(), length=6)
         # Redis 저장
-        cache_key = f"email_code_{email}"
+        cache_key = f"email_code_{email}_{purpose.value}"  # type: ignore[misc]
         cache_data = {"code": code, "purpose": purpose.value}  # type: ignore[misc]
         # cache 저장 설정
         try:
@@ -65,7 +65,7 @@ class EmailVerificationService:
             raise ValidationError("이메일 발송 실패 했습니다")
 
     @classmethod
-    def verification_code(cls, email: str, code: str) -> str:
+    def verification_code(cls, email: str, code: str, purpose: AuthPurpose) -> str:
         """
         사용자 입력한 코드를 Redis 대조 후 일치 시 토큰을 발급
 
@@ -74,18 +74,15 @@ class EmailVerificationService:
         :return: 인증 실패시 ValidationError 성공시  토큰 발급
         """
 
-        cache_key = f"email_code_{email}"
+        cache_key = f"email_code_{email}_{purpose.value}"  # type: ignore[misc]
         cached_data = cache.get(cache_key)
 
         if not cached_data:
             raise ValidationError("인증코드가 만료되거나 발급되지 않았습니다.")
 
-        cached_purpose = cached_data.get("purpose")
-
         # purpose 검증
-        try:
-            purpose = AuthPurpose(cached_purpose)
-        except ValueError:
+        cached_purpose = cached_data.get("purpose")
+        if cached_purpose != purpose.value:  # type: ignore[misc]
             raise ValidationError("인증 용도가 일치하지 않습니다.")
 
         # 코드 확인

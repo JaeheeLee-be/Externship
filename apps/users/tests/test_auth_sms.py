@@ -56,14 +56,14 @@ class SmsAuthViewTests(IsolatedRedisTestClient):
         mock_sms_token = "mocked_token_string_123"
         mock_verify_code.return_value = mock_sms_token
 
-        data = {"phone_number": self.valid_phone, "code": self.valid_code}
+        data = {"phone_number": self.valid_phone, "code": self.valid_code, "purpose": self.valid_purpose}
 
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["detail"], "회원가입을 위한 휴대폰 인증에 성공했습니다.")
         self.assertEqual(response.data["sms_token"], mock_sms_token)
-        mock_verify_code.assert_called_once_with(self.valid_phone, self.valid_code)
+        mock_verify_code.assert_called_once_with(self.valid_phone, self.valid_code, SmsPurpose(self.valid_purpose))
 
     @patch("apps.users.views.auth_sms_view.SmsVerificationService.verify_sms_code")
     def test_sms_verify_view_service_error(self, mock_verify_code: Any) -> None:

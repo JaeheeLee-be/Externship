@@ -103,10 +103,11 @@ class EmailVerificationView(APIView):
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         email = serializer.validated_data["email"]
         code = serializer.validated_data["code"]
+        purpose = AuthPurpose(serializer.validated_data["purpose"])
 
         # service token 발급
         try:
-            email_token = EmailVerificationService.verification_code(email, code)
+            email_token = EmailVerificationService.verification_code(email, code, purpose)
 
             return Response(
                 {

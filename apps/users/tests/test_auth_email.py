@@ -31,7 +31,7 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
         self.assertEqual(mail.outbox[0].to, [self.email])
 
         # 3. Redis 캐시에 코드가 잘 저장되었는지 확인
-        cache_key = f"email_code_{self.email}"
+        cache_key = f"email_code_{self.email}_{purpose}"
         cached_data = cache.get(cache_key)
         self.assertIsNotNone(cached_data)
         self.assertIn("code", cached_data)
@@ -61,10 +61,10 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
     def test_verify_email_signup_success(self) -> None:
         """[성공] 회원가입 용도"""
         purpose = "signup"
-        cache_key = f"email_code_{self.email}"
+        cache_key = f"email_code_{self.email}_{purpose}"
         cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
 
-        data = {"email": self.email, "code": self.valid_code}
+        data = {"email": self.email, "code": self.valid_code, "purpose": purpose}
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -83,10 +83,10 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
     def test_verify_email_find_password_success(self) -> None:
         """[성공] 비밀번호 찾기 용도"""
         purpose = "find_password"
-        cache_key = f"email_code_{self.email}"
+        cache_key = f"email_code_{self.email}_{purpose}"
         cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
 
-        data = {"email": self.email, "code": self.valid_code}
+        data = {"email": self.email, "code": self.valid_code, "purpose": purpose}
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -95,10 +95,10 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
     def test_verify_email_recovery_success(self) -> None:
         """[성공] 계정 복구 용도"""
         purpose = "recovery"
-        cache_key = f"email_code_{self.email}"
+        cache_key = f"email_code_{self.email}_{purpose}"
         cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
 
-        data = {"email": self.email, "code": self.valid_code}
+        data = {"email": self.email, "code": self.valid_code, "purpose": purpose}
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -107,10 +107,10 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
     def test_verify_email_invalid_code(self) -> None:
         """[실패] 틀린 인증 코드 입력 시 실패 테스트"""
         purpose = "signup"
-        cache_key = f"email_code_{self.email}"
+        cache_key = f"email_code_{self.email}_{purpose}"
         cache.set(cache_key, {"code": self.valid_code, "purpose": purpose}, timeout=300)
 
-        data = {"email": self.email, "code": "WRONG1"}
+        data = {"email": self.email, "code": "WRONG1", "purpose": purpose}
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -122,7 +122,7 @@ class EmailVerificationAPITests(IsolatedRedisTestClient):
     def test_verify_email_expired_code(self) -> None:
         """[실패] 인증 시간이 만료된(캐시에 없는) 경우 실패 테스트"""
         # 캐시에 아무것도 세팅하지 않음으로써 '만료된 상황' 가정
-        data = {"email": self.email, "code": self.valid_code}
+        data = {"email": self.email, "code": self.valid_code, "purpose": "signup"}
         response = self.client.post(self.verify_url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

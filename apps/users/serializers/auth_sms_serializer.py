@@ -5,9 +5,15 @@ from rest_framework import serializers
 from apps.users.utils.purpose_enum import SmsPurpose
 
 
-class PhoneNumberBaseSerializer(serializers.Serializer[Any]):
+class SmsSendSerializer(serializers.Serializer[Any]):
+
     phone_number = serializers.CharField(
         max_length=20,
+        error_messages={"required": "이 필드는 필수 항목입니다."},
+    )
+
+    purpose = serializers.ChoiceField(
+        choices=SmsPurpose.choices,
         error_messages={"required": "이 필드는 필수 항목입니다."},
     )
 
@@ -19,15 +25,7 @@ class PhoneNumberBaseSerializer(serializers.Serializer[Any]):
         return clean_value
 
 
-class SmsSendSerializer(PhoneNumberBaseSerializer):
-
-    purpose = serializers.ChoiceField(
-        choices=SmsPurpose.choices,
-        error_messages={"required": "이 필드는 필수 항목입니다."},
-    )
-
-
-class SmsVerifySerializer(PhoneNumberBaseSerializer):
+class SmsVerifySerializer(SmsSendSerializer):
     code = serializers.CharField(
         max_length=6,
         min_length=6,
