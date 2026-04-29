@@ -10,8 +10,8 @@ from .exam_model import Exam
 class ExamDeployment(TimeStampModel):
 
     class ExamStatus(models.TextChoices):
-        ON = "activate", "활성화"
-        OFF = "deactivate", "비활성화"
+        ON = "Activated", "활성화"
+        OFF = "Deactivated", "비활성화"
 
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
@@ -20,7 +20,7 @@ class ExamDeployment(TimeStampModel):
     open_at = models.DateTimeField()
     close_at = models.DateTimeField()
     questions_snapshot_json = models.JSONField(default=dict)
-    status = models.CharField(choices=ExamStatus.choices, max_length=10, default=ExamStatus.ON)
+    status = models.CharField(choices=ExamStatus.choices, max_length=11, default=ExamStatus.ON)
 
     class Meta:
         db_table = "exam_deployments"
