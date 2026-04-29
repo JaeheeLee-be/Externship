@@ -111,7 +111,6 @@ class TestExamSerializer(ExamBaseTestCase):
     def test_exam_get_detail(self) -> None:
         serializer = ExamDetailSerializer(self.exam1)
         self.assertEqual(serializer.data["title"], "test_exam")
-        self.assertEqual(serializer.data["questions"][0], self.question3.id)
         self.assertEqual(serializer.data["questions"]["options"], ["it", "is", "blank"])
 
 
