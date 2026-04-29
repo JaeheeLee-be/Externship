@@ -11,6 +11,8 @@ class CommentNotFoundError(Exception):
 
 
 class CommentPermissionDeniedError(Exception):
+    pass
+
 class PostLikePostNotFoundError(Exception):
     pass
 
