@@ -1,39 +1,30 @@
 from __future__ import annotations
 
-from typing import Never, Optional, cast
+from typing import cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.exceptions import NotAuthenticated
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.models import User
-from apps.users.serializers.withdrawal_serializer import (
-    RestoreSerializer,
-    WithdrawalSerializer,
-)
+from apps.users.serializers.withdrawal_serializer import RestoreSerializer, WithdrawalSerializer
 from apps.users.services.withdrawal_service import restore_user_by_token, withdraw_user
 from apps.users.utils.withdrawal_exceptions import (
     WithdrawalBadRequestError,
     WithdrawalNotFoundError,
 )
+from apps.users.views.user_info_view import UserInfoView
 
 
-class WithdrawalView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def permission_denied(
-        self,
-        request: Request,
-        message: Optional[str] = None,
-        code: Optional[str] = None,
-    ) -> Never:
-        # IsAuthenticated는 미인증 시에만 실패하므로 항상 401 반환
-        # request.authenticators 체크는 permission 클래스에서 이미 지원
-        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+class WithdrawalView(UserInfoView):
+    """
+    GET/PATCH: UserInfoView 상속 (회원정보 조회/수정)
+    DELETE: 회원 탈퇴 - enrollment_url의 UserInfoView와 동일한 'me' 경로를 공유하므로
+            __init__.py에서 withdrawal_urls를 먼저 include해 이 View가 우선 매칭됨
+    """
 
     @extend_schema(
         tags=["accounts"],
