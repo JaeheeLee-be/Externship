@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.db.models import Q, QuerySet
 
 from apps.users.models import User
@@ -6,17 +8,15 @@ from apps.users.models import User
 class AdminAccountService:
 
     @staticmethod
-    def get_account_list(validated_params: dict) -> dict:
-        queryset: QuerySet = User.objects.all().order_by("-created_at")
+    def get_account_list(validated_params: dict[str, Any]) -> dict[str, Any]:
+        queryset: QuerySet[User] = User.objects.all().order_by("-created_at")
 
         # 이메일 또는 닉네임 검색
         if search := validated_params.get("search"):
-            queryset = queryset.filter(
-                Q(email__icontains=search) | Q(nickname__icontains=search)
-            )
+            queryset = queryset.filter(Q(email__icontains=search) | Q(nickname__icontains=search))
 
-        if status := validated_params.get("status"):
-            queryset = queryset.filter(status=status)
+        if "is_active" in validated_params:
+            queryset = queryset.filter(is_active=validated_params["is_active"])
 
         if role := validated_params.get("role"):
             queryset = queryset.filter(role=role)

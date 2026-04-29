@@ -1,22 +1,28 @@
+from typing import Any, cast
+
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
 
-from apps.users.serializers import AdminAccountQuerySerializer, AdminAccountSerializer
-from apps.users.services import AdminAccountService
+from apps.users.models import User
+from apps.users.serializers.admin_account_serializer import (
+    AdminAccountQuerySerializer,
+    AdminAccountSerializer,
+)
+from apps.users.services.admin_account_service import AdminAccountService
 
 
 class IsAdminRole(IsAuthenticated):
     """JWT 인증 + role이 admin인 경우만 허용"""
 
-    def has_permission(self, request: Request, view) -> bool:
+    def has_permission(self, request: Request, view: Any) -> bool:
         # IsAuthenticated 체크 먼저 (실패 시 401)
         if not super().has_permission(request, view):
             return False
         # role 체크 (실패 시 403)
-        return request.user.role == "admin"
+        return cast(User, request.user).role == "ADMIN"
 
 
 class AdminAccountListView(APIView):
@@ -42,13 +48,9 @@ class AdminAccountListView(APIView):
         return Response(
             {
                 "count": count,
-                "next": f"{base_url}?page={page + 1}&page_size={page_size}"
-                if (page * page_size) < count
-                else None,
-                "previous": f"{base_url}?page={page - 1}&page_size={page_size}"
-                if page > 1
-                else None,
+                "next": f"{base_url}?page={page + 1}&page_size={page_size}" if (page * page_size) < count else None,
+                "previous": f"{base_url}?page={page - 1}&page_size={page_size}" if page > 1 else None,
                 "results": result_serializer.data,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
