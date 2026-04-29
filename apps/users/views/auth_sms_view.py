@@ -105,6 +105,6 @@ class SmsVerificationView(APIView):
             purpose = SmsPurpose(serializer.validated_data["purpose"])
 
             sms_token = SmsVerificationService.verify_sms_code(phone_number, code, purpose)
-            return Response({"detail": "회원가입을 위한 휴대폰 인증에 성공했습니다.", "sms_token": sms_token})
+            return Response({"message": "회원가입을 위한 휴대폰 인증에 성공했습니다.", "sms_token": sms_token})
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
