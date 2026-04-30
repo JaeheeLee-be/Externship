@@ -1,7 +1,6 @@
 from typing import Any
 
 from django.db import transaction
-from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.qna.exceptions import (
     ConflictException,
