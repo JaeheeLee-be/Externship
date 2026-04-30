@@ -33,7 +33,9 @@ class WithdrawalView(UserInfoView):
     permission_classes = [IsAuthenticated]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
-        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        if request.authenticators and not request.successful_authenticator:
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        super().permission_denied(request, message, code)
 
     @extend_schema(
         tags=["accounts"],
