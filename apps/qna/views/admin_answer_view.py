@@ -1,10 +1,13 @@
+from typing import NoReturn
+
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
+from apps.qna.exceptions import BaseCustomException
 from apps.qna.serializers.admin_answer_serializers import AdminAnswerDeleteSerializer
 from apps.qna.services.admin_answer_service import AdminAnswerDeleteService
 
@@ -15,11 +18,19 @@ class AdminAnswerDeleteView(APIView):
     어드민 답변 삭제 API
     """
 
-    permission_classes = [IsAuthenticated, IsRoleAdminUser]
+    permission_classes = [IsRoleAdminUser]
     service = AdminAnswerDeleteService()
 
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if request.user.is_authenticated:
+            raise PermissionDenied(detail="답변 삭제 권한이 없습니다.")
+        raise NotAuthenticated("로그인이 필요합니다.")
+
     def delete(self, request: Request, answer_id: int) -> Response:
-        answer = self.service.delete(answer_id)
+        try:
+            answer = self.service.delete(answer_id)
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(
             AdminAnswerDeleteSerializer(answer).data,
             status=status.HTTP_200_OK,

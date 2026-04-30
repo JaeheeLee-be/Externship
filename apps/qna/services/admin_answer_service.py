@@ -1,5 +1,4 @@
-from rest_framework.exceptions import NotFound
-
+from apps.qna.exceptions import NotFoundException
 from apps.qna.models.answer_models import Answer
 
 
@@ -12,7 +11,7 @@ class AdminAnswerDeleteService:
         try:
             return Answer.objects.get(pk=answer_id)
         except Answer.DoesNotExist:
-            raise NotFound("삭제할 답변을 찾을 수 없습니다.")
+            raise NotFoundException("삭제할 답변을 찾을 수 없습니다.")
 
     def delete(self, answer_id: int) -> dict[str, int]:
         answer = self.get_object(answer_id)
