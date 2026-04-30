@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import Never, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import NotAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,6 +29,11 @@ class WithdrawalView(UserInfoView):
     DELETE: 회원 탈퇴 - enrollment_url의 UserInfoView와 동일한 'me' 경로를 공유하므로
             __init__.py에서 withdrawal_urls를 먼저 include해 이 View가 우선 매칭됨
     """
+
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
+        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
         tags=["accounts"],

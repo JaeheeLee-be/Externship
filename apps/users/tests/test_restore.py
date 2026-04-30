@@ -147,6 +147,7 @@ class RestoreUserByTokenServiceTest(TestCase):
         with patch("apps.users.services.withdrawal_service.cache") as mock_cache:
             mock_cache.get.return_value = {"email": user.email, "purpose": "recovery"}
             restore_user_by_token("valid_token")
+            mock_cache.delete.assert_called_once_with("email_verify_token_valid_token")
         user.refresh_from_db()
         self.assertTrue(user.is_active)
         self.assertFalse(Withdrawal.objects.filter(user=user).exists())

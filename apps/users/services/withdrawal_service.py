@@ -79,15 +79,15 @@ def restore_user_by_token(email_token: str) -> None:
     :raises DeletedUserError: 해당 이메일의 탈퇴 계정이 존재하지 않는 경우
     """
     # purpose 검증 및 캐시 데이터 조회 (Serializer에서 1차 검증 후 서비스에서 이메일 추출용으로 재조회)
+    token_key = get_email_verify_token_cache_key(email_token)
     cached = get_recovery_token_cache(email_token)
     email: str = cached["email"]
 
     # is_active=False 조건으로 탈퇴 상태 유저만 조회
-    # 복구 완료 후 is_active=True가 되므로 같은 토큰 재사용 시 DoesNotExist → DeletedUserError로 자연 차단
-    # cache.delete()를 별도로 호출하지 않아도 DB 상태가 재사용을 막아줌 (피드백 반영 - 중복 제거)
     try:
         user = User.objects.get(email=email, is_active=False)
     except User.DoesNotExist:
         raise DeletedUserError()
 
     restore_user(user)
+    cache.delete(token_key)

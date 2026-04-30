@@ -98,6 +98,7 @@ class WithdrawalViewTest(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
 
     def test_withdraw_invalid_reason(self) -> None:
         """잘못된 reason 값 - 400 반환"""

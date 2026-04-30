@@ -1,6 +1,9 @@
 from django.urls import path
 
-from apps.users.views.withdrawal_view import RestoreView, WithdrawalView
+from apps.users.views.withdrawal_view import (
+    RestoreView,
+    WithdrawalView,
+)
 
 urlpatterns = [
     # WithdrawalView는 UserInfoView를 상속하므로 GET/PATCH/DELETE 모두 처리
