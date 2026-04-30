@@ -2,6 +2,7 @@ from typing import Any
 
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
 from apps.users.models import User
@@ -49,13 +50,17 @@ def create_user(validated_data: dict[str, Any]) -> User:
         raise ValidationError("인증 데이터에 문제가 있습니다. 다시 시도해 주세요.")
     try:
         with transaction.atomic():
-            if User.objects.filter(email=email).exists():
-                raise ConflictError("이미 가입된 이메일입니다.")
-            if User.objects.filter(phone_number=phone_number).exists():
-                raise ConflictError("이미 가입에 사용된 휴대전화 번호입니다.")
-
-            if User.objects.filter(nickname=nickname).exists():
-                raise ConflictError("이미 사용 중인 닉네임입니다.")
+            # ser.objects.select_for_update()
+            existing_users = User.objects.select_for_update().filter(
+                Q(email=email) | Q(phone_number=phone_number) | Q(nickname=nickname)
+            )
+            for user in existing_users:
+                if user.email == email:
+                    raise ConflictError("이미 가입된 이메일입니다.")
+                if user.phone_number == phone_number:
+                    raise ConflictError("이미 가입에 사용된 휴대전화 번호입니다.")
+                if user.nickname == nickname:
+                    raise ConflictError("이미 사용 중인 닉네임입니다.")
 
             user = User.objects.create_user(
                 email=email,
@@ -63,11 +68,10 @@ def create_user(validated_data: dict[str, Any]) -> User:
                 phone_number=phone_number,
                 **validated_data,
             )
-    except IntegrityError:
+            cache.delete(email_key)
+            cache.delete(sms_key)
 
-        raise ConflictError("이미 가입된 회원일 수 있습니다.")
+            return user
 
-    cache.delete(email_key)
-    cache.delete(sms_key)
-
-    return user
+    except (ConflictError, ValidationError):
+        raise
