@@ -14,7 +14,10 @@ def call_google(model: str, message: str) -> Iterator[str]:
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse"
 
-    payload = {"system_instruction": {"parts": [{"text": QNA_PROMPT}]}, "contents": [{"parts": [{"text": message}]}]}
+    payload = {
+        "system_instruction": {"parts": [{"text": QNA_PROMPT}]},
+        "contents": [{"parts": [{"text": f"<client_question>{message}</client_question>"}]}],
+    }
 
     headers = {
         "x-goog-api-key": api_key,

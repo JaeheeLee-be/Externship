@@ -22,7 +22,7 @@ def call_groq(model: str, message: str) -> Iterator[str]:
                 "role": "system",
                 "content": QNA_PROMPT,
             },
-            {"role": "user", "content": message},
+            {"role": "user", "content": f"<client_question>{message}</client_question>"},
         ],
     }
 
