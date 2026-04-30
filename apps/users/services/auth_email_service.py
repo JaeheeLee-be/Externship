@@ -39,7 +39,7 @@ class EmailVerificationService:
         # Base62 코드 생성
         code = Base62.uuid_encode(uuid.uuid4(), length=6)
         # Redis 저장
-        cache_key = f"email_code_{email}_{purpose.value}"  # type: ignore[misc]
+        cache_key = f"email_code_{email}"
         cache_data = {"code": code, "purpose": purpose.value}  # type: ignore[misc]
         # cache 저장 설정
         try:
@@ -74,7 +74,7 @@ class EmailVerificationService:
         :return: 인증 실패시 ValidationError 성공시  토큰 발급
         """
 
-        cache_key = f"email_code_{email}_{purpose.value}"  # type: ignore[misc]
+        cache_key = f"email_code_{email}"
         cached_data = cache.get(cache_key)
 
         if not cached_data:
