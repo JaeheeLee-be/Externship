@@ -1,7 +1,6 @@
 from django.db import models
 
 from apps.core.models import TimeStampModel
-
 from apps.posts.models.course import Course
 
 
