@@ -77,7 +77,7 @@ class AnswerDetailService:
             raise PermissionDeniedException("본인이 작성한 답변만 수정할 수 있습니다.")
         with transaction.atomic():
             answer.content = validated_data["content"]
-            answer.save(update_fields=["content","updated_at"])
+            answer.save(update_fields=["content", "updated_at"])
 
             answer.answerimage_set.all().delete()
             AnswerImage.objects.bulk_create(
