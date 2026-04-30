@@ -40,5 +40,3 @@ class SubjectUpdateSerializer(serializers.ModelSerializer[Subject]):
             "status",
         )
         extra_kwargs = {field: {"required": False} for field in fields}
-
-

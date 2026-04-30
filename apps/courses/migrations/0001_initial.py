@@ -18,7 +18,12 @@ class Migration(migrations.Migration):
                 migrations.CreateModel(
                     name="Cohort",
                     fields=[
-                        ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                        (
+                            "id",
+                            models.BigAutoField(
+                                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                            ),
+                        ),
                         ("created_at", models.DateTimeField(auto_now_add=True)),
                         ("updated_at", models.DateTimeField(auto_now=True)),
                         ("number", models.PositiveSmallIntegerField()),
@@ -48,7 +53,12 @@ class Migration(migrations.Migration):
                 migrations.CreateModel(
                     name="Subject",
                     fields=[
-                        ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                        (
+                            "id",
+                            models.BigAutoField(
+                                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                            ),
+                        ),
                         ("created_at", models.DateTimeField(auto_now_add=True)),
                         ("updated_at", models.DateTimeField(auto_now=True)),
                         ("title", models.CharField(max_length=30)),
