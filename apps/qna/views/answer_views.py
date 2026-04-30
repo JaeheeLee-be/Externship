@@ -15,14 +15,22 @@ from apps.core.utils.permissions import IsStudentUser
 from apps.core.utils.s3 import PresignedUrlView
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
-from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema,answer_update_schema
+from apps.qna.schemas.answer_schemas import (
+    answer_accept_schema,
+    answer_create_schema,
+    answer_update_schema,
+)
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
     AnswerUpdateSerializer,
 )
-from apps.qna.services.answer_services import AnswerAcceptService, AnswerDetailService, AnswerService
+from apps.qna.services.answer_services import (
+    AnswerAcceptService,
+    AnswerDetailService,
+    AnswerService,
+)
 
 
 class AnswerPresignedUrlView(PresignedUrlView):
@@ -100,8 +108,9 @@ class AnswerDetail(APIView):
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         raise NotAuthenticated("로그인한 사용자만 답변을 수정할 수 있습니다.")
+
     @answer_update_schema
-    def put(self, request: Request, answer_id: int) -> Response:
+    def put(self, request: AuthenticatedRequest, answer_id: int) -> Response:
         serializer = AnswerRequestSerializer(data=request.data)
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)

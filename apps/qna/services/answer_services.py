@@ -57,6 +57,8 @@ class AnswerAcceptService:
                 raise ConflictException()
             answer.is_adopted = True
             answer.save()
+            return answer
+
 
 class AnswerDetailService:
     """
@@ -70,7 +72,7 @@ class AnswerDetailService:
         except Answer.DoesNotExist:
             raise NotFoundException("해당 답변을 찾을 수 없습니다.")
 
-    def update(self, user:User,answer: Answer, **validated_data: Any) -> Answer:
+    def update(self, user: User, answer: Answer, **validated_data: Any) -> Answer:
         """답변 수정을 위한 로직"""
         if answer.author_id != user.id:
             raise PermissionDeniedException("본인이 작성한 답변만 수정할 수 있습니다.")

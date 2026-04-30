@@ -4,7 +4,7 @@ from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
-    AnswerUpdateSerializer
+    AnswerUpdateSerializer,
 )
 
 answer_accept_schema = extend_schema(
@@ -38,10 +38,10 @@ answer_update_schema = extend_schema(
     summary="답변 수정",
     description="질문에 대한 답변을 수정합니다.",
     request=AnswerRequestSerializer,
-    responses ={
+    responses={
         200: AnswerUpdateSerializer,
         401: OpenApiResponse(description="로그인한 사용자만 답변을 수정할 수 있습니다."),
         403: OpenApiResponse(description="본인이 작성한 답변만 수정할 수 있습니다."),
         404: OpenApiResponse(description="해당 답변을 찾을 수 없습니다."),
-    }
+    },
 )

@@ -34,6 +34,7 @@ class AnswerAcceptResponseSerializer(serializers.ModelSerializer[Answer]):
     """답변 채택 응답 serializer"""
 
     answer_id = serializers.IntegerField(source="id")
+
     class Meta:
         model = Answer
         fields = (
@@ -42,15 +43,16 @@ class AnswerAcceptResponseSerializer(serializers.ModelSerializer[Answer]):
             "is_adopted",
         )
 
+
 class AnswerUpdateSerializer(serializers.ModelSerializer[Answer]):
     """답변 수정 했을떄 응답 serializer"""
 
     answer_id = serializers.IntegerField(source="id")
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
     class Meta:
         model = Answer
         fields = (
             "answer_id",
             "updated_at",
         )
-
