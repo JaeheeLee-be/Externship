@@ -24,13 +24,10 @@ from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
 
 
 class AnswerPresignedUrlView(PresignedUrlView):
-    """post를 불러와 오버라이드 -> 결과적으로 put만 실행"""
+    """presignedurl view"""
 
     permission_classes: list[type[Any]] = [IsStudentUser]
     path = "uploads/images/answers/"
-
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class AnswerView(APIView):
