@@ -187,6 +187,12 @@ class AnswerUpdateTestCase(BaseTestCase):
     질문수정 API
     """
 
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.user.role = "STUDENT"
+        cls.user.save()
+
     def setUp(self) -> None:
         self.client = APIClient()
 
