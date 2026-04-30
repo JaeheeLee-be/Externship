@@ -34,8 +34,8 @@ class AdminAccountListViewTest(APITestCase):
         User.objects.all().delete()
         cls.admin = create_user("admin@test.com", "admin_nick", role="ADMIN")
         cls.user = create_user("user@test.com", "user_nick", role="USER", is_active=True)
-        cls.inactive = create_user("inactive@test.com", "inactive_nick", role="USER", is_active=False)
-        cls.student = create_user("student@test.com", "student_nick", role="STUDENT", is_active=True)
+        cls.inactive = create_user("inactive@test.com", "inact_nick", role="USER", is_active=False)
+        cls.student = create_user("student@test.com", "student_nk", role="STUDENT", is_active=True)
 
     def setUp(self) -> None:
         self.client = APIClient()
