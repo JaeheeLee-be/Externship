@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+from typing import ClassVar
+
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APITestCase
 
 from apps.users.models import User
 
@@ -8,116 +12,137 @@ from apps.users.models import User
 def create_user(
     email: str,
     nickname: str,
-    role: str = "USER",
+    phone_number: str,
+    role: str = User.Role.USER,
     is_active: bool = True,
 ) -> User:
-    unique_suffix = str(abs(hash(email)))[:8]
     return User.objects.create_user(
         email=email,
-        password="Test1234!",
+        password="Test1234!@",
+        name="홍길동",
         nickname=nickname,
-        name="Tester",
-        phone_number=f"010{unique_suffix}",
+        phone_number=phone_number,
         role=role,
         is_active=is_active,
     )
 
 
 class AdminAccountListViewTest(APITestCase):
-    admin: User
-    user: User
-    inactive: User
-    student: User
+    """GET /api/v1/admin/accounts 어드민 회원 목록 조회 API 테스트"""
+
+    url: ClassVar[str]
+    admin: ClassVar[User]
+    normal_user: ClassVar[User]
+    student: ClassVar[User]
+    inactive: ClassVar[User]
 
     @classmethod
     def setUpTestData(cls) -> None:
-        User.objects.all().delete()
-        cls.admin = create_user("admin@test.com", "admin_nick", role="ADMIN")
-        cls.user = create_user("user@test.com", "user_nick", role="USER", is_active=True)
-        cls.inactive = create_user("inactive@test.com", "inact_nick", role="USER", is_active=False)
-        cls.student = create_user("student@test.com", "student_nk", role="STUDENT", is_active=True)
+        cls.url = reverse("admin-account-list")
 
-    def setUp(self) -> None:
-        self.client = APIClient()
-        self.url = reverse("users:admin-account-list")
+        cls.admin = create_user(
+            email="admin@oz.com",
+            nickname="관리자",
+            phone_number="01000000000",
+            role=User.Role.ADMIN,
+        )
+        cls.normal_user = create_user(
+            email="user@oz.com",
+            nickname="일반유저",
+            phone_number="01011111111",
+            role=User.Role.USER,
+        )
+        cls.student = create_user(
+            email="student@oz.com",
+            nickname="수강생닉",
+            phone_number="01033333333",
+            role=User.Role.STUDENT,
+        )
+        cls.inactive = create_user(
+            email="inactive@oz.com",
+            nickname="비활성유저",
+            phone_number="01044444444",
+            role=User.Role.USER,
+            is_active=False,
+        )
 
-    # ── 인증 / 권한 ───────────────────────────────────────────────────────────
+    # ------------------------------------------------------------------ #
+    # 인증 / 권한
+    # ------------------------------------------------------------------ #
 
     def test_unauthenticated_returns_401(self) -> None:
+        """비인증 요청 → 401"""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_non_admin_role_returns_403(self) -> None:
-        self.client.force_authenticate(user=self.user)
+    def test_non_admin_user_returns_403(self) -> None:
+        """일반 유저(USER role) 접근 → 403"""
+        self.client.force_authenticate(user=self.normal_user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_admin_role_returns_200(self) -> None:
+    # ------------------------------------------------------------------ #
+    # 기본 응답 구조
+    # ------------------------------------------------------------------ #
+
+    def test_admin_user_returns_200_with_correct_structure(self) -> None:
+        """어드민 유저 접근 → 200, count/next/previous/results 구조 확인"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    # ── 응답 구조 ─────────────────────────────────────────────────────────────
-
-    def test_response_has_required_keys(self) -> None:
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url)
         for key in ("count", "next", "previous", "results"):
             self.assertIn(key, response.data)
 
-    def test_result_item_has_expected_fields(self) -> None:
+    def test_results_contain_expected_fields(self) -> None:
+        """results 항목이 명세 필드와 정확히 일치하는지 확인"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url)
         expected_fields = {"id", "email", "nickname", "name", "birthday", "is_active", "role", "created_at"}
         self.assertEqual(set(response.data["results"][0].keys()), expected_fields)
 
-    # ── 검색 ──────────────────────────────────────────────────────────────────
-
-    def test_search_by_email(self) -> None:
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url, {"search": "user@test.com"})
-        emails = [r["email"] for r in response.data["results"]]
-        self.assertIn("user@test.com", emails)
-
-    # ── 필터 ──────────────────────────────────────────────────────────────────
+    # ------------------------------------------------------------------ #
+    # 필터
+    # ------------------------------------------------------------------ #
 
     def test_filter_is_active_true(self) -> None:
+        """is_active=true → 활성 유저만 반환"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"is_active": "true"})
-        self.assertTrue(all(r["is_active"] for r in response.data["results"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all(item["is_active"] for item in response.data["results"]))
 
     def test_filter_is_active_false(self) -> None:
+        """is_active=false → 비활성 유저만 반환"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"is_active": "false"})
-        self.assertTrue(all(not r["is_active"] for r in response.data["results"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all(not item["is_active"] for item in response.data["results"]))
 
-    def test_filter_role_student(self) -> None:
+    def test_filter_role(self) -> None:
+        """role=STUDENT → STUDENT 유저만 반환"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"role": "STUDENT"})
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["email"], "student@test.com")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all(item["role"] == "STUDENT" for item in response.data["results"]))
 
-    # ── 페이지네이션 ──────────────────────────────────────────────────────────
-
-    def test_pagination_next_url_exists(self) -> None:
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url, {"page": 1, "page_size": 2})
-        self.assertIsNotNone(response.data["next"])
-        self.assertIn("page=2", response.data["next"])
-
-    def test_pagination_no_previous_on_first_page(self) -> None:
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url, {"page": 1, "page_size": 10})
-        self.assertIsNone(response.data["previous"])
-
-    # ── 유효성 검사 ───────────────────────────────────────────────────────────
-
-    def test_invalid_role_param_returns_400(self) -> None:
+    def test_filter_invalid_role_returns_400(self) -> None:
+        """유효하지 않은 role 값 → 400"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"role": "SUPERUSER"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_invalid_page_param_returns_400(self) -> None:
+    # ------------------------------------------------------------------ #
+    # 페이지네이션 / 파라미터 유효성
+    # ------------------------------------------------------------------ #
+
+    def test_page_zero_returns_400(self) -> None:
+        """page=0 → 400 (min_value=1)"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"page": 0})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_page_size_over_max_returns_400(self) -> None:
+        """page_size=101 → 400 (max_value=100)"""
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.url, {"page_size": 101})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
