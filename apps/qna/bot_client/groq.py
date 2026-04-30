@@ -43,10 +43,6 @@ def call_groq(model: str, message: str) -> Iterator[str]:
                     if content is not None:
                         yield content
 
-                    finish_reason = choice.get("finish_reason")
-                    if finish_reason:
-                        yield finish_reason
-
                 except (json.JSONDecodeError, KeyError, IndexError):
                     continue
 

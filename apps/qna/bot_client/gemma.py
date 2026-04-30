@@ -40,10 +40,6 @@ def call_google(model: str, message: str) -> Iterator[str]:
                     if text is not None:
                         yield text
 
-                    finish_reason = candidates.get("finishReason")
-                    if finish_reason:
-                        yield finish_reason
-
                 except (json.JSONDecodeError, KeyError, IndexError):
                     continue
 
