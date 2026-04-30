@@ -3,10 +3,10 @@ from typing import Any
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.exams.models.exam_model import Exam
 from apps.courses.models.cohort import Cohort
-from apps.posts.models.course import Course
 from apps.courses.models.subject import Subject
+from apps.exams.models.exam_model import Exam
+from apps.posts.models.course import Course
 
 
 class SubjectSummarySerializer(serializers.ModelSerializer[Subject]):
