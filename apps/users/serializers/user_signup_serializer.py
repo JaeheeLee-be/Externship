@@ -31,6 +31,11 @@ class SignupSerializer(serializers.ModelSerializer["User"]):
             "nickname": {"validators": []},
         }
 
+    def validate_gender(self, value: str) -> str:
+        if value not in User.Gender.values:
+            raise serializers.ValidationError("유효하지 않은 성별입니다. M(남성) 또는 F(여성)만 허용됩니다.")
+        return value
+
     def validate_nickname(self, value: str) -> str:
         if not re.match(r"^[가-힣a-zA-Z0-9]{2,10}$", value):
             raise serializers.ValidationError("닉네임은 2~10자 이내, 특수문자 제외, 한글/영문/숫자만 허용됩니다.")
