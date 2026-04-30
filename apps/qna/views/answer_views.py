@@ -103,10 +103,12 @@ class AnswerDetail(APIView):
     답변 수정 API
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStudentUser]
     answer_service = AnswerDetailService()
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if request.user.is_authenticated:
+            raise PermissionDenied(detail="답변 수정 권한이 없습니다.")
         raise NotAuthenticated("로그인한 사용자만 답변을 수정할 수 있습니다.")
 
     @answer_update_schema
