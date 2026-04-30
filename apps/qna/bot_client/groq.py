@@ -1,19 +1,17 @@
 import json
 from typing import Iterator
 
-from django.conf import settings
-from .prompts.qna_chatbot_prompt import QNA_PROMPT
 import requests
+from django.conf import settings
+
+from .prompts.qna_chatbot_prompt import QNA_PROMPT
 
 
 def call_groq(model: str, message: str) -> Iterator[str]:
     api_key = settings.GROQ_API_KEY
     url = "https://api.groq.com/openai/v1/chat/completions"
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
 
     payload = {
         "model": model,
@@ -24,11 +22,8 @@ def call_groq(model: str, message: str) -> Iterator[str]:
                 "role": "system",
                 "content": QNA_PROMPT,
             },
-            {
-                "role": "user",
-                "content": message
-            }
-        ]
+            {"role": "user", "content": message},
+        ],
     }
 
     try:
