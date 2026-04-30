@@ -236,6 +236,7 @@ AWS_S3_CONFIG = Config(s3={"addressing_style": "virtual"})
 
 # FRONTEND_REDIRECT_URI
 FRONTEND_REDIRECT_URI = os.getenv("FRONTEND_REDIRECT_URI")
+
 CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
 CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/3"
 CELERY_TIMEZONE = "Asia/Seoul"
@@ -246,3 +247,8 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=0, minute=0),
     },
 }
+
+
+# LLM API Settings
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GOOGLE_API_KEY = os.getenv("GEMMA_API_KEY")
