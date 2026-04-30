@@ -37,7 +37,7 @@ class SmsVerificationService:
             if not User.objects.filter(phone_number=phone_number).exists():
                 raise ValidationError("변경가능한 번호가 아닙니다")
 
-        cache_key = f"sms_code_{phone_number}_{purpose.value}"  # type: ignore[misc]
+        cache_key = f"sms_code_{phone_number}"
         # 캐시 저장 용도
         cache_data = {"purpose": purpose.value}  # type: ignore[misc]
         # cache 저장 설정
@@ -62,7 +62,7 @@ class SmsVerificationService:
         성공 시 다음 단계용 sms_token을 발급합니다.
         """
         formatted_phone = cls.phone_format_change(phone_number)
-        cache_key = f"sms_code_{phone_number}_{purpose.value}"  # type: ignore[misc]
+        cache_key = f"sms_code_{phone_number}"
         cached_data = cache.get(cache_key)
         if not cached_data:
             raise ValidationError("인증 코드가 만료되었거나 발급되지 않았습니다.")
