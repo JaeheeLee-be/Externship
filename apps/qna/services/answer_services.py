@@ -68,12 +68,12 @@ class AnswerDetailService:
         try:
             return Answer.objects.get(pk=answer_id)
         except Answer.DoesNotExist:
-            raise NotFound("해당 답변을 찾을 수 없습니다.")
+            raise NotFoundException("해당 답변을 찾을 수 없습니다.")
 
     def update(self, user:User,answer: Answer, **validated_data: Any) -> Answer:
         """답변 수정을 위한 로직"""
         if answer.author_id != user.id:
-            raise PermissionDenied("본인이 작성한 답변만 수정할 수 있습니다.")
+            raise PermissionDeniedException("본인이 작성한 답변만 수정할 수 있습니다.")
         with transaction.atomic():
             answer.content = validated_data["content"]
             answer.save()
