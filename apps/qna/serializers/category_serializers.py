@@ -2,6 +2,13 @@ from typing import Any
 
 from rest_framework import serializers
 
+from apps.qna.exceptions import (
+    DuplicateCategoryException,
+    InvalidMiddleParentException,
+    InvalidSmallParentException,
+    LargeHasParentException,
+    ParentNotFoundException,
+)
 from apps.qna.models.question_models import QuestionCategory
 
 
@@ -58,49 +65,32 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
         # 대분류는 부모를 가질 수 없음
         if category_type == "large":
             if parent_id is not None:
-                raise serializers.ValidationError(
-                    "대분류는 parent_id를 가질 수 없습니다.",
-                    code="large_has_parent",
-                )
+                raise LargeHasParentException()
 
         # 중/소분류는 부모가 필요함
         elif category_type in ["middle", "small"]:
             if parent_id is None:
-                raise serializers.ValidationError(
-                    "부모 카테고리를 찾을 수 없습니다.",
-                    code="parent_not_found",
-                )
+                raise ParentNotFoundException()
 
             try:
-                parent = QuestionCategory.objects.get(id=parent_id)
+                # select_related로 조부모까지 한 번에 로딩 → N+1 방지
+                parent = QuestionCategory.objects.select_related("parent").get(id=parent_id)
             except QuestionCategory.DoesNotExist:
-                raise serializers.ValidationError(
-                    "부모 카테고리를 찾을 수 없습니다.",
-                    code="parent_not_found",
-                )
+                raise ParentNotFoundException()
 
             parent_depth = get_category_depth(parent)
 
             # 중분류의 부모는 대분류
             if category_type == "middle" and parent_depth != 1:
-                raise serializers.ValidationError(
-                    "중분류의 부모는 대분류여야 합니다.",
-                    code="invalid_middle_parent",
-                )
+                raise InvalidMiddleParentException()
 
             # 소분류의 부모는 중분류
             if category_type == "small" and parent_depth != 2:
-                raise serializers.ValidationError(
-                    "소분류의 부모는 중분류여야 합니다.",
-                    code="invalid_small_parent",
-                )
+                raise InvalidSmallParentException()
 
         # 같은 부모 아래 동일 이름 중복 방지
         if QuestionCategory.objects.filter(parent=parent, name=name).exists():
-            raise serializers.ValidationError(
-                "동일한 이름의 카테고리가 이미 존재합니다.",
-                code="duplicate_category",
-            )
+            raise DuplicateCategoryException()
 
         attrs["parent"] = parent
         return attrs
@@ -112,14 +102,6 @@ class AdminCategoryCreateSerializer(serializers.Serializer[Any]):
             return str(first_error[0])
 
         return str(first_error)
-
-    def get_error_code(self) -> str:
-        first_error = next(iter(self.errors.values()))
-
-        if isinstance(first_error, list):
-            return getattr(first_error[0], "code", "invalid")
-
-        return getattr(first_error, "code", "invalid")
 
 
 # 카테고리 생성 응답
@@ -185,4 +167,4 @@ class AdminCategoryListSerializer(serializers.ModelSerializer[QuestionCategory])
         return obj.parent.name
 
     def get_child_categories(self, obj: QuestionCategory) -> list[str]:
-        return [child.name for child in obj.children.all()]
+        return list(obj.children.values_list("name", flat=True))
