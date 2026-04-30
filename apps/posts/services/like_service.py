@@ -19,7 +19,6 @@ def create_post_like(user: User, post_id: int) -> Like:
     like, created = Like.objects.get_or_create(
         user=user,
         post=post,
-        defaults={"is_liked": True},
     )
 
     if created:
