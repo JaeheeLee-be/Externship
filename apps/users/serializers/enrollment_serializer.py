@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.posts.models.cohort import Cohort
+from apps.courses.models.cohort import Cohort
 
 
 class EnrollmentSerializer(serializers.Serializer["EnrollmentSerializer"]):
