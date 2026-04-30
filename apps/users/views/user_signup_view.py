@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.users.serializers.user_signup_serializer import SignupSerializer
 from apps.users.services.user_signup_service import create_user
+from apps.users.utils.user_exceptions import ConflictError
 
 
 class SignupView(APIView):
@@ -38,11 +39,24 @@ class SignupView(APIView):
     )
     def post(self, request: Request) -> Response:
         serializer = SignupSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        create_user(serializer.validated_data)
-
-        return Response(
-            {"detail": "회원가입이 완료되었습니다."},
-            status=status.HTTP_201_CREATED,
-        )
+        if not serializer.is_valid():
+            return Response(
+                {"error_detail": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            create_user(serializer.validated_data)
+            return Response(
+                {"detail": "회원가입이 완료되었습니다."},
+                status=status.HTTP_201_CREATED,
+            )
+        except ConflictError as e:
+            return Response(
+                {"error_detail": str(e)},
+                status=status.HTTP_409_CONFLICT,
+            )
+        except ValidationError as e:
+            return Response(
+                {"error_detail": e.detail},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
