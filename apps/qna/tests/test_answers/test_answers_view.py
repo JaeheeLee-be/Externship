@@ -3,11 +3,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.qna.models.answer_models import Answer
-<<<<<<< HEAD
 from apps.qna.models.question_models import Question, QuestionCategory
-=======
-from apps.qna.models.question_models import Question, QuestionCategorie
->>>>>>> 2117118 (feat:답변 댓글 test code 작성)
 from apps.users.models import User
 
 
@@ -92,7 +88,6 @@ class AnswersViewTestCase(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-<<<<<<< HEAD
 class AnswerAcceptViewTestCase(BaseTestCase):
     """
     POST api/v1/qna/answers/{answer_id}/accept
@@ -272,7 +267,6 @@ class AnswerUpdateTestCase(BaseTestCase):
         response = self.client.put(url, {"content": "updated content", "img_urls": []}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-=======
 class AnswerCommentViewTestCase(BaseTestCase):
     """
     POST api/v1/qna/answers/{answer_id}/comments
@@ -323,4 +317,3 @@ class AnswerCommentViewTestCase(BaseTestCase):
         response = self.client.post(url, self.comment, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
->>>>>>> 2117118 (feat:답변 댓글 test code 작성)
