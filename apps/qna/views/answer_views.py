@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
+from apps.core.utils.s3 import PresignedUrlView
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
@@ -20,6 +21,13 @@ from apps.qna.serializers.answer_serializers import (
     AnswerResponseSerializer,
 )
 from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
+
+
+class AnswerPresignedUrlView(PresignedUrlView):
+    """presignedurl view"""
+
+    permission_classes: list[type[Any]] = [IsStudentUser]
+    path = "uploads/images/answers/"
 
 
 class AnswerView(APIView):
