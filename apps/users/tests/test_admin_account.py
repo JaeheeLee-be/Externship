@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 
 from apps.users.models import User
 
-# 이제 되나?
+
 def create_user(
     email: str,
     nickname: str,
