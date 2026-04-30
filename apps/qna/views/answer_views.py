@@ -6,6 +6,7 @@ from rest_framework.exceptions import (
     PermissionDenied,
     ValidationError,
 )
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,13 +15,22 @@ from apps.core.utils.permissions import IsStudentUser
 from apps.core.utils.s3 import PresignedUrlView
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
-from apps.qna.schemas.answer_schemas import answer_accept_schema, answer_create_schema
+from apps.qna.schemas.answer_schemas import (
+    answer_accept_schema,
+    answer_create_schema,
+    answer_update_schema,
+)
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
+    AnswerUpdateSerializer,
 )
-from apps.qna.services.answer_services import AnswerAcceptService, AnswerService
+from apps.qna.services.answer_services import (
+    AnswerAcceptService,
+    AnswerDetailService,
+    AnswerService,
+)
 
 
 class AnswerPresignedUrlView(PresignedUrlView):
@@ -85,3 +95,32 @@ class AnswerAcceptView(APIView):
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(AnswerAcceptResponseSerializer(answer).data, status=status.HTTP_200_OK)
+
+
+class AnswerDetail(APIView):
+    """
+    PUT /api/v1/qna/answers/{answer_id}
+    답변 수정 API
+    """
+
+    permission_classes = [IsAuthenticated]
+    answer_service = AnswerDetailService()
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        raise NotAuthenticated("로그인한 사용자만 답변을 수정할 수 있습니다.")
+
+    @answer_update_schema
+    def put(self, request: AuthenticatedRequest, answer_id: int) -> Response:
+        serializer = AnswerRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            raise ValidationError(serializer.errors)
+        try:
+            answer = self.answer_service.get_answer(answer_id)
+            updated_answer = self.answer_service.update(
+                request.user,
+                answer,
+                **serializer.validated_data,
+            )
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
+        return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
