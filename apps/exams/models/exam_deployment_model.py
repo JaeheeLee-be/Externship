@@ -2,7 +2,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.core.models import TimeStampModel
-from apps.posts.models.cohort import Cohort
+from apps.courses.models.cohort import Cohort
 
 from .exam_model import Exam
 
