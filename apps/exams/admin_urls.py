@@ -24,7 +24,7 @@ urlpatterns = [
     path("presigned-url/", ExamImageUploadView.as_view(), name="presigned-url"),
     path("<int:exam_id>/questions/", AdminQuestionCreateView.as_view(), name="exam-question-create"),
     path(
-        "<int:exam_id>/questions/<int:question_id>/",
+        "questions/<str:question_id>/",
         AdminQuestionDetailView.as_view(),
         name="exam-question-detail",
     ),
