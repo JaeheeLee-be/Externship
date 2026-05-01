@@ -10,6 +10,7 @@ from apps.exams.exceptions.exam_question_exceptions import (
     ExamQuestionDeleteNotFound,
     ExamQuestionUpdateConflict,
     ExamQuestionUpdateNotFound,
+    ExamQuestionDeleteConflict
 )
 from apps.exams.models.exam_model import Exam
 from apps.exams.models.exam_question_model import ExamQuestion
@@ -49,13 +50,17 @@ class AdminQuestionService:
 
             self.target_question = target_question
 
-            if self.method == "delete":
-                return self
+            if self.method == "update":
 
-            exam = Exam.objects.select_for_update().filter(id=target_question.exam_id).first()
-            result = ExamQuestion.objects.filter(exam=exam).aggregate(
-                total_point=Sum("point"),
-            )
+                exam = Exam.objects.select_for_update().filter(id=target_question.exam_id).first()
+                result = ExamQuestion.objects.filter(exam=exam).aggregate(
+                    total_point=Sum("point"),
+                )
+            else:
+                exam = Exam.objects.select_for_update().filter(id=target_question.exam_id).first()
+                result = ExamQuestion.objects.filter(exam=exam).aggregate(
+                    len_of_questions=Count("id")
+                )
 
         if not exam:
             self.atomic.__exit__(None, None, None)
@@ -93,5 +98,7 @@ class AdminQuestionService:
         return self.target_question
 
     def delete_question(self) -> ExamQuestion:
+        if self.len_of_questions == 1:
+            raise ExamQuestionDeleteConflict()
         self.target_question.delete()
         return self.target_question
