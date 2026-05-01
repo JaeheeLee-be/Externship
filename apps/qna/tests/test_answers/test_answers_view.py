@@ -267,11 +267,20 @@ class AnswerUpdateTestCase(BaseTestCase):
         response = self.client.put(url, {"content": "updated content", "img_urls": []}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class AnswerCommentViewTestCase(BaseTestCase):
     """
     POST api/v1/qna/answers/{answer_id}/comments
     답변 댓글 작성 API test code
     """
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        super().setUpTestData()
+        cls.user.role = "STUDENT"
+        cls.user.save()
+
     def setUp(self) -> None:
         self.client = APIClient()
         self.answer = Answer.objects.create(

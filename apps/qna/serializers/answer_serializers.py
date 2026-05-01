@@ -57,20 +57,28 @@ class AnswerUpdateSerializer(serializers.ModelSerializer[Answer]):
             "updated_at",
         )
 
-class AnswerCommentRequestSerializer(serializers.ModelSerializer[AnswerComment]):
 
+class AnswerCommentRequestSerializer(serializers.Serializer[AnswerComment]):
     """
     답변 댓글 작성 요청 serializer
     """
-    class Meta:
-        model = AnswerComment
-        fields = ["content"]
+
+    content = serializers.CharField(
+        required=True,
+        min_length=1,
+        max_length=500,
+        error_messages={
+            "min_length": "댓글 내용은 1자 이상 입력해야 합니다.",
+            "max_length": "댓글 내용은 500자 이하로 입력해야 합니다.",
+        },
+    )
 
 
 class AnswerCommentResponseSerializer(serializers.ModelSerializer[AnswerComment]):
     """
     답변 댓글 작성 응답 serializer
     """
+
     comment_id = serializers.IntegerField(source="id")
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 

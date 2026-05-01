@@ -12,5 +12,5 @@ urlpatterns = [
         name="answer_presigned_url",
     ),
     path("answers/<int:answer_id>", answer_views.AnswerDetail.as_view(), name="answers_detail"),
-    path("answers/<int:answer_id>/comments", answer_views.AnswerCommentView.as_view(),name="answer_comments")
+    path("answers/<int:answer_id>/comments", answer_views.AnswerCommentView.as_view(), name="answer_comments"),
 ]

@@ -6,7 +6,6 @@ from rest_framework.exceptions import (
     PermissionDenied,
     ValidationError,
 )
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,22 +16,23 @@ from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.answer_schemas import (
     answer_accept_schema,
+    answer_comment_schema,
     answer_create_schema,
     answer_update_schema,
 )
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
+    AnswerCommentRequestSerializer,
+    AnswerCommentResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
     AnswerUpdateSerializer,
-    AnswerCommentRequestSerializer,
-    AnswerCommentResponseSerializer,
 )
 from apps.qna.services.answer_services import (
     AnswerAcceptService,
+    AnswerCommentService,
     AnswerDetailService,
     AnswerService,
-    AnswerCommentService
 )
 
 
@@ -130,26 +130,34 @@ class AnswerDetail(APIView):
             return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
 
+
 class AnswerCommentView(APIView):
     """
     POST api/v1/qna/answers/{answer_id}/comments
     답변 댓글 작성 API
     """
-    permission_classes = [IsAuthenticated]
+
+    permission_classes = [IsStudentUser]
     answer_comment_service = AnswerCommentService()
 
-    def post(self, request: Request, answer_id: int) -> Response:
-        answer = self.answer_comment_service.get_object(answer_id)
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if request.user.is_authenticated:
+            raise PermissionDenied(detail="댓글 작성 권한이 없습니다.")
+        raise NotAuthenticated("로그인한 사용자만 댓글을 작성할 수 있습니다.")
+
+    def post(self, request: AuthenticatedRequest, answer_id: int) -> Response:
         serializer = AnswerCommentRequestSerializer(
             data=request.data,
         )
         if not serializer.is_valid():
             raise ValidationError(serializer.errors)
-        assert request.user.id is not None
-        answer_comment = self.answer_comment_service.create_comment(
-            answer_id=answer.id,
-            user=request.user,
-            **serializer.validated_data,
-        )
-        return Response(AnswerCommentResponseSerializer(answer_comment).data,status=status.HTTP_201_CREATED)
-    # 403 에러는 관리자만 답변에 대한 댓글을 작성할 수 있는지 물어보자
+        try:
+            answer = self.answer_comment_service.get_object(answer_id)
+            answer_comment = self.answer_comment_service.create_comment(
+                answer_id=answer.id,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
+        return Response(AnswerCommentResponseSerializer(answer_comment).data, status=status.HTTP_201_CREATED)
