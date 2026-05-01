@@ -24,5 +24,5 @@ class ExamQuestionDeleteNotFound(Exception):
 
 
 class ExamQuestionDeleteConflict(Exception):
-    def __init__(self,message:str="쪽지시험 문제 삭제 처리 중 충돌이 발생했습니다."):
+    def __init__(self, message: str = "쪽지시험 문제 삭제 처리 중 충돌이 발생했습니다."):
         super().__init__(message)

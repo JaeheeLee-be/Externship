@@ -39,6 +39,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
     error_404_delete: str
     error_401_delete: str
     error_403_delete: str
+    error_409_delete: str
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -121,6 +122,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         cls.error_401_delete = "유효하지 않은 문제 수정 데이터 입니다."
         cls.error_403_delete = "쪽지시험 문제 삭제 권한이 없습니다."
         cls.error_404_delete = "삭제할 문제 정보를 찾을 수 없습니다."
+        cls.error_409_delete = "쪽지시험 문제 삭제 처리 중 충돌이 발생했습니다."
 
     def setUp(self) -> None:
         self.client = APIClient()
@@ -207,9 +209,17 @@ class TestAdminExamQuestionCreateView(APITestCase):
 
     def test_admin_check_delete_question(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
+        self.client.post(self.create_url, self.data, format="json")
         response = self.client.delete(self.update_and_delete_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(ExamQuestion.objects.filter(exam=self.exam).count(), 0)
+        self.assertEqual(ExamQuestion.objects.filter(exam=self.exam).count(), 1)
+
+    def test_admin_check_delete_fail_question(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(self.update_and_delete_url)
+        self.assertEqual(response.data.get("error_detail"), self.error_409_delete)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(ExamQuestion.objects.filter(exam=self.exam).count(), 1)
 
     def test_student_check_delete_question(self) -> None:
         self.client.force_authenticate(user=self.student)

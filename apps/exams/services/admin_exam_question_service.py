@@ -7,10 +7,10 @@ from django.db.models import Count, Sum
 from apps.exams.exceptions.exam_question_exceptions import (
     ExamQuestionCreateConflict,
     ExamQuestionCreateNotFound,
+    ExamQuestionDeleteConflict,
     ExamQuestionDeleteNotFound,
     ExamQuestionUpdateConflict,
     ExamQuestionUpdateNotFound,
-    ExamQuestionDeleteConflict
 )
 from apps.exams.models.exam_model import Exam
 from apps.exams.models.exam_question_model import ExamQuestion
@@ -18,6 +18,10 @@ from apps.exams.models.exam_question_model import ExamQuestion
 
 # TODO : 함수형으로 리펙토링 예정
 class AdminQuestionService:
+    exam: Exam
+    target_question: ExamQuestion
+    total_point: int
+    len_of_questions: int
 
     def __init__(
         self, method: Literal["create", "update", "delete"], exam_id: int | None = None, question_id: int | None = None
@@ -58,9 +62,7 @@ class AdminQuestionService:
                 )
             else:
                 exam = Exam.objects.select_for_update().filter(id=target_question.exam_id).first()
-                result = ExamQuestion.objects.filter(exam=exam).aggregate(
-                    len_of_questions=Count("id")
-                )
+                result = ExamQuestion.objects.filter(exam=exam).aggregate(len_of_questions=Count("id"))
 
         if not exam:
             self.atomic.__exit__(None, None, None)
@@ -69,6 +71,7 @@ class AdminQuestionService:
             elif self.method == "update":
                 raise ExamQuestionUpdateNotFound()
 
+        assert exam is not None
         self.exam = exam
         self.len_of_questions = result.get("len_of_questions", 0)
         self.total_point = result.get("total_point", 0)
