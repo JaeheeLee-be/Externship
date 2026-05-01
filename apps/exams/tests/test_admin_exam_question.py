@@ -107,9 +107,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
             "point": 9,
         }
         cls.create_url = reverse("exam-question-create", kwargs={"exam_id": cls.exam.id})
-        cls.update_and_delete_url = reverse(
-            "exam-question-detail", kwargs={"exam_id": cls.exam.id, "question_id": cls.question.id}
-        )
+        cls.update_and_delete_url = reverse("exam-question-detail", kwargs={"question_id": cls.question.id})
         cls.error_400_create = "유효하지 않은 문제 생성 데이터 입니다."
         cls.error_401_create = "자격 인증 데이터가 제공되지 않았습니다."
         cls.error_403_create = "쪽지시험 문제 등록 권한이 없습니다."

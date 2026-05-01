@@ -34,6 +34,10 @@ class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
         extra_kwargs = {field: {"required": False} for field in fields}
 
 
+class QuestionDeleteRequestSerializer(serializers.Serializer[int]):
+    question_id = serializers.IntegerField(min_value=1)
+
+
 class QuestionDeleteResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
     class Meta:
         model = ExamQuestion
@@ -59,8 +63,10 @@ class QuestionResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
 
 
 class QuestionUpdateResponseSerializer(QuestionResponseSerializer):
+    question_id = serializers.IntegerField(source="id")
+
     class Meta(QuestionResponseSerializer.Meta):
-        fields = ["id"] + QuestionResponseSerializer.Meta.fields
+        fields = ["question_id"] + QuestionResponseSerializer.Meta.fields
 
 
 class QuestionCreateResponseSerializer(QuestionResponseSerializer):
