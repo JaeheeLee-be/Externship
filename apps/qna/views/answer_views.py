@@ -145,6 +145,7 @@ class AnswerCommentView(APIView):
             raise PermissionDenied(detail="댓글 작성 권한이 없습니다.")
         raise NotAuthenticated("로그인한 사용자만 댓글을 작성할 수 있습니다.")
 
+    @answer_comment_schema
     def post(self, request: AuthenticatedRequest, answer_id: int) -> Response:
         serializer = AnswerCommentRequestSerializer(
             data=request.data,
