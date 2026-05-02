@@ -23,7 +23,7 @@ class GroqFactory:
         title: str,
         message: str,
         model: str = "openai/gpt-oss-120b",
-        stream: bool = True,
+        stream: bool = False,
         temperature: float = 0.1,
     ) -> Payload:
 
@@ -63,9 +63,7 @@ class GroqFactory:
             *(history or []),
             Message(
                 role="user",
-                content=f"""
-                <client_question>{message}</client_question>
-                """,
+                content=f"<client_question>{message}</client_question>",
             ),
         ]
 
