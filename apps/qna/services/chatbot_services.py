@@ -7,10 +7,6 @@ from apps.qna.models import Question, QuestionCategory
 from apps.qna.redis import CacheRepository, CacheFactory, INITIAL_KEY
 
 
-
-
-
-
 class InitialService:
 
     @staticmethod
@@ -25,6 +21,13 @@ class InitialService:
 
         key = INITIAL_KEY.format(question.id)
         CacheRepository.initial_save(key=key, value=asdict(save_data))
+
+    @staticmethod
+    def get_initial_answer(question_id: int) -> str:
+        initial = CacheRepository.get(INITIAL_KEY.format(question_id))
+        if not initial:
+            raise
+        return initial.answer
 
     @staticmethod
     def _create_initial_answer(question: Question, category: str) -> str:
