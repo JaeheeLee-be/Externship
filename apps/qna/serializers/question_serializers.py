@@ -114,3 +114,35 @@ class QuestionDetailSerializer(serializers.Serializer[Any]):
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     author = QuestionDetailAuthorSerializer()
     answers = QuestionDetailAnswerSerializer(many=True)
+
+
+class QuestionUpdateSerializer(serializers.Serializer[Any]):
+    """질문 수정 요청 데이터"""
+
+    title = serializers.CharField(max_length=50)
+    content = serializers.CharField()
+    category_id = serializers.IntegerField()
+    img_urls = serializers.ListField(
+        child=serializers.URLField(),
+        required=False,
+        default=list,
+    )
+
+    def validate_category_id(self, value: int) -> int:
+        try:
+            category = QuestionCategory.objects.select_related("parent__parent").get(id=value)
+        except QuestionCategory.DoesNotExist:
+            raise serializers.ValidationError("존재하지 않는 카테고리입니다.")
+
+        # 소분류 = parent가 있고, 그 parent도 parent가 있는 것
+        if category.parent is None or category.parent.parent is None:
+            raise serializers.ValidationError("소분류 카테고리만 선택할 수 있습니다.")
+
+        return value
+
+
+class QuestionUpdateResponseSerializer(serializers.Serializer[Any]):
+    """질문 수정 응답 데이터"""
+
+    question_id = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
