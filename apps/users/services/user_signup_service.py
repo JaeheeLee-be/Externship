@@ -20,9 +20,6 @@ def create_user(validated_data: dict[str, Any]) -> User:
     password = validated_data.pop("password")
     nickname = validated_data.get("nickname")
 
-    if not all([email_token, sms_token, password]):
-        raise ValidationError("필수 인증 정보 또는 비밀번호가 누락되었습니다.")
-
     email_key = f"email_verify_token_{email_token}"
     sms_key = f"sms_verify_token_{sms_token}"
 

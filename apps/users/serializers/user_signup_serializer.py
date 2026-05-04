@@ -11,6 +11,10 @@ class SignupSerializer(serializers.ModelSerializer["User"]):
     email_token = serializers.CharField(write_only=True)
     sms_token = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
+    gender = serializers.ChoiceField(
+        choices=User.Gender.choices,
+        error_messages={'invalid_choice': '유효하지 않은 성별입니다. M(남성) 또는 F(여성)만 허용됩니다.'}
+    )
 
     class Meta:
         model = User
@@ -27,10 +31,6 @@ class SignupSerializer(serializers.ModelSerializer["User"]):
             "nickname": {"validators": []},
         }
 
-    def validate_gender(self, value: str) -> str:
-        if value not in User.Gender.values:
-            raise serializers.ValidationError("유효하지 않은 성별입니다. M(남성) 또는 F(여성)만 허용됩니다.")
-        return value
 
     def validate_nickname(self, value: str) -> str:
         if not re.match(r"^[가-힣a-zA-Z0-9]{2,10}$", value):
