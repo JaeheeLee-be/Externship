@@ -26,7 +26,7 @@ class AdminAccountSerializer(serializers.ModelSerializer[User]):
     def get_status(self, obj: User) -> str:
 
         try:
-            obj.withdrawal  # type: ignore[attr-defined]
+            obj.withdrawal
             return "withdrew"
         except ObjectDoesNotExist:
             return "active" if obj.is_active else "inactive"
