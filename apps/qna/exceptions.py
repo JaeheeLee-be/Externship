@@ -43,3 +43,12 @@ class InvalidMiddleParentException(BaseCustomException):
 class InvalidSmallParentException(BaseCustomException):
     status_code = 400
     default_message = "소분류의 부모는 중분류여야 합니다."
+
+
+class CategoryNotFoundException(BaseCustomException):
+    status_code = 404
+    default_message = "해당 카테고리를 찾을 수 없습니다."
+
+
+class DefaultCategoryDeleteException(ConflictException):
+    default_message = "기본 카테고리는 삭제할 수 없습니다."

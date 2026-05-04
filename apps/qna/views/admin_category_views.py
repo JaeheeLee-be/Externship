@@ -79,3 +79,20 @@ class AdminCategoryListCreateAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class AdminCategoryDestroyAPIView(APIView):
+    permission_classes = [IsRoleAdminUser]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated(detail="로그인이 필요합니다.")
+        raise PermissionDenied(detail="카테고리 삭제 권한이 없습니다.")
+
+    # 삭제
+    def delete(self, request: Request, category_id: int, *args: Any, **kwargs: Any) -> Response:
+        try:
+            result = CategoryService.delete_category(category_id=category_id)
+            return Response(result, status=status.HTTP_200_OK)
+        except BaseCustomException as e:
+            return Response({"error_detail": e.message}, status=e.status_code)
