@@ -30,7 +30,7 @@ class MyCoursesView(APIView):
             if not request.user.is_authenticated:
                 raise NotAuthenticatedError()
 
-            user = cast(User, request.user)
+            user = request.user
 
             if user.role != User.Role.STUDENT:
                 raise PermissionDenied()
