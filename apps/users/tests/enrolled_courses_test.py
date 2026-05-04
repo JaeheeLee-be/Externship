@@ -33,7 +33,7 @@ class MyCoursesViewTest(APITestCase):
             name="테스트",
             nickname="테스트닉",
             phone_number="01011112222",
-            role=User.Role.STUDENT,    # ← 추가
+            role=User.Role.STUDENT,  # ← 추가
         )
 
         # 수강생 유저 (신청 기록 없음)
@@ -43,7 +43,7 @@ class MyCoursesViewTest(APITestCase):
             name="다른유저",
             nickname="다른닉",
             phone_number="01033334444",
-            role=User.Role.STUDENT,    # ← 추가
+            role=User.Role.STUDENT,  # ← 추가
         )
 
         # 일반 유저 (수강생 아님)
@@ -166,9 +166,7 @@ class MyCoursesViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        item = next(
-            i for i in response.data if i["cohort"]["id"] == self.cohort_preparing.id
-        )
+        item = next(i for i in response.data if i["cohort"]["id"] == self.cohort_preparing.id)
 
         cohort_data = item["cohort"]
         self.assertEqual(cohort_data["id"], self.cohort_preparing.id)
