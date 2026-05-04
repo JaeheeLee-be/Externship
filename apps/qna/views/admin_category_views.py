@@ -1,7 +1,7 @@
 from typing import Any, NoReturn
 
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,6 +21,8 @@ class AdminCategoryListCreateAPIView(APIView):
     permission_classes = [IsRoleAdminUser]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated(detail="로그인이 필요합니다.")
         raise PermissionDenied(
             detail=(
                 "카테고리 목록 조회 권한이 없습니다." if request.method == "GET" else "카테고리 등록 권한이 없습니다."
