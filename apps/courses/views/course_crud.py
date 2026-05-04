@@ -1,6 +1,8 @@
+from typing import Any, NoReturn
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +19,11 @@ from apps.courses.serializers.course_crud import (
     ValidationErrorResponseSerializer,
 )
 from apps.courses.services import course_crud as coursecrud_service
-from apps.posts.exceptions import CourseAlreadyExistsError, CourseNotFoundError
+from apps.courses.utils.exceptions import (
+    CommentPermissionDeniedError,
+    CourseAlreadyExistsError,
+    CourseNotFoundError,
+)
 
 
 class CourseListView(APIView):
@@ -41,7 +47,12 @@ class CourseListView(APIView):
 
 
 class AdminCourseCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    # 어드민만 접근 가능하도록 설정
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    # 403 처리 - 퍼미션 디나이드
+    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
+        raise CommentPermissionDeniedError()
 
     @extend_schema(
         tags=["admin-courses"],
@@ -71,13 +82,16 @@ class AdminCourseCreateView(APIView):
             )
 
         return Response(
-            CourseCreateResponseSerializer({"detail": "과정이 등록되었습니다.", "id": course.id}).data,
+            CourseCreateResponseSerializer({"detail": "코스가 성공적으로 등록되었습니다.", "id": course.id}).data,
             status=status.HTTP_201_CREATED,
         )
 
 
 class AdminCourseDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
+        raise CommentPermissionDeniedError()
 
     @extend_schema(
         tags=["admin-courses"],
@@ -161,4 +175,28 @@ class AdminCourseDetailView(APIView):
         return Response(
             CourseDeleteResponseSerializer({"detail": "과정이 삭제되었습니다."}).data,
             status=status.HTTP_200_OK,
+        )
+
+
+class CourseCreateView(APIView):
+    # 어드민만 생성 가능하도록 설정
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    # 403 에러 발생 시 처리
+    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
+        raise CommentPermissionDeniedError()
+
+    def post(self, request: Request) -> Response:
+        serializer = CourseCreateRequestSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            # 에러 응답 명세 (ValidationErrorResponseSerializer)
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        course = coursecrud_service.create_course(serializer.validated_data)
+
+        # 성공 응답 명세 (CourseCreateResponseSerializer)
+        # 메시지를 주어야 하므로 detail 포함
+        return Response(
+            {"detail": "코스가 성공적으로 생성되었습니다.", "id": course.id}, status=status.HTTP_201_CREATED
         )

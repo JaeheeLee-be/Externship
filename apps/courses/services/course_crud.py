@@ -3,7 +3,7 @@ from typing import Any
 from django.db.models import QuerySet
 
 from apps.courses.models.course import Course
-from apps.posts.exceptions import (
+from apps.courses.utils.exceptions import (
     CourseAlreadyExistsError,
     CourseNotFoundError,
 )
