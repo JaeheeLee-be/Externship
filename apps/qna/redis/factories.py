@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from .dtos import InitialQNA
+from apps.qna.redis.dtos import InitialQNA
 
 
 class CacheFactory:
