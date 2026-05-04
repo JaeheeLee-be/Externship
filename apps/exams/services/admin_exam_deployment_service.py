@@ -9,12 +9,21 @@ from django.db.models import Avg, Count, QuerySet
 from apps.core.utils.base62 import Base62
 from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentConflictError,
+    DeploymentDetailNotFoundError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
 )
 from apps.exams.models.exam_deployment_model import ExamDeployment
 from apps.exams.models.exam_model import Exam
+from apps.exams.models.exam_submission_model import ExamSubmission
 from apps.posts.models import Cohort
+from apps.users.models import CohortStudents
+
+SORT_FIELD_MAP = {
+    "created_at": "created_at",
+    "submit_count": "submit_count",
+    "avg_score": "avg_score",
+}
 
 
 def create_access_code(length: int = 8) -> str:
@@ -63,13 +72,6 @@ def create_deployment(validated_data: dict[str, Any]) -> ExamDeployment:
     return deployment
 
 
-SORT_FIELD_MAP = {
-    "created_at": "created_at",
-    "submit_count": "submit_count",
-    "avg_score": "avg_score",
-}
-
-
 def get_deployment_list(validated_params: dict[str, Any]) -> QuerySet[ExamDeployment]:
     subject_id = validated_params.get("subject_id")
     cohort_id = validated_params.get("cohort_id")
@@ -97,3 +99,49 @@ def get_deployment_list(validated_params: dict[str, Any]) -> QuerySet[ExamDeploy
     qs = qs.order_by(f"-{sort_field}" if order == "desc" else sort_field)
 
     return qs
+
+
+def get_deployment_target_student_count(cohort_id: int) -> int:
+    return CohortStudents.objects.filter(cohort_id=cohort_id).count()
+
+
+def get_deployment_submitted_student_count(deployment_id: int) -> int:
+    return ExamSubmission.objects.filter(deployment_id=deployment_id).count()
+
+
+def calculate_not_submitted_count(
+    total_student_count: int,
+    submit_count: int,
+) -> int:
+    return max(total_student_count - submit_count, 0)
+
+
+def get_deployment_detail(deployment_id: int) -> ExamDeployment:
+
+    try:
+        deployment = ExamDeployment.objects.select_related(
+            "exam__subject",
+            "cohort__course",
+        ).get(id=deployment_id)
+    except ExamDeployment.DoesNotExist:
+        raise DeploymentDetailNotFoundError()
+
+    total_student_count = get_deployment_target_student_count(
+        cohort_id=deployment.cohort_id,
+    )
+
+    submit_count = get_deployment_submitted_student_count(
+        deployment_id=deployment.id,
+    )
+
+    setattr(deployment, "submit_count", submit_count)
+    setattr(
+        deployment,
+        "not_submitted_count",
+        calculate_not_submitted_count(
+            total_student_count=total_student_count,
+            submit_count=submit_count,
+        ),
+    )
+
+    return deployment
