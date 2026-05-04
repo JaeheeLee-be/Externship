@@ -16,8 +16,15 @@ class QuestionCreateSerializer(serializers.Serializer[Any]):
     )
 
     def validate_category_id(self, value: int) -> int:
-        if not QuestionCategory.objects.filter(id=value).exists():
+        try:
+            category = QuestionCategory.objects.select_related("parent__parent").get(id=value)
+        except QuestionCategory.DoesNotExist:
             raise serializers.ValidationError("존재하지 않는 카테고리입니다.")
+
+        # 소분류 = parent가 있고, 그 parent도 parent가 있는 것
+        if category.parent is None or category.parent.parent is None:
+            raise serializers.ValidationError("소분류 카테고리만 선택할 수 있습니다.")
+
         return value
 
 

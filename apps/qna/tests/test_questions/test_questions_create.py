@@ -1,4 +1,3 @@
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -16,6 +15,7 @@ class QuestionCreateAPIViewTest(APITestCase):
     admin_user: User
     general_user: User
     large_category: QuestionCategory
+    medium_category: QuestionCategory
     small_category: QuestionCategory
 
     @classmethod
@@ -60,13 +60,13 @@ class QuestionCreateAPIViewTest(APITestCase):
             name="백엔드",
             parent=None,
         )
-        medium_category = QuestionCategory.objects.create(
+        cls.medium_category = QuestionCategory.objects.create(
             name="웹프레임워크",
             parent=cls.large_category,
         )
         cls.small_category = QuestionCategory.objects.create(
             name="Django",
-            parent=medium_category,
+            parent=cls.medium_category,
         )
 
     def setUp(self) -> None:
@@ -140,16 +140,25 @@ class QuestionCreateAPIViewTest(APITestCase):
         question = Question.objects.get(id=response.data["question_id"])
         self.assertEqual(question.author_id, self.admin_user.id)
 
-    def test_대분류_카테고리로_질문_등록_성공(self) -> None:
-        """소분류가 아닌 대분류 category_id로도 등록 가능"""
+    def test_대분류_카테고리로_질문_등록_400(self) -> None:
+        """대분류 category_id는 400"""
         self._force_login(self.student_user)
         payload = self._make_payload(category_id=self.large_category.id)
 
         response = self.client.post(URL, data=payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        question = Question.objects.get(id=response.data["question_id"])
-        self.assertEqual(question.category_id, self.large_category.id)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error_detail", response.data)
+
+    def test_중분류_카테고리로_질문_등록_400(self) -> None:
+        """중분류 category_id는 400"""
+        self._force_login(self.student_user)
+        payload = self._make_payload(category_id=self.medium_category.id)
+
+        response = self.client.post(URL, data=payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error_detail", response.data)
 
     # ── 인증/권한 에러 케이스 ────────────────────────────────────────
 

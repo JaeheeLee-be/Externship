@@ -5,7 +5,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.models import User
 from apps.core.utils.permissions import IsStudentUser
 from apps.qna.models.question_models import QuestionCategory
 from apps.qna.serializers.question_serializers import (
@@ -13,6 +12,7 @@ from apps.qna.serializers.question_serializers import (
     QuestionCreateSerializer,
 )
 from apps.qna.services.question_services import QuestionService
+from apps.users.models import User
 
 
 class QuestionCreateAPIView(APIView):
