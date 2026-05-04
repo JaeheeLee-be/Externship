@@ -1,11 +1,8 @@
 from rest_framework import serializers
 
-from apps.qna.models import Question
-
 
 class InitialAIAnswerSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
     question_id = serializers.IntegerField()
-    output = serializers.CharField()
+    output = serializers.CharField(source="answer")
     using_model = serializers.CharField()
-    created_at = serializers.DateTimeField()
+    created_at = serializers.CharField()
