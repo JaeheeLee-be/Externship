@@ -2,6 +2,8 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
+    AnswerCommentRequestSerializer,
+    AnswerCommentResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
     AnswerUpdateSerializer,
@@ -42,6 +44,20 @@ answer_update_schema = extend_schema(
         200: AnswerUpdateSerializer,
         401: OpenApiResponse(description="로그인한 사용자만 답변을 수정할 수 있습니다."),
         403: OpenApiResponse(description="본인이 작성한 답변만 수정할 수 있습니다."),
+        404: OpenApiResponse(description="해당 답변을 찾을 수 없습니다."),
+    },
+)
+
+answer_comment_schema = extend_schema(
+    tags=["Qna"],
+    summary="답변 댓글",
+    description="질문에 대한 댓글 작성",
+    request=AnswerCommentRequestSerializer,
+    responses={
+        200: AnswerCommentResponseSerializer,
+        400: OpenApiResponse(description="댓글 내용은 1~500자 사이로 입력해야 합니다."),
+        401: OpenApiResponse(description="로그인한 사용자만 댓글을 작성할 수 있습니다."),
+        403: OpenApiResponse(description="댓글 작성 권한이 없습니다."),
         404: OpenApiResponse(description="해당 답변을 찾을 수 없습니다."),
     },
 )

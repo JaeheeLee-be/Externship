@@ -6,7 +6,6 @@ from rest_framework.exceptions import (
     PermissionDenied,
     ValidationError,
 )
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,17 +16,21 @@ from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.answer_schemas import (
     answer_accept_schema,
+    answer_comment_schema,
     answer_create_schema,
     answer_update_schema,
 )
 from apps.qna.serializers.answer_serializers import (
     AnswerAcceptResponseSerializer,
+    AnswerCommentRequestSerializer,
+    AnswerCommentResponseSerializer,
     AnswerRequestSerializer,
     AnswerResponseSerializer,
     AnswerUpdateSerializer,
 )
 from apps.qna.services.answer_services import (
     AnswerAcceptService,
+    AnswerCommentService,
     AnswerDetailService,
     AnswerService,
 )
@@ -126,3 +129,37 @@ class AnswerDetail(APIView):
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
         return Response(AnswerUpdateSerializer(updated_answer).data, status=status.HTTP_200_OK)
+
+
+class AnswerCommentView(APIView):
+    """
+    POST api/v1/qna/answers/{answer_id}/comments
+    답변 댓글 작성 API
+    """
+
+    permission_classes = [IsStudentUser]
+    answer_comment_service = AnswerCommentService()
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if request.user.is_authenticated:
+            raise PermissionDenied(detail="댓글 작성 권한이 없습니다.")
+        raise NotAuthenticated("로그인한 사용자만 댓글을 작성할 수 있습니다.")
+
+    @answer_comment_schema
+    def post(self, request: AuthenticatedRequest, answer_id: int) -> Response:
+        serializer = AnswerCommentRequestSerializer(
+            data=request.data,
+        )
+        if not serializer.is_valid():
+            error = list(serializer.errors.values())[0][0]
+            raise ValidationError(detail=error)
+        try:
+            answer = self.answer_comment_service.get_object(answer_id)
+            answer_comment = self.answer_comment_service.create_comment(
+                answer_id=answer.id,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
+        return Response(AnswerCommentResponseSerializer(answer_comment).data, status=status.HTTP_201_CREATED)
