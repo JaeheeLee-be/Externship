@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.courses.models.cohort import Cohort
-from courses.models.course import Course
+from apps.courses.models.course import Course
 from apps.users.models import CohortStudents, User
 
 
