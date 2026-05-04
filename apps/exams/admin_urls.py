@@ -5,7 +5,7 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.views.admin_exam_deployment_view import AdminExamDeploymentView
 from apps.exams.views.admin_exam_question_view import (
     AdminQuestionCreateView,
-    AdminQuestionDetailView,
+    AdminQuestionUpdateDeleteView,
 )
 from apps.exams.views.admin_exam_view import ExamDetailView, ExamListCreateView
 
@@ -19,11 +19,7 @@ urlpatterns = [
     path("deployments/", AdminExamDeploymentView.as_view(), name="exam-deployment"),
     path("presigned-url/", ExamImageUploadView.as_view(), name="presigned-url"),
     path("<int:exam_id>/questions/", AdminQuestionCreateView.as_view(), name="exam-question-create"),
-    path(
-        "questions/<str:question_id>/",
-        AdminQuestionDetailView.as_view(),
-        name="exam-question-detail",
-    ),
+    path("questions/<int:question_id>/", AdminQuestionUpdateDeleteView.as_view(), name="exam-question-update-delete"),
     path("<int:exam_id>/", ExamDetailView.as_view(), name="exam-detail"),
     path("", ExamListCreateView.as_view(), name="exam-list"),
 ]

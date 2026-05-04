@@ -62,7 +62,7 @@ class AdminQuestionCreateView(APIView):
     tags=["exams_question"],
     summary="쪽지시험 문제 수정 및 삭제",
 )
-class AdminQuestionDetailView(APIView):
+class AdminQuestionUpdateDeleteView(APIView):
     permission_classes = [IsRoleAdminUser]
 
     def permission_denied(

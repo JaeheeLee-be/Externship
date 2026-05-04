@@ -73,8 +73,8 @@ class AdminQuestionService:
 
         assert exam is not None
         self.exam = exam
-        self.len_of_questions = result.get("len_of_questions", 0)
-        self.total_point = result.get("total_point", 0)
+        self.len_of_questions = result.get("len_of_questions") or 0
+        self.total_point = result.get("total_point") or 0
         return self
 
     def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: Any) -> None:
