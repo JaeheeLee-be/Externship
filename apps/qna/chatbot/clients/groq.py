@@ -3,6 +3,8 @@ from typing import Any, Iterator
 
 import requests
 
+from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
+
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
@@ -32,12 +34,10 @@ def call_groq(payload: dict[str, Any], key: str) -> Iterator[str]:
                 except (json.JSONDecodeError, KeyError, IndexError):
                     continue
 
-    except requests.HTTPError as e:
-        raise RuntimeError(f"HTTP {e.response.status_code}: {e.response.text}")
-    except requests.ConnectionError:
-        raise RuntimeError("서버에 연결할 수 없습니다.")
+    except (requests.HTTPError, requests.ConnectionError):
+        raise GroqAPIError()
     except requests.Timeout:
-        raise RuntimeError("요청 시간이 초과되었습니다.")
+        raise GroqTimeoutError()
 
 
 def call_groq_once(payload: dict[str, Any], key: str) -> str:
@@ -46,13 +46,9 @@ def call_groq_once(payload: dict[str, Any], key: str) -> str:
     try:
         with requests.post(url, headers=headers, json=payload, timeout=(5, 60)) as res:
             res.raise_for_status()
-            return res.json()["choices"][0]["message"]["content"]
+            return str(res.json()["choices"][0]["message"]["content"])
 
-    except (json.JSONDecodeError, KeyError, IndexError):
-        raise RuntimeError("응답 추출에 실패했습니다")
-    except requests.HTTPError as e:
-        raise RuntimeError(f"HTTP {e.response.status_code}: {e.response.text}")
-    except requests.ConnectionError:
-        raise RuntimeError("서버에 연결할 수 없습니다.")
+    except (json.JSONDecodeError, KeyError, IndexError, requests.HTTPError, requests.ConnectionError):
+        raise GroqAPIError()
     except requests.Timeout:
-        raise RuntimeError("요청 시간이 초과되었습니다.")
+        raise GroqTimeoutError()
