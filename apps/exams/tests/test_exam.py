@@ -250,7 +250,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             {
                 "subject_id": self.subject_python.id,
                 "title": "new_exam",
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
             format="json",
         )
@@ -336,7 +336,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
             {
                 "subject_id": self.subject_python.id,
                 "title": "new_exam" * 20,
-                "thumbnail_image_url": "https://example.com/image.abcd",
+                "thumbnail_img_url": "https://example.com/image.abcd",
             },
             format="json",
         )
@@ -389,14 +389,14 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "updated_exam",
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["title"], "updated_exam")
         self.assertEqual(response.data["subject_id"], self.subject_python.id)
-        self.assertEqual(response.data["thumbnail_image_url"], "https://example.com/image.jpg")
+        self.assertEqual(response.data["thumbnail_img_url"], "https://example.com/image.jpg")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_detail_put_as_user(self) -> None:
@@ -406,7 +406,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "updated_exam",
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
@@ -419,7 +419,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "updated_exam",
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
@@ -434,7 +434,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "test_exam",
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
@@ -450,7 +450,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "updated_exam",
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
@@ -465,7 +465,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "test_exam2",
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
@@ -480,7 +480,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "updated_exam",
                 "subject_id": self.subject_html.id + 9999,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 
@@ -507,7 +507,7 @@ class TestExamDetail(ExamBaseTestCase):
             {
                 "title": "updated_exam" * 20,
                 "subject_id": self.subject_python.id,
-                "thumbnail_image_url": "https://example.com/image.jpg",
+                "thumbnail_img_url": "https://example.com/image.jpg",
             },
         )
 

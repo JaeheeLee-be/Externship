@@ -2,7 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.users.serializers.purpose_enum import AuthPurpose
+from apps.users.utils.purpose_enum import AuthPurpose
 
 
 class EmailRequestSerializer(serializers.Serializer[Any]):
@@ -14,9 +14,8 @@ class EmailRequestSerializer(serializers.Serializer[Any]):
     )
 
 
-class EmailVerifySerializer(serializers.Serializer[Any]):
+class EmailVerifySerializer(EmailRequestSerializer):
     # 인증번호 확인
-    email = serializers.EmailField(error_messages={"required": "이 필드는 필수 항목입니다."})
     code = serializers.CharField(min_length=6, max_length=6, error_messages={"required": "이 필드는 필수 항목입니다."})
 
     def validate_code(self, value: str) -> str:

@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from botocore.config import Config
+from celery.schedules import crontab  # type: ignore[import-untyped]
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -33,7 +34,7 @@ THIRD_PARTY_APPS = [
 ]
 
 # 추가한 도메인별 앱을 줄바꿈, 쉼표를 사용하여 나열.
-CUSTOM_APPS: list[str] = ["apps.users", "apps.core", "apps.qna", "apps.posts", "apps.exams"]
+CUSTOM_APPS: list[str] = ["apps.users", "apps.core", "apps.qna", "apps.posts", "apps.exams", "apps.courses"]
 
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
@@ -235,3 +236,19 @@ AWS_S3_CONFIG = Config(s3={"addressing_style": "virtual"})
 
 # FRONTEND_REDIRECT_URI
 FRONTEND_REDIRECT_URI = os.getenv("FRONTEND_REDIRECT_URI")
+
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/3"
+CELERY_TIMEZONE = "Asia/Seoul"
+
+CELERY_BEAT_SCHEDULE = {
+    "delete-expired-withdrawn-users": {
+        "task": "apps.users.tasks.delete_expired_withdrawn_users",
+        "schedule": crontab(hour=0, minute=0),
+    },
+}
+
+
+# LLM API Settings
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GOOGLE_API_KEY = os.getenv("GEMMA_API_KEY")

@@ -43,7 +43,7 @@ class ExamListSerializer(serializers.ModelSerializer[Exam]):
 
 class ExamCreatePutSerializer(serializers.ModelSerializer[Exam]):
     subject_id = serializers.IntegerField()
-    thumbnail_image_url = serializers.CharField(required=False, default="default_img_url")
+    thumbnail_img_url = serializers.CharField(required=False, default="default_img_url")
 
     class Meta:
         model = Exam
@@ -51,7 +51,7 @@ class ExamCreatePutSerializer(serializers.ModelSerializer[Exam]):
             "id",
             "title",
             "subject_id",
-            "thumbnail_image_url",
+            "thumbnail_img_url",
         ]
         read_only_fields = ["id"]
         extra_kwargs: dict[str, dict[str, list[object]]] = {"title": {"validators": []}}
@@ -88,7 +88,7 @@ class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
             "title",
             "subject",
             "questions",
-            "thumbnail_image_url",
+            "thumbnail_img_url",
             "created_at",
             "updated_at",
         ]
@@ -97,7 +97,7 @@ class ExamDetailSerializer(serializers.ModelSerializer[Exam]):
             "title",
             "subject",
             "questions",
-            "thumbnail_image_url",
+            "thumbnail_img_url",
             "created_at",
             "updated_at",
         ]

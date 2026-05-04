@@ -10,8 +10,8 @@ from apps.users.serializers.auth_email_serializer import (
     EmailRequestSerializer,
     EmailVerifySerializer,
 )
-from apps.users.serializers.purpose_enum import AuthPurpose
 from apps.users.services.auth_email_service import EmailVerificationService
+from apps.users.utils.purpose_enum import AuthPurpose
 
 
 class EmailSendView(APIView):
@@ -58,7 +58,7 @@ class EmailSendView(APIView):
         try:
             EmailVerificationService.send_verification_email(email, purpose)
 
-            return Response({"detail": "이메일 인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
+            return Response({"detail": "이메일 인증 코드가 전송되었습니다"}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -96,21 +96,22 @@ class EmailVerificationView(APIView):
         },
     )
 
-    ## 이메일 검증 인지 코드 검증 뷰
+    ## 이메일 검증 인증 코드 검증 뷰
     def post(self, request: Request) -> Response:
         serializer = EmailVerifySerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         email = serializer.validated_data["email"]
         code = serializer.validated_data["code"]
+        purpose = AuthPurpose(serializer.validated_data["purpose"])
 
         # service token 발급
         try:
-            email_token = EmailVerificationService.verification_code(email, code)
+            email_token = EmailVerificationService.verification_code(email, code, purpose)
 
             return Response(
                 {
-                    "detail": "이메일 인증이 성공했습니다",
+                    "detail": "이메일 인증에 성공하였습니다",
                     "email_token": email_token,
                 },
                 status=status.HTTP_200_OK,

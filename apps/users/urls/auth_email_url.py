@@ -1,4 +1,4 @@
-from django.urls import include, path
+from django.urls import path
 
 from apps.users.views.auth_email_view import EmailSendView, EmailVerificationView
 
