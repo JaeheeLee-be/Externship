@@ -8,7 +8,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.qna.exceptions import BaseCustomException
+
 from apps.qna.schemas.chatbot_schemas import ai_answer_get_schema, ai_answer_post_schema
+
 from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer
 from apps.qna.services.chatbot_services import InitialService
 
@@ -20,6 +22,7 @@ class InitialAiAnswerAPIView(APIView):
         if not request.user.is_authenticated:
             raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
         raise PermissionDenied(message)
+
 
     @ai_answer_get_schema
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
