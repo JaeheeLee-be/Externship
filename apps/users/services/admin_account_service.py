@@ -16,7 +16,7 @@ class AdminAccountService:
     ) -> dict[str, Any]:
         queryset: QuerySet[User] = User.objects.all().order_by("-created_at")
 
-        # 이메일 또는 닉네임 검색
+        # 이메일 또는 닉네임 검색 (기존과 동일)
         if search := validated_params.get("search"):
             queryset = queryset.filter(Q(email__icontains=search) | Q(nickname__icontains=search))
 
