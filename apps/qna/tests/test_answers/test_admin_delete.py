@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from apps.qna.models.answer_models import Answer
+from apps.qna.models.answer_models import Answer, AnswerComment
 from apps.qna.models.question_models import Question, QuestionCategory
 from apps.users.models import User
 
@@ -65,13 +65,25 @@ class AdminAnswerDeleteTestCase(BaseTestCase):
         )
 
     def test_admin_delete_answer(self) -> None:
-        """어드민 답변 삭제"""
+        """어드민 답변 삭제 답변에 댓글이 없을떄"""
         self.client.force_authenticate(user=self.user)
         url = reverse("admin-answer-delete", kwargs={"answer_id": self.answer.id})
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Answer.objects.count(), 0)
+        self.assertEqual(response.data["deleted_comment_count"], 0)
+        self.assertEqual(response.data["answer_id"], self.answer.id)
+
+    def test_admin_delete_answer_with_comments(self) -> None:
+        AnswerComment.objects.create(author=self.user, answer=self.answer, content="comment1")
+        AnswerComment.objects.create(author=self.user, answer=self.answer, content="comment2")
+        self.client.force_authenticate(user=self.user)
+        url = reverse("admin-answer-delete", kwargs={"answer_id": self.answer.id})
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["deleted_comment_count"], 2)
 
     def test_admin_delete_answer_not_found(self) -> None:
         """답변을 찾을 수 없을떄"""

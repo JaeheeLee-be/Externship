@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from apps.qna.exceptions import NotFoundException
 from apps.qna.models.answer_models import Answer
 
@@ -14,7 +16,9 @@ class AdminAnswerDeleteService:
             raise NotFoundException("삭제할 답변을 찾을 수 없습니다.")
 
     def delete(self, answer_id: int) -> dict[str, int]:
-        answer = self.get_object(answer_id)
-        deleted_comment_count = answer.answercomment_set.count()
-        answer.delete()
+        with transaction.atomic():
+
+            answer = self.get_object(answer_id)
+            deleted_comment_count = answer.answercomment_set.count()
+            answer.delete()
         return {"answer_id": answer_id, "deleted_comment_count": deleted_comment_count}

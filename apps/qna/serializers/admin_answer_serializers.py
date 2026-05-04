@@ -9,5 +9,5 @@ class AdminAnswerDeleteSerializer(serializers.Serializer[Any]):
     admin 답변 삭제 API 응답 serializer
     """
 
-    answer_id = serializers.IntegerField()
-    deleted_comment_count = serializers.IntegerField()
+    answer_id = serializers.IntegerField(read_only=True)
+    deleted_comment_count = serializers.IntegerField(read_only=True)
