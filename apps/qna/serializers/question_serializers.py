@@ -26,3 +26,29 @@ class QuestionCreateSerializer(serializers.Serializer[Any]):
 class QuestionCreateResponseSerializer(serializers.Serializer[Any]):
     message = serializers.CharField()
     question_id = serializers.IntegerField()
+
+
+class QuestionListCategorySerializer(serializers.Serializer[Any]):
+    id = serializers.IntegerField()
+    depth = serializers.IntegerField()
+    names = serializers.ListField(child=serializers.CharField())
+
+
+class QuestionListAuthorSerializer(serializers.Serializer[Any]):
+    id = serializers.IntegerField()
+    nickname = serializers.CharField()
+    profile_img_url = serializers.CharField(allow_null=True)
+    course_name = serializers.CharField(allow_null=True)
+    cohort_number = serializers.IntegerField(allow_null=True)
+
+
+class QuestionListItemSerializer(serializers.Serializer[Any]):
+    id = serializers.IntegerField()
+    category = QuestionListCategorySerializer()
+    author = QuestionListAuthorSerializer()
+    title = serializers.CharField()
+    content_preview = serializers.CharField()
+    answer_count = serializers.IntegerField()
+    view_count = serializers.IntegerField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    thumbnail_img_url = serializers.CharField(allow_null=True)

@@ -1,3 +1,4 @@
+import math
 from typing import Any, NoReturn, cast
 
 from rest_framework import status
@@ -7,14 +8,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
+from apps.qna.models import QuestionCategory
 from apps.qna.schemas.question_schemas import (
     question_create_schema,
+    question_list_schema,
 )
 from apps.qna.serializers.question_serializers import (
     QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
+    QuestionListItemSerializer,
 )
-from apps.qna.services.question_services import QuestionService
+from apps.qna.services.question_services import QuestionListService, QuestionService
 from apps.users.models import User
 
 
@@ -53,4 +57,81 @@ class QuestionAPIView(APIView):
                 "question_id": question.id,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+    # ── GET /api/v1/qna/questions ─────────────────────────────────────
+    @question_list_schema
+    def get(self, request: Request) -> Response:
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+            page_size = max(1, min(100, int(request.query_params.get("page_size", 10))))
+        except ValueError:
+            return Response(
+                {"error_detail": "유효하지 않은 목록 조회 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        search_keyword = request.query_params.get("search_keyword") or None
+        answer_status = request.query_params.get("answer_status") or None
+        sort = request.query_params.get("sort", "latest")
+
+        raw_category_id = request.query_params.get("category_id")
+        category_id: int | None = None
+        if raw_category_id:
+            try:
+                category_id = int(raw_category_id)
+            except ValueError:
+                return Response(
+                    {"error_detail": "유효하지 않은 목록 조회 요청입니다."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not QuestionCategory.objects.filter(id=category_id).exists():
+                return Response(
+                    {"error_detail": "조회 가능한 질문이 존재하지 않습니다."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        if answer_status and answer_status not in {"answered", "unanswered"}:
+            return Response(
+                {"error_detail": "유효하지 않은 목록 조회 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if sort not in {"latest", "oldest", "views"}:
+            return Response(
+                {"error_detail": "유효하지 않은 목록 조회 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        questions, total_count = QuestionListService.get_question_list(
+            page=page,
+            page_size=page_size,
+            search_keyword=search_keyword,
+            category_id=category_id,
+            answer_status=answer_status,
+            sort=sort,
+        )
+
+        results = [QuestionListService.build_result(q) for q in questions]
+        serializer = QuestionListItemSerializer(results, many=True)
+
+        total_pages = math.ceil(total_count / page_size) if total_count else 1
+        base_url = request.build_absolute_uri(request.path)
+
+        def build_url(p: int) -> str | None:
+            if p < 1 or p > total_pages:
+                return None
+            params = request.query_params.dict()
+            params["page"] = str(p)
+            query_string = "&".join(f"{k}={v}" for k, v in params.items())
+            return f"{base_url}?{query_string}"
+
+        return Response(
+            {
+                "count": total_count,
+                "next": build_url(page + 1),
+                "previous": build_url(page - 1),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
         )
