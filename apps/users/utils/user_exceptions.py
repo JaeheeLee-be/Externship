@@ -9,5 +9,5 @@ class DuplicateNicknameError(Exception):
 
 
 class ConflictError(Exception):
-    def __init__(self, message :str="이미 중복된 회원 가입 내역이 존재 합니다.") -> None:
+    def __init__(self, message: str = "이미 중복된 회원 가입 내역이 존재 합니다.") -> None:
         super().__init__(message)
