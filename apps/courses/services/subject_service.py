@@ -1,8 +1,12 @@
 from django.db import IntegrityError
 from django.db.models import QuerySet
 
-from apps.courses.exceptions import SubjectDuplicateTitleError, SubjectNotFoundError
-from apps.courses.models import Course, Subject
+from apps.courses.exceptions import (
+    SubjectDuplicateTitleError,
+    SubjectNotFoundError,
+)
+from apps.courses.models import Subject
+from apps.posts.models import Course
 
 
 def create_subject(
@@ -11,6 +15,7 @@ def create_subject(
     number_of_days: int,
     number_of_hours: int,
     thumbnail_img_url: str | None,
+    status: bool = True,
 ) -> Subject:
     try:
         return Subject.objects.create(
@@ -19,16 +24,14 @@ def create_subject(
             number_of_days=number_of_days,
             number_of_hours=number_of_hours,
             thumbnail_img_url=thumbnail_img_url,
+            status=status,
         )
     except IntegrityError:
-        raise SubjectDuplicateTitleError("동일한 이름의 과목이 이미 존재합니다.")
+        raise SubjectDuplicateTitleError()
 
 
-def get_subject_list(course_id: int, page: int, page_size: int) -> tuple[int, QuerySet[Subject]]:
-    qs = Subject.objects.select_related("course").filter(course_id=course_id).order_by("id")
-    total_count = qs.count()
-    offset = (page - 1) * page_size
-    return total_count, qs[offset : offset + page_size]
+def get_subject_list(course_id: int) -> QuerySet[Subject]:
+    return Subject.objects.select_related("course").filter(course_id=course_id).order_by("id")
 
 
 def get_subject_detail(subject_id: int) -> Subject:
