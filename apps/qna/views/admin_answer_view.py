@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.schemas.answer_admin_schemas import answer_admin_delete_schema
 from apps.qna.serializers.admin_answer_serializers import AdminAnswerDeleteSerializer
 from apps.qna.services.admin_answer_service import AdminAnswerDeleteService
 
@@ -26,6 +27,7 @@ class AdminAnswerDeleteView(APIView):
             raise PermissionDenied(detail="답변 삭제 권한이 없습니다.")
         raise NotAuthenticated("로그인이 필요합니다.")
 
+    @answer_admin_delete_schema
     def delete(self, request: Request, answer_id: int) -> Response:
         try:
             answer = self.service.delete(answer_id)
