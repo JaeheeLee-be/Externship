@@ -1,4 +1,4 @@
-name: Notify on PR reviews request
+name: Notify on PR review request
 
 on:
   pull_request:
