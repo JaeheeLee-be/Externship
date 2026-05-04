@@ -29,6 +29,10 @@ from apps.exams.services.admin_exam_question_service import (
 )
 
 
+@extend_schema(
+    tags=["exams_question"],
+    summary="쪽지시험 문제 생성",
+)
 class AdminQuestionCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
@@ -39,10 +43,6 @@ class AdminQuestionCreateView(APIView):
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise PermissionDenied("쪽지시험 문제 등록 권한이 없습니다.")
 
-    @extend_schema(
-        tags=["exams_question"],
-        summary="쪽지시험 문제 생성",
-    )
     def post(self, request: Request, exam_id: int) -> Response:
         serializer = QuestionCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -58,6 +58,10 @@ class AdminQuestionCreateView(APIView):
         return Response(QuestionCreateResponseSerializer(new_question).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["exams_question"],
+    summary="쪽지시험 문제 수정 및 삭제",
+)
 class AdminQuestionDetailView(APIView):
     permission_classes = [IsRoleAdminUser]
 
@@ -70,10 +74,6 @@ class AdminQuestionDetailView(APIView):
             raise PermissionDenied("쪽지시험 문제 수정 권한이 없습니다.")
         raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
 
-    @extend_schema(
-        tags=["exams_question"],
-        summary="쪽지시험 문제 수정",
-    )
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -88,10 +88,6 @@ class AdminQuestionDetailView(APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(QuestionUpdateResponseSerializer(mod_question).data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        tags=["exams_question"],
-        summary="쪽지시험 문제 삭제",
-    )
     def delete(self, request: Request, question_id: int) -> Response:
         serializer = QuestionDeleteRequestSerializer(data={"question_id": question_id})
         if not serializer.is_valid():
