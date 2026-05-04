@@ -100,7 +100,7 @@ class AdminExamDeploymentView(APIView):
 class AdminExamDeploymentDetailView(APIView):
     permission_classes = [IsRoleAdminUser]
 
-    def permission_denied(self, request, message: str | None = None, code: str | None = None) -> NoReturn:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if request.user and request.user.is_authenticated:
             if request.method == "GET":
                 raise PermissionDenied("쪽지시험 배포 상세 조회 권한이 없습니다.")
