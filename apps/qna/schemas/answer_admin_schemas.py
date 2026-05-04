@@ -12,5 +12,5 @@ answer_admin_delete_schema = extend_schema(
         401: OpenApiResponse(description="로그인이 필요합니다."),
         403: OpenApiResponse(description="답변 삭제 권한이 없습니다."),
         404: OpenApiResponse(description="삭제할 답변을 찾을 수 없습니다."),
-    }
+    },
 )
