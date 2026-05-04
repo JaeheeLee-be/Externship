@@ -11,15 +11,20 @@ class AdminAccountQuerySerializer(serializers.Serializer[Any]):
     page = serializers.IntegerField(required=False, default=1, min_value=1)
     page_size = serializers.IntegerField(required=False, default=10, min_value=1, max_value=100)
     search = serializers.CharField(required=False, allow_blank=True)
-    is_active = serializers.BooleanField(required=False)
+
+    status = serializers.ChoiceField(
+        choices=["active", "inactive", "withdrew"],
+        required=False,
+    )
+
     role = serializers.ChoiceField(
-        choices=["USER", "ADMIN", "STUDENT"],
+        choices=["user", "staff", "admin", "student"],
         required=False,
     )
 
 
 class AdminAccountSerializer(serializers.ModelSerializer[User]):
-    """어드민 회원 목록 응답 직렬화용"""
+    """어드민 회원 목록 응답 직렬화용 (기존과 동일)"""
 
     class Meta:
         model = User
