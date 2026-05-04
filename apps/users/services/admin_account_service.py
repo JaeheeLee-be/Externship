@@ -11,20 +11,15 @@ class AdminAccountService:
     def get_account_list(validated_params: dict[str, Any]) -> dict[str, Any]:
         queryset: QuerySet[User] = User.objects.all().order_by("-created_at")
 
-        # 이메일 또는 닉네임 검색 (기존과 동일)
+        # 이메일 또는 닉네임 검색
         if search := validated_params.get("search"):
             queryset = queryset.filter(Q(email__icontains=search) | Q(nickname__icontains=search))
 
-        if status := validated_params.get("status"):
-            if status == "active":
-                queryset = queryset.filter(is_active=True)
-            elif status == "inactive":
-                queryset = queryset.filter(is_active=False)
-            elif status == "withdrew":
-                queryset = queryset.filter(withdrawal__isnull=False)
+        if "is_active" in validated_params:
+            queryset = queryset.filter(is_active=validated_params["is_active"])
 
         if role := validated_params.get("role"):
-            queryset = queryset.filter(role=role.upper())
+            queryset = queryset.filter(role=role)
 
         page: int = validated_params.get("page", 1)
         page_size: int = validated_params.get("page_size", 10)

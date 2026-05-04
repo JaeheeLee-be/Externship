@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from apps.users.models import User
@@ -12,7 +13,7 @@ class AdminAccountQuerySerializer(serializers.Serializer[Any]):
     search = serializers.CharField(required=False, allow_blank=True)
     status = serializers.ChoiceField(choices=["active", "inactive", "withdrew"], required=False)
     role = serializers.ChoiceField(
-        choices=["USER", "ADMIN", "STUDENT"],
+        choices=["user", "admin", "student", "staff"],
         required=False,
     )
 
@@ -20,9 +21,19 @@ class AdminAccountQuerySerializer(serializers.Serializer[Any]):
 class AdminAccountSerializer(serializers.ModelSerializer[User]):
 
     status = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     def get_status(self, obj: User) -> str:
-        return "ACTIVE" if obj.is_active else "INACTIVE"
+
+        try:
+            obj.withdrawal  # type: ignore[attr-defined]
+            return "withdrew"
+        except ObjectDoesNotExist:
+            return "active" if obj.is_active else "inactive"
+
+    def get_role(self, obj: User) -> str:
+
+        return obj.role.lower()
 
     class Meta:
         model = User
@@ -36,3 +47,11 @@ class AdminAccountSerializer(serializers.ModelSerializer[User]):
             "role",
             "created_at",
         ]
+
+
+class AdminAccountListResponseSerializer(serializers.Serializer[Any]):
+
+    count = serializers.IntegerField()
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
+    results = AdminAccountSerializer(many=True)

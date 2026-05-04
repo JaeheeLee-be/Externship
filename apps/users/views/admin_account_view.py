@@ -1,37 +1,26 @@
-from typing import Any, NoReturn, cast
+from typing import Any, NoReturn
 
 from rest_framework import exceptions, status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.models import User
+from apps.core.utils.permissions import IsRoleAdminUser
 from apps.users.serializers.admin_account_serializer import (
+    AdminAccountListResponseSerializer,
     AdminAccountQuerySerializer,
-    AdminAccountSerializer,
 )
 from apps.users.services.admin_account_service import AdminAccountService
 
 
-class IsAdminRole(IsAuthenticated):
-
-    def has_permission(self, request: Request, view: Any) -> bool:
-        # IsAuthenticated 체크 먼저 (실패 시 401)
-        if not super().has_permission(request, view):
-            return False
-        # role 체크 (실패 시 403)
-        return cast(User, request.user).role == "ADMIN"
-
-
 class AdminAccountListView(APIView):
-    permission_classes = [IsAdminRole]
+    permission_classes = [IsRoleAdminUser]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
-        """API 명세에 맞춘 에러 응답 형식 오버라이딩"""
+        """API 명세 에러 메시지 — custom_exception_handler가 error_detail로 변환"""
         if request.authenticators and not request.successful_authenticator:
-            raise exceptions.NotAuthenticated({"error_detail": "인증이 필요합니다."})
-        raise exceptions.PermissionDenied({"error_detail": message or "접근 권한이 없습니다."})
+            raise exceptions.NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        raise exceptions.PermissionDenied("권한이 없습니다.")
 
     def get(self, request: Request) -> Response:
         # 쿼리 파라미터 검증
@@ -40,9 +29,6 @@ class AdminAccountListView(APIView):
 
         # 서비스 호출
         data = AdminAccountService.get_account_list(query_serializer.validated_data)
-
-        # 응답 직렬화
-        result_serializer = AdminAccountSerializer(data["results"], many=True)
 
         # next / previous URL 구성 (기존 쿼리파라미터 유지)
         base_url = request.build_absolute_uri(request.path)
@@ -59,12 +45,14 @@ class AdminAccountListView(APIView):
         query_params["page"] = str(page - 1)
         previous_url = f"{base_url}?{query_params.urlencode()}" if page > 1 else None
 
-        return Response(
+        # 응답 직렬화 — count/next/previous/results 전체를 한 번에 직렬화
+        response_serializer = AdminAccountListResponseSerializer(
             {
                 "count": count,
                 "next": next_url,
                 "previous": previous_url,
-                "results": result_serializer.data,
-            },
-            status=status.HTTP_200_OK,
+                "results": data["results"],
+            }
         )
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
