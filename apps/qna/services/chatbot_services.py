@@ -88,10 +88,10 @@ class InitialService:
     def _get_categories(category: QuestionCategory) -> str:
         middle = category.parent
         if middle is None:
-            return ""
+            return category.name
 
         top = middle.parent
         if top is None:
-            return ""
+            return f"{middle.name} > {category.name}"
 
         return f"{top.name} > {middle.name} > {category.name}"
