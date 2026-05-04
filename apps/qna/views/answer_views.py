@@ -151,7 +151,8 @@ class AnswerCommentView(APIView):
             data=request.data,
         )
         if not serializer.is_valid():
-            raise ValidationError(serializer.errors)
+            error = list(serializer.errors.values())[0][0]
+            raise ValidationError(detail=error)
         try:
             answer = self.answer_comment_service.get_object(answer_id)
             answer_comment = self.answer_comment_service.create_comment(
