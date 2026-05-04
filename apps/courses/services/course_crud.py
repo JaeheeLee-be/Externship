@@ -1,24 +1,26 @@
 from typing import Any
 
 from django.db.models import QuerySet
-from django.shortcuts import get_object_or_404
 
-from apps.posts.exceptions import CourseAlreadyExistsError
-from apps.posts.models.course import Course
+from apps.courses.models.course import Course
+from apps.posts.exceptions import (
+    CourseAlreadyExistsError,
+    CourseNotFoundError,
+)
 
 
 def get_course_list() -> QuerySet[Course]:
-    # 과정 목록조회 검증
     return Course.objects.all().order_by("id")
 
 
 def get_course_detail(course_id: int) -> Course:
-    # 과정 상세조회 검증
-    return get_object_or_404(Course, id=course_id)
+    try:
+        return Course.objects.get(id=course_id)
+    except Course.DoesNotExist as e:
+        raise CourseNotFoundError("과정을 찾을 수 없습니다.") from e
 
 
 def create_course(validated_data: dict[str, Any]) -> Course:
-    # 과정 등록 검증
     name = validated_data["name"]
 
     if Course.objects.filter(name=name).exists():
@@ -28,8 +30,7 @@ def create_course(validated_data: dict[str, Any]) -> Course:
 
 
 def update_course(course_id: int, validated_data: dict[str, Any]) -> Course:
-    # 과정 수정 검증
-    course = get_object_or_404(Course, id=course_id)
+    course = get_course_detail(course_id)
 
     for field, value in validated_data.items():
         setattr(course, field, value)
@@ -39,9 +40,5 @@ def update_course(course_id: int, validated_data: dict[str, Any]) -> Course:
 
 
 def delete_course(course_id: int) -> None:
-    # 과정 삭제 검증
-    course = get_object_or_404(Course, id=course_id)
-
-    # 추후 다른 거 연결되면 추가 가능성 O
-
+    course = get_course_detail(course_id)
     course.delete()
