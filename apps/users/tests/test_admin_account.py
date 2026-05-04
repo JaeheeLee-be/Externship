@@ -71,8 +71,8 @@ class AdminAccountServiceUnitTest(APITestCase):
 
         self.assertEqual(result["count"], 1)
 
-    def test_service_is_active_filter(self) -> None:
-        result = AdminAccountService.get_account_list({"is_active": False})
+    def test_service_status_filter(self) -> None:
+        result = AdminAccountService.get_account_list({"status": "inactive"})
 
         self.assertEqual(result["count"], 1)
 
@@ -140,8 +140,8 @@ class AdminAccountFilterTest(APITestCase):
 
         self.assertEqual(response.data["count"], 1)
 
-    def test_filter_by_is_active(self) -> None:
-        response = self.client.get(URL, {"is_active": "false"})
+    def test_filter_by_status(self) -> None:
+        response = self.client.get(URL, {"status": "inactive"})
 
         self.assertTrue(all(r["status"] == "INACTIVE" for r in response.data["results"]))
         self.assertGreater(response.data["count"], 0)
