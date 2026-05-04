@@ -71,12 +71,12 @@ class AdminAccountListViewTest(APITestCase):
     # ------------------------------------------------------------------ #
 
     def test_unauthenticated_returns_401(self) -> None:
-        """비인증 요청 → 401"""
+        """비인증 요청 -> 401"""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_non_admin_user_returns_403(self) -> None:
-        """일반 유저(USER role) 접근 → 403"""
+        """일반 유저(USER role) 접근 -> 403"""
         self.client.force_authenticate(user=self.normal_user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -86,7 +86,7 @@ class AdminAccountListViewTest(APITestCase):
     # ------------------------------------------------------------------ #
 
     def test_admin_user_returns_200_with_correct_structure(self) -> None:
-        """어드민 유저 접근 → 200, count/next/previous/results 구조 확인"""
+        """어드민 유저 접근 -> 200, count/next/previous/results 구조 확인"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -104,29 +104,36 @@ class AdminAccountListViewTest(APITestCase):
     # 필터
     # ------------------------------------------------------------------ #
 
-    def test_filter_is_active_true(self) -> None:
-        """is_active=true → 활성 유저만 반환"""
+    def test_filter_status_active(self) -> None:
+        """status=active -> 활성 유저(is_active=True)만 반환
+        변경: is_active BooleanField -> status ChoiceField('active'/'inactive'/'withdrew')
+        """
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url, {"is_active": "true"})
+        response = self.client.get(self.url, {"status": "active"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(item["is_active"] for item in response.data["results"]))
 
-    def test_filter_is_active_false(self) -> None:
-        """is_active=false → 비활성 유저만 반환"""
+    def test_filter_status_inactive(self) -> None:
+        """status=inactive -> 비활성 유저(is_active=False)만 반환
+        변경: is_active BooleanField -> status ChoiceField('active'/'inactive'/'withdrew')
+        """
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url, {"is_active": "false"})
+        response = self.client.get(self.url, {"status": "inactive"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(not item["is_active"] for item in response.data["results"]))
 
     def test_filter_role(self) -> None:
-        """role=STUDENT → STUDENT 유저만 반환"""
+        """role=student (소문자) -> STUDENT 유저만 반환
+        변경: role choices가 대문자 -> 소문자로 변경됨
+        응답의 role 값은 DB 저장값 그대로(대문자) 반환됨
+        """
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(self.url, {"role": "STUDENT"})
+        response = self.client.get(self.url, {"role": "student"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(all(item["role"] == "STUDENT" for item in response.data["results"]))
 
     def test_filter_invalid_role_returns_400(self) -> None:
-        """유효하지 않은 role 값 → 400"""
+        """유효하지 않은 role 값 -> 400"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"role": "SUPERUSER"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -136,13 +143,13 @@ class AdminAccountListViewTest(APITestCase):
     # ------------------------------------------------------------------ #
 
     def test_page_zero_returns_400(self) -> None:
-        """page=0 → 400 (min_value=1)"""
+        """page=0 -> 400 (min_value=1)"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"page": 0})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_page_size_over_max_returns_400(self) -> None:
-        """page_size=101 → 400 (max_value=100)"""
+        """page_size=101 -> 400 (max_value=100)"""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"page_size": 101})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
