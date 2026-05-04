@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 from rest_framework import exceptions, status
 from rest_framework.permissions import IsAuthenticated
@@ -27,7 +27,7 @@ class IsAdminRole(IsAuthenticated):
 class AdminAccountListView(APIView):
     permission_classes = [IsAdminRole]
 
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         """API 명세에 맞춘 에러 응답 형식 오버라이딩"""
         if request.authenticators and not request.successful_authenticator:
             raise exceptions.NotAuthenticated({"error_detail": "인증이 필요합니다."})

@@ -107,6 +107,15 @@ class AdminAccountListTest(APITestCase):
 
         for field in ["id", "email", "nickname", "name", "birthday", "status", "role", "created_at"]:
             self.assertIn(field, result)
+        # is_active는 응답 필드에서 제거됨
+        self.assertNotIn("is_active", result)
+
+    def test_status_field_returns_enum_value(self) -> None:
+        """status 필드가 ACTIVE / INACTIVE enum으로 반환되는지 확인"""
+        response = self.client.get(URL)
+
+        for result in response.data["results"]:
+            self.assertIn(result["status"], ["ACTIVE", "INACTIVE"])
 
 
 # ── 필터링 ─────────────────────────────────────────────────────────────────────
@@ -165,11 +174,24 @@ class AdminAccountPaginationTest(APITestCase):
         self.assertEqual(len(response.data["results"]), 5)
         self.assertIsNotNone(response.data["next"])
         self.assertIsNone(response.data["previous"])
+        # next URL에 page, page_size 파라미터 포함 여부 확인
+        self.assertIn("page=2", response.data["next"])
+        self.assertIn("page_size=5", response.data["next"])
 
     def test_previous_url_on_second_page(self) -> None:
         response = self.client.get(URL, {"page": 2, "page_size": 5})
 
         self.assertIsNotNone(response.data["previous"])
+        # previous URL에 page, page_size 파라미터 포함 여부 확인
+        self.assertIn("page=1", response.data["previous"])
+        self.assertIn("page_size=5", response.data["previous"])
+
+    def test_next_url_preserves_query_params(self) -> None:
+        """페이지 이동 시 search 등 기존 쿼리파라미터가 유지되는지 확인"""
+        response = self.client.get(URL, {"page": "1", "page_size": "5", "role": "USER"})
+
+        if response.data["next"]:
+            self.assertIn("role=USER", response.data["next"])
 
     def test_next_is_none_on_last_page(self) -> None:
         total = User.objects.count()
