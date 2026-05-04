@@ -13,7 +13,6 @@ class DuplicateNicknameError(APIException):
     default_code = "duplicate_nickname"
 
 
-class ConflictError(APIException):
-    status_code = 409
+class ConflictError(Exception):
     default_detail = "이미 중복된 회원 가입 내역이 존재 합니다."
     default_code = "conflict"
