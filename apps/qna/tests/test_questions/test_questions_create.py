@@ -25,7 +25,7 @@ class QuestionCreateAPIViewTest(APITestCase):
             email="student@test.com",
             password="password123!",
             name="수강생",
-            nickname="student_nick",
+            nickname="st_nick",
             phone_number="010-1111-1111",
             gender="male",
             birthday="2000-01-01",
@@ -36,7 +36,7 @@ class QuestionCreateAPIViewTest(APITestCase):
             email="admin@test.com",
             password="password123!",
             name="관리자",
-            nickname="admin_nick",
+            nickname="ad_nick",
             phone_number="010-2222-2222",
             gender="female",
             birthday="1990-01-01",
@@ -47,7 +47,7 @@ class QuestionCreateAPIViewTest(APITestCase):
             email="general@test.com",
             password="password123!",
             name="일반유저",
-            nickname="general_nick",
+            nickname="ge_nick",
             phone_number="010-3333-3333",
             gender="male",
             birthday="1995-01-01",
@@ -78,8 +78,8 @@ class QuestionCreateAPIViewTest(APITestCase):
     def _force_login(self, user: User) -> None:
         self.client.force_authenticate(user=user)
 
-    def _make_payload(self, **overrides: object) -> dict:
-        base: dict = {
+    def _make_payload(self, **overrides: object) -> dict[str, object]:
+        base: dict[str, object] = {
             "title": "Django ForeignKey 역참조는 어떻게 하나요?",
             "content": "related_name 지정 후 역참조하는 방법이 궁금합니다.",
             "category_id": self.small_category.id,  # ID 하드코딩 금지 → 실제 객체 참조

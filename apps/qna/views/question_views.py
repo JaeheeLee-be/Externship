@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.users.models import User
 from apps.core.utils.permissions import IsStudentUser
 from apps.qna.models.question_models import QuestionCategory
 from apps.qna.serializers.question_serializers import (
@@ -28,10 +29,12 @@ class QuestionCreateAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        user = cast(User, request.user)
+
         category = QuestionCategory.objects.get(id=serializer.validated_data["category_id"])
 
         question = QuestionService.create_question(
-            author=request.user,
+            author=user,
             title=serializer.validated_data["title"],
             content=serializer.validated_data["content"],
             category=category,
