@@ -1,7 +1,6 @@
 from typing import Any
 
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
 
 from apps.courses.models.cohort import Cohort
 from apps.posts.models.course import Course
@@ -24,8 +23,8 @@ class CourseInfoSerializer(serializers.ModelSerializer[Course]):
 
 # 메인 시리얼라이저(위에 두개 묶어주기)
 class AvailableCoursesSerializer(serializers.Serializer[Any]):
-    course = CourseInfoSerializer(read_only=True)
     cohort = CohortInfoSerializer(source="*", read_only=True)
+    course = CourseInfoSerializer(read_only=True)
     # source='*'의 역할:
     # 1. 특정 필드가 아닌 '객체(instance) 전체'를 전달할때 사용
     # 2. cohort가 모델 필드명에 없어서 소스를 지정하는 용도

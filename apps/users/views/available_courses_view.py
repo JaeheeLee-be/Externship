@@ -7,7 +7,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.courses.models.cohort import Cohort, StatusChoices
 from apps.users.models import User
 from apps.users.serializers.available_courses_serializer import (
     AvailableCoursesSerializer,
