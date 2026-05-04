@@ -7,3 +7,6 @@ class InitialQNA:
     title: str
     category: str
     content: str
+    question_id: int
+    using_model: str
+    created_at: str

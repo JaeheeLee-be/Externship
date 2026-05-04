@@ -1,22 +1,22 @@
 from django.test import TestCase
 
-from apps.qna.chatbot.factories.payload import GroqFactory, Message, Payload
+from apps.qna.chatbot import GroqFactory, Message, Payload
 
 
 class TestMessage(TestCase):
 
-    def test_corecct(self):
+    def test_correct(self) -> None:
         msg = Message(role="test", content="test")
         self.assertEqual(msg.role, "test")
         self.assertEqual(msg.content, "test")
 
-    def test_equality(self):
+    def test_equality(self) -> None:
         self.assertEqual(
             Message(role="test", content="test"),
             Message(role="test", content="test"),
         )
 
-    def test_inequality(self):
+    def test_inequality(self) -> None:
         self.assertNotEqual(
             Message(role="test1", content="test1"),
             Message(role="test2", content="test2"),
@@ -24,7 +24,7 @@ class TestMessage(TestCase):
 
 
 class TestPayload(TestCase):
-    def test_correct(self):
+    def test_correct(self) -> None:
         messages = [Message(role="test", content="test")]
         payload = Payload(messages=messages, model="test_model", stream=True, temperature=0.1)
         self.assertEqual(payload.messages, messages)
@@ -34,23 +34,25 @@ class TestPayload(TestCase):
 
 
 class TestCreateFirstPayload(TestCase):
+    payload: Payload
+
     @classmethod
-    def setUpTestData(cls):
-        cls.payload = GroqFactory.create_first_payload(
+    def setUpTestData(cls) -> None:
+        cls.payload = GroqFactory.create_initial_payload(
             prompt="test_prompt",
             category="test_category",
             title="test_title",
             message="test_message",
         )
 
-    def test_correct(self):
+    def test_correct(self) -> None:
         self.assertIsInstance(self.payload, Payload)
         self.assertIsInstance(self.payload.messages, list)
         self.assertEqual(self.payload.model, "openai/gpt-oss-120b")
         self.assertEqual(self.payload.stream, False)
         self.assertEqual(self.payload.temperature, 0.1)
 
-    def test_messages(self):
+    def test_messages(self) -> None:
         self.assertEqual(len(self.payload.messages), 2)
         self.assertEqual(self.payload.messages[0], Message(role="system", content="test_prompt"))
         self.assertEqual(self.payload.messages[1].role, "user")
@@ -67,27 +69,29 @@ class TestCreateFirstPayload(TestCase):
 
 
 class TestCreatePayload(TestCase):
+    payload: Payload
+
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.payload = GroqFactory.create_payload(
             prompt="test_prompt",
             message="test_message",
         )
 
-    def test_correct(self):
+    def test_correct(self) -> None:
         self.assertIsInstance(self.payload, Payload)
         self.assertIsInstance(self.payload.messages, list)
         self.assertEqual(self.payload.model, "openai/gpt-oss-120b")
         self.assertEqual(self.payload.stream, True)
         self.assertEqual(self.payload.temperature, 0.1)
 
-    def test_messages(self):
+    def test_messages(self) -> None:
         self.assertEqual(len(self.payload.messages), 2)
         self.assertEqual(self.payload.messages[0], Message(role="system", content="test_prompt"))
         self.assertEqual(self.payload.messages[1].role, "user")
         self.assertEqual(self.payload.messages[1].content, "<client_question>test_message</client_question>")
 
-    def test_messages_with_history(self):
+    def test_messages_with_history(self) -> None:
         history = [
             Message(role="user", content="hello"),
             Message(role="assistant", content="world"),

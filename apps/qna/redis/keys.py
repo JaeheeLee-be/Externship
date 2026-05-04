@@ -1,1 +1,2 @@
-INITIAL_KEY = "initial{}"
+INITIAL_KEY = "qna_initial:{}"
+LOCK_KEY = "{}:lock"
