@@ -1,5 +1,4 @@
 import json
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -7,6 +6,7 @@ from django.test import TestCase
 
 from apps.qna.chatbot.clients.groq import call_groq, call_groq_once
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
+from apps.core.utils.test_factories import MockedAIResponse as Res
 
 """실제 groq api 요청을 보내는 테스트입니다."""
 # class TestRealCall(TestCase):
@@ -40,32 +40,14 @@ from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 
 
 class TestCallGroq(TestCase):
-    @staticmethod
-    def make_line(content: str) -> str:
-        return "data: " + json.dumps({"choices": [{"delta": {"content": content}}]})
-
-    @staticmethod
-    def make_res(lines: list[str]) -> MagicMock:
-        res = MagicMock()
-        res.iter_lines.return_value = iter(lines)
-        res.__enter__.return_value = res
-        res.__exit__.return_value = False
-        return res
+    @classmethod
+    def setUpTestData(cls):
+        cls.lines = Res.make_lines()
+        cls.payload = {"test": "test"}
+        cls.key = "groq_api_key"
 
     def setUp(self) -> None:
-
-        lines = [
-            self.make_line("I"),
-            self.make_line(" "),
-            self.make_line("am"),
-            self.make_line(" "),
-            self.make_line("gumba"),
-            "data: [DONE]",
-        ]
-
-        self.res = self.make_res(lines)
-        self.payload = {"test": "test"}
-        self.key = "groq_api_key"
+        self.res = Res.make_iter_res(self.lines)
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_correct(self, mock: MagicMock) -> None:
@@ -77,8 +59,8 @@ class TestCallGroq(TestCase):
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_skips_empty_line(self, mock: MagicMock) -> None:
-        lines = ["", self.make_line("hello"), "data: [DONE]"]
-        mock.return_value = self.make_res(lines)
+        lines = ["", Res.make_line("hello"), "data: [DONE]"]
+        mock.return_value = Res.make_iter_res(lines)
         text = ""
         for chunk in call_groq(self.payload, self.key):
             text += chunk
@@ -86,8 +68,8 @@ class TestCallGroq(TestCase):
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_stop_at_done(self, mock: MagicMock) -> None:
-        lines = [self.make_line("hello"), "data: [DONE]", self.make_line("world")]
-        mock.return_value = self.make_res(lines)
+        lines = [Res.make_line("hello"), "data: [DONE]", Res.make_line("world")]
+        mock.return_value = Res.make_iter_res(lines)
         text = ""
         for chunk in call_groq(self.payload, self.key):
             text += chunk
@@ -95,8 +77,8 @@ class TestCallGroq(TestCase):
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_skips_invalid_json(self, mock: MagicMock) -> None:
-        lines = ["data: not-json", self.make_line("valid")]
-        mock.return_value = self.make_res(lines)
+        lines = ["data: not-json", Res.make_line("valid")]
+        mock.return_value = Res.make_iter_res(lines)
         text = ""
         for chunk in call_groq(self.payload, self.key):
             text += chunk
@@ -105,8 +87,8 @@ class TestCallGroq(TestCase):
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_skips_with_invalid_key(self, mock: MagicMock) -> None:
         invalid_key = json.dumps({"invalid_key": "invalid"})
-        lines = [f"data: {invalid_key}", self.make_line("test")]
-        mock.return_value = self.make_res(lines)
+        lines = [f"data: {invalid_key}", Res.make_line("test")]
+        mock.return_value = Res.make_iter_res(lines)
         text = ""
         for chunk in call_groq(self.payload, self.key):
             text += chunk
@@ -115,8 +97,8 @@ class TestCallGroq(TestCase):
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_skips_with_invalid_index(self, mock: MagicMock) -> None:
         invalid_index = json.dumps({"choices": []})
-        lines = [f"data: {invalid_index}", self.make_line("test")]
-        mock.return_value = self.make_res(lines)
+        lines = [f"data: {invalid_index}", Res.make_line("test")]
+        mock.return_value = Res.make_iter_res(lines)
         text = ""
         for chunk in call_groq(self.payload, self.key):
             text += chunk
@@ -143,18 +125,11 @@ class TestCallGroq(TestCase):
 
 
 class TestCallGroqOnce(TestCase):
-    @staticmethod
-    def make_res(content: str) -> MagicMock:
-        res = MagicMock()
-        res.json.return_value = {"choices": [{"message": {"content": content}}]}
-        res.__enter__.return_value = res
-        res.__exit__.return_value = False
-        return res
 
     def setUp(self) -> None:
         self.key = "key"
         self.payload = {"payload": "payload"}
-        self.res = self.make_res("i am gumba")
+        self.res = Res.make_res("i am gumba")
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_correct(self, mock: MagicMock) -> None:

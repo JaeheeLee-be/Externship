@@ -1,5 +1,4 @@
 from dataclasses import asdict
-from typing import reveal_type
 
 from django.conf import settings
 
@@ -22,21 +21,39 @@ class InitialService:
 
     @staticmethod
     def save_initial_answer_for_created(question_id: int) -> InitialQNA:
+        return InitialService.save_initial_answer(question_id)
+
+    @staticmethod
+    def get_initial_answer(question_id: int) -> InitialQNA:
+        key = INITIAL_KEY.format(question_id)
+        cached = CacheRepository.get(key)
+        if cached:
+            return cached
+
+        lock_key = LOCK_KEY.format(key)
+        if not CacheRepository.acquire_lock(lock_key):
+            raise ConflictException("이미 AI가 답변을 생성했습니다.")
+
+        try:
+            return InitialService.save_initial_answer(question_id)
+        finally:
+            CacheRepository.delete(lock_key)
+
+    @staticmethod
+    def save_initial_answer(question_id: int) -> InitialQNA:
         if CacheRepository.get(INITIAL_KEY.format(question_id)):
             raise ConflictException("이미 AI가 답변을 생성했습니다.")
+
         question = Question.objects.filter(pk=question_id).select_related("category__parent__parent").first()
         if not question:
             raise NotFoundException("질문 데이터를 찾을 수 없습니다.")
-        return InitialService.save_initial_answer(question)
 
-    @staticmethod
-    def save_initial_answer(question: Question) -> InitialQNA:
-        category = InitialService._get_categories(question.category)
+        categories = InitialService._get_categories(question.category)
         save_data = CacheFactory.create_initial_cache(
-            category=category,
+            category=categories,
             title=question.title,
             content=question.content,
-            answer=InitialService._create_initial_answer(question, category),
+            answer=InitialService._create_initial_answer(question, categories),
             question_id=question.id,
             using_model=InitialService.MODEL,
         )
@@ -47,30 +64,10 @@ class InitialService:
         return save_data
 
     @staticmethod
-    def get_initial_answer(question_id: int) -> InitialQNA:
-        key = INITIAL_KEY.format(question_id)
-        cached = CacheRepository.get(key)
-        if cached:
-            return cached
-
-        question = Question.objects.filter(pk=question_id).select_related("category__parent__parent").first()
-        if not question:
-            raise NotFoundException("질문 데이터를 찾을 수 없습니다.")
-
-        lock_key = LOCK_KEY.format(key)
-        if not CacheRepository.acquire_lock(lock_key):
-            raise ConflictException("이미 AI가 답변을 생성했습니다.")
-
-        try:
-            return InitialService.save_initial_answer(question)
-        finally:
-            CacheRepository.delete(lock_key)
-
-    @staticmethod
-    def _create_initial_answer(question: Question, category: str) -> str:
+    def _create_initial_answer(question: Question, categories: str) -> str:
         payload = GroqFactory.create_initial_payload(
             prompt=QNA_PROMPT,
-            category=category,
+            category=categories,
             title=question.title,
             message=question.content,
             stream=False,
