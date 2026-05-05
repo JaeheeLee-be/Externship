@@ -20,11 +20,12 @@ class InitialService:
     TTL = 60 * 60 * 24 * 7
 
     @staticmethod
-    def save_initial_answer_for_created(question_id: int) -> InitialQNA:
-        return InitialService.save_initial_answer(question_id)
-
-    @staticmethod
     def get_initial_answer(question_id: int) -> InitialQNA:
+        """
+        초기응답 조회용 서비스 함수입니다.
+        조회했을 때 AI 초기응답이 없을 시 초기응답을 재요청하게 됩니다.
+        중복 생성을 방지하기 위해 락으로 동시성 제어를 구현했습니다.
+        """
         key = INITIAL_KEY.format(question_id)
         cached = CacheRepository.get(key)
         if cached:
@@ -41,6 +42,11 @@ class InitialService:
 
     @staticmethod
     def save_initial_answer(question_id: int) -> InitialQNA:
+        """
+        초기응답 생성용 서비스 함수입니다.
+        동시요청 가능성이 없어 락을 구현하지 않았습니다.
+        초기응답은 모든 클라이언트에게 동일하게 제공되므로 캐시 키에 user_id를 포함하지 않습니다.
+        """
         if CacheRepository.get(INITIAL_KEY.format(question_id)):
             raise ConflictException("이미 AI가 답변을 생성했습니다.")
 

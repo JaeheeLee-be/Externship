@@ -31,7 +31,7 @@ class InitialAiAnswerAPIView(APIView):
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         try:
             question_id = kwargs["question_id"]
-            instance = InitialService.save_initial_answer_for_created(question_id)
+            instance = InitialService.save_initial_answer(question_id)
             serializer = InitialAIAnswerSerializer(instance=instance)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except BaseCustomException as e:

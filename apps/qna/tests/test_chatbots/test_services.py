@@ -89,12 +89,6 @@ class TestInitialService(IsolatedRedisTestClient):
         self.assertEqual(save_data, cached_data)
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
-    def test_save_initial_answer_for_created(self, mock: MagicMock) -> None:
-        mock.return_value = self.res
-        result = InitialService.save_initial_answer_for_created(self.question.id)
-        self.assertEqual(result, CacheRepository.get(f"qna_initial:{self.question.id}"))
-
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_get_initial_answer_returns_cached(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         InitialService.save_initial_answer(self.question.id)
