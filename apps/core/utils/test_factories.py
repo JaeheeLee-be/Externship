@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 
-from apps.qna.models import QuestionCategory, Question
+from apps.qna.models import Question, QuestionCategory
 from apps.users.models import User
 
 _test_user_counter = 0
@@ -18,10 +18,13 @@ def create_test_user(suffix: str) -> User:
         phone_number=f"010{_test_user_counter:08d}",
     )
 
-def create_test_category_and_question(author: str, top: str = "top", middle: str = "middle", bottom: str = "bottom") -> tuple[QuestionCategory, QuestionCategory, QuestionCategory, Question]:
-    top = QuestionCategory.objects.create(name=top, parent=None)
-    middle = QuestionCategory.objects.create(name=middle, parent=top)
-    bottom = QuestionCategory.objects.create(name=bottom, parent=middle)
+
+def create_test_category_and_question(
+    author: str, top_name: str = "top", middle_name: str = "middle", bottom_name: str = "bottom"
+) -> tuple[QuestionCategory, QuestionCategory, QuestionCategory, Question]:
+    top = QuestionCategory.objects.create(name=top_name, parent=None)
+    middle = QuestionCategory.objects.create(name=middle_name, parent=top)
+    bottom = QuestionCategory.objects.create(name=bottom_name, parent=middle)
     question = Question.objects.create(
         author=create_test_user(author),
         category=bottom,
@@ -29,6 +32,7 @@ def create_test_category_and_question(author: str, top: str = "top", middle: str
         content="content",
     )
     return top, middle, bottom, question
+
 
 class MockedAIResponse:
 
@@ -48,7 +52,7 @@ class MockedAIResponse:
         return "data: " + json.dumps({"choices": [{"delta": {"content": content}}]})
 
     @staticmethod
-    def make_iter_res(lines) -> MagicMock:
+    def make_iter_res(lines: list[str]) -> MagicMock:
         res = MagicMock()
         res.iter_lines.return_value = iter(lines)
         res.__enter__.return_value = res

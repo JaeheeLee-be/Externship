@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 import requests
 from django.test import TestCase
 
+from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.qna.chatbot.clients.groq import call_groq, call_groq_once
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
-from apps.core.utils.test_factories import MockedAIResponse as Res
 
 """실제 groq api 요청을 보내는 테스트입니다."""
 # class TestRealCall(TestCase):
@@ -40,8 +40,12 @@ from apps.core.utils.test_factories import MockedAIResponse as Res
 
 
 class TestCallGroq(TestCase):
+    lines: list[str]
+    payload: dict[str, str]
+    key: str
+
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.lines = Res.make_lines()
         cls.payload = {"test": "test"}
         cls.key = "groq_api_key"

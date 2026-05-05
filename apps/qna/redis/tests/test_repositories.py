@@ -2,9 +2,9 @@ import json
 
 from django.core.cache import cache
 
+from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.qna.redis import CacheRepository
 from apps.qna.redis.dtos import InitialQNA
-from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 
 
 class TestCacheRepository(IsolatedRedisTestClient):
