@@ -13,3 +13,7 @@ class Payload:
     model: str
     stream: bool
     temperature: float
+
+@dataclass
+class QNAStreamResponse:
+    message: str

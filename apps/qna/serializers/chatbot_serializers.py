@@ -8,3 +8,6 @@ class InitialAIAnswerSerializer(serializers.Serializer[Any]):
     output = serializers.CharField(source="answer")
     using_model = serializers.CharField()
     created_at = serializers.CharField()
+
+class QNAChatbotRequestSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000, trim_whitespace=True)
