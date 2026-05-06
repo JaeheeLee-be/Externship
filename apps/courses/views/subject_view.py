@@ -60,6 +60,6 @@ class SubjectCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SubjectCreateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": str(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
         subject = subject_service.create_subject(**serializer.validated_data)
         return Response(SubjectCreateSerializer(subject).data, status=status.HTTP_201_CREATED)
