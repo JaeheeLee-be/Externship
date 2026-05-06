@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import NoReturn
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
@@ -24,17 +24,14 @@ class AdminWithdrawalPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class AdminWithdrawalBaseView(APIView):
+class AdminWithdrawalListView(APIView):
     permission_classes = [IsRoleAdminUser]
+    serializer_class = WithdrawalListSerializer
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise PermissionDenied("권한이 없습니다.")
-
-
-class AdminWithdrawalListView(AdminWithdrawalBaseView):
-    serializer_class = WithdrawalListSerializer
 
     @extend_schema(
         tags=["admin"],
@@ -43,10 +40,6 @@ class AdminWithdrawalListView(AdminWithdrawalBaseView):
         parameters=[WithdrawalListQuerySerializer],
         responses={
             200: WithdrawalListResponseSerializer,
-            400: OpenApiResponse(
-                description="유효하지 않은 쿼리 파라미터",
-                response=serializers.Serializer,
-            ),
             401: OpenApiResponse(
                 description="인증 실패",
                 response=serializers.Serializer,
@@ -59,8 +52,7 @@ class AdminWithdrawalListView(AdminWithdrawalBaseView):
     )
     def get(self, request: Request) -> Response:
         query_serializer = WithdrawalListQuerySerializer(data=request.query_params)
-        if not query_serializer.is_valid():
-            return Response({"error_detail": query_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        query_serializer.is_valid()
 
         queryset = get_withdrawal_list(
             search=query_serializer.validated_data.get("search"),

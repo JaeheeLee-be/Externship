@@ -9,7 +9,9 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.users.models import User, Withdrawal
+from apps.courses.models.cohort import Cohort
+from apps.posts.models.course import Course
+from apps.users.models import TrainigAssistants, User, Withdrawal
 
 
 def create_user(
@@ -59,6 +61,18 @@ def create_withdrawal(user: User) -> Withdrawal:
     )
 
 
+def create_course_and_cohort() -> tuple[Course, Cohort]:
+    course = Course.objects.create(name="초격차 백엔드 부트캠프", tag="BE")
+    cohort = Cohort.objects.create(
+        course=course,
+        number=1,
+        max_student=30,
+        start_date=timezone.localdate(),
+        end_date=timezone.localdate() + timedelta(weeks=24),
+    )
+    return course, cohort
+
+
 class AdminWithdrawalListViewGetTest(APITestCase):
     """GET /api/v1/admin/withdrawals 탈퇴 목록 조회"""
 
@@ -67,7 +81,10 @@ class AdminWithdrawalListViewGetTest(APITestCase):
     def setUp(self) -> None:
         self.admin = create_admin()
         self.user = create_user(
-            email="student@oz.com", nickname="수강생", phone_number="01022223333", role=User.Role.STUDENT
+            email="student@oz.com",
+            nickname="수강생",
+            phone_number="01022223333",
+            role=User.Role.STUDENT,
         )
         self.other_user = create_user(email="other@oz.com", nickname="기타유저", phone_number="01033334444")
         self.withdrawal = create_withdrawal(self.user)
@@ -86,11 +103,13 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         self.assertEqual(len(data["results"]), 2)
         self.assertIn("reason_display", data["results"][0])
         self.assertIn("withdrawn_at", data["results"][0])
-        self.assertEqual(data["results"][0]["reason_display"], "더 이상 필요하지 않음")
+        self.assertEqual(data["results"][0]["reason_display"], "더 이상 필요없음")
+        student_result = next(result for result in data["results"] if result["id"] == self.withdrawal.id)
         self.assertEqual(
-            set(data["results"][0]["user"].keys()),
-            {"id", "email", "name", "role", "birthday"},
+            set(student_result["user"].keys()),
+            {"id", "email", "name", "role", "position", "birthday"},
         )
+        self.assertEqual(student_result["user"]["position"], "ENROLLED")
 
     def test_admin_can_filter_withdrawal_list_by_search_and_role(self) -> None:
         response = self.client.get(self.url, {"search": "student", "role": User.Role.STUDENT}, **self.auth)
@@ -98,6 +117,24 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         data = response.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"][0]["id"], self.withdrawal.id)
+
+    def test_admin_can_filter_withdrawal_list_by_position(self) -> None:
+        _, cohort = create_course_and_cohort()
+        ta_user = create_user(
+            email="ta@oz.com",
+            nickname="조교",
+            phone_number="01055556666",
+        )
+        ta_withdrawal = create_withdrawal(ta_user)
+        TrainigAssistants.objects.create(user=ta_user, cohort=cohort)
+
+        response = self.client.get(self.url, {"role": "TA"}, **self.auth)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["id"], ta_withdrawal.id)
+        self.assertEqual(data["results"][0]["user"]["position"], "TA")
 
     def test_admin_can_control_page_size(self) -> None:
         response = self.client.get(self.url, {"page_size": 1}, **self.auth)

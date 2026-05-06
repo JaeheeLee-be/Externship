@@ -6,27 +6,37 @@ from rest_framework import serializers
 
 from apps.users.models import User, Withdrawal
 
-ADMIN_USER_ROLE_CHOICES = ("USER", "TA", "OM", "LC", "ADMIN", "STUDENT")
-WITHDRAWAL_REASON_DISPLAY_MAP = {
-    "NO_LONGER_NEEDED": "더 이상 필요하지 않음",
-}
+POSITION_CHOICES = ("TA", "OM", "LC", "ENROLLED")
+WITHDRAWAL_LIST_ROLE_CHOICES = tuple(choice[0] for choice in User.Role.choices) + POSITION_CHOICES[:3]
 
 
 class WithdrawalListQuerySerializer(serializers.Serializer[Any]):
-    page = serializers.IntegerField(required=False, min_value=1)
-    page_size = serializers.IntegerField(required=False, min_value=1, max_value=100)
+    page = serializers.IntegerField(required=False)
+    page_size = serializers.IntegerField(required=False)
     search = serializers.CharField(required=False, allow_blank=True)
-    role = serializers.ChoiceField(required=False, choices=ADMIN_USER_ROLE_CHOICES)
+    role = serializers.ChoiceField(required=False, choices=WITHDRAWAL_LIST_ROLE_CHOICES)
     sort = serializers.ChoiceField(required=False, choices=("latest", "oldest"))
 
 
 class WithdrawalListUserSerializer(serializers.ModelSerializer[User]):
-    role = serializers.ChoiceField(read_only=True, choices=ADMIN_USER_ROLE_CHOICES)
+    role = serializers.ChoiceField(read_only=True, choices=User.Role.choices)
+    position = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "email", "name", "role", "birthday"]
+        fields = ["id", "email", "name", "role", "position", "birthday"]
         read_only_fields = fields
+
+    def get_position(self, obj: User) -> str | None:
+        if _has_related(obj.training_assistants):
+            return "TA"
+        if _has_related(obj.operation_managers):
+            return "OM"
+        if _has_related(obj.learning_coachs):
+            return "LC"
+        if obj.role == User.Role.STUDENT:
+            return "ENROLLED"
+        return None
 
 
 class WithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
@@ -40,7 +50,7 @@ class WithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
         read_only_fields = fields
 
     def get_reason_display(self, obj: Withdrawal) -> str:
-        return WITHDRAWAL_REASON_DISPLAY_MAP.get(obj.reason, obj.get_reason_display())
+        return obj.get_reason_display()
 
 
 class WithdrawalListResponseSerializer(serializers.Serializer[Any]):
@@ -48,3 +58,7 @@ class WithdrawalListResponseSerializer(serializers.Serializer[Any]):
     next = serializers.CharField(read_only=True, allow_null=True)
     previous = serializers.CharField(read_only=True, allow_null=True)
     results = WithdrawalListSerializer(many=True, read_only=True)
+
+
+def _has_related(manager: Any) -> bool:
+    return bool(manager.all())
