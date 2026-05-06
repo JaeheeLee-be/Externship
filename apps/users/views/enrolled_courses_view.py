@@ -1,11 +1,13 @@
-from typing import Any, cast
+from typing import cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.utils.permissions import IsStudentUser
 from apps.users.models import User
 from apps.users.serializers.enrolled_courses_serializer import MyCoursesSerializer
 from apps.users.services.enrolled_courses_service import get_my_courses
@@ -13,7 +15,14 @@ from apps.users.utils.user_exceptions import NotAuthenticatedError, PermissionDe
 
 
 class MyCoursesView(APIView):
-    permission_classes: list[Any] = []
+    permission_classes = [IsAuthenticated, IsStudentUser]
+
+    def check_permissions_custom(self, request: Request)-> None:
+        if not request.user.is_authenticated:
+            raise NotAuthenticatedError()
+        if request.user.role != User.Role.STUDENT:
+            raise PermissionDenied()
+
 
     @extend_schema(
         tags=["Accounts (회원관리)"],
@@ -27,14 +36,9 @@ class MyCoursesView(APIView):
     )
     def get(self, request: Request) -> Response:
         try:
-            if not request.user.is_authenticated:
-                raise NotAuthenticatedError()
+            self.check_permissions_custom(request)
 
-            user = request.user
-
-            if user.role != User.Role.STUDENT:
-                raise PermissionDenied()
-
+            user = cast(User, request.user)
             data = get_my_courses(user)
             serializer = MyCoursesSerializer(data, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
