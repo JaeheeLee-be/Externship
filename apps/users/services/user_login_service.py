@@ -39,7 +39,7 @@ class UserLoginService:
         return str(refresh.access_token), str(refresh)
 
     @staticmethod
-    def add_to_blacklist(refresh_token_str: str) -> None:
+    def add_to_blacklist(refresh_token_str: str) -> bool:
         """Redis 캐시에 토큰을 블랙리스트에 등록"""
         try:
             token = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
@@ -47,12 +47,13 @@ class UserLoginService:
             exp = token.payload.get("exp")
             now = int(time.time())
             if not isinstance(exp, int) or not isinstance(jti, str):
-                return
+                return True
             timeout = exp - now
             if timeout > 0:
                 cache.set(f"blacklist_{jti}", "true", timeout)
+            return True
         except TokenError:
-            pass
+            return True
 
     @staticmethod
     def is_blacklisted(refresh_token_str: str) -> bool:
