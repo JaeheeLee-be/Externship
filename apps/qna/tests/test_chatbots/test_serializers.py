@@ -1,7 +1,11 @@
 from django.test import TestCase
 
-from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer, QNAChatbotRequestSerializer, \
-    MessageSerializer, QNAChatbotResponseSerializer
+from apps.qna.serializers.chatbot_serializers import (
+    InitialAIAnswerSerializer,
+    MessageSerializer,
+    QNAChatbotRequestSerializer,
+    QNAChatbotResponseSerializer,
+)
 
 
 class TestInitialAIAnswerSerializer(TestCase):
@@ -18,6 +22,7 @@ class TestInitialAIAnswerSerializer(TestCase):
         self.assertEqual(serializer.data["using_model"], data["using_model"])
         self.assertEqual(serializer.data["created_at"], data["created_at"])
         self.assertNotIn("answer", serializer.data)
+
 
 class TestQNAChatbotRequestSerializer(TestCase):
     def test_valid_message(self) -> None:

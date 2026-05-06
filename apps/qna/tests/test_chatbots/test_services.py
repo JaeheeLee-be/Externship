@@ -9,11 +9,14 @@ from apps.qna.chatbot import Message
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.exceptions import (
     ConflictException,
+    ConversationOverException,
     ExternalAPIException,
     ExternalAPITimeoutException,
     GetInitialTimeoutException,
     NotFoundException,
     NotFoundException, ConversationOverException, InactiveSessionException,
+    InactiveSessionException,
+    NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
 from apps.qna.redis import CacheRepository
@@ -254,8 +257,10 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
             ttl=60,
         )
         QNAChatbotService._store_history(
-            self.user_id, self.question.id, 60,
-            [Message(role="user", content="over"), Message(role="assistant", content="end")]
+            self.user_id,
+            self.question.id,
+            60,
+            [Message(role="user", content="over"), Message(role="assistant", content="end")],
         )
         self.assertIsNone(CacheRepository.get_history(QNA_KEY.format(self.user_id, self.question.id)))
         self.assertIsNone(CacheRepository.get_session(SESSION_KEY.format(self.user_id)))

@@ -86,6 +86,7 @@ class QNAChatbotAPIView(APIView):
         try:
             user_id = request.user.id
             question_id = kwargs["question_id"]
+            QNAChatbotService.ensure_conversation_not_over(user_id, question_id)
             QNAChatbotService.ensure_active_session(user_id, question_id)
             QNAChatbotService.ensure_initial_exist(question_id)
             return StreamingHttpResponse(
