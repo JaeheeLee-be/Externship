@@ -97,7 +97,7 @@ class AdminQuestionService:
             raise ExamQuestionUpdateConflict()
         for k, v in data.items():
             setattr(self.target_question, k, v)
-        self.target_question.save(update_fields=list(data.keys()))
+        self.target_question.save()
         return self.target_question
 
     def delete_question(self) -> Tuple[int, int]:
