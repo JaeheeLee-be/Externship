@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Tuple
 
 from django.db import transaction
 from django.db.models import Count, Sum
@@ -100,8 +100,10 @@ class AdminQuestionService:
         self.target_question.save(update_fields=list(data.keys()))
         return self.target_question
 
-    def delete_question(self) -> ExamQuestion:
+    def delete_question(self) -> Tuple[int, int]:
         if self.len_of_questions == 1:
             raise ExamQuestionDeleteConflict()
         self.target_question.delete()
-        return self.target_question
+        question_id = self.target_question.id
+        exam_id = self.exam.id
+        return question_id, exam_id

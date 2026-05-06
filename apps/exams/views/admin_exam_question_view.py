@@ -19,7 +19,6 @@ from apps.exams.exceptions.exam_question_exceptions import (
 from apps.exams.serializers.admin_exam_question_serializer import (
     QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
-    QuestionDeleteRequestSerializer,
     QuestionDeleteResponseSerializer,
     QuestionUpdateResponseSerializer,
     QuestionUpdateSerializer,
@@ -89,14 +88,14 @@ class AdminQuestionUpdateDeleteView(APIView):
         return Response(QuestionUpdateResponseSerializer(mod_question).data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, question_id: int) -> Response:
-        serializer = QuestionDeleteRequestSerializer(data={"question_id": question_id})
-        if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
             with AdminQuestionService(method="delete", question_id=question_id) as service:
-                target_question = service.delete_question()
+                question_id, exam_id = service.delete_question()
         except ExamQuestionDeleteConflict as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         except ExamQuestionDeleteNotFound as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        return Response(QuestionDeleteResponseSerializer(target_question).data, status=status.HTTP_200_OK)
+        return Response(
+            QuestionDeleteResponseSerializer({"question_id": question_id, "exam_id": exam_id}).data,
+            status=status.HTTP_200_OK,
+        )

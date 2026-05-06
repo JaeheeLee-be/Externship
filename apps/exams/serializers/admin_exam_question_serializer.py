@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any,Dict
 
 from rest_framework import serializers
 
@@ -34,18 +34,9 @@ class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
         extra_kwargs = {field: {"required": False} for field in fields}
 
 
-class QuestionDeleteRequestSerializer(serializers.Serializer[int]):
-    question_id = serializers.IntegerField(min_value=1)
-
-
-class QuestionDeleteResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
-    class Meta:
-        model = ExamQuestion
-        fields = [
-            "id",
-            "exam_id",
-        ]
-        read_only_fields = ["id", "exam_id"]
+class QuestionDeleteResponseSerializer(serializers.Serializer[Dict[str,int]]):
+    question_id = serializers.IntegerField()
+    exam_id = serializers.IntegerField()
 
 
 class QuestionResponseSerializer(serializers.ModelSerializer[ExamQuestion]):
