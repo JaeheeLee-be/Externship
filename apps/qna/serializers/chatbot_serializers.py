@@ -2,6 +2,8 @@ from typing import Any
 
 from rest_framework import serializers
 
+from apps.qna.chatbot import Message
+
 
 class InitialAIAnswerSerializer(serializers.Serializer[Any]):
     question_id = serializers.IntegerField()
@@ -9,5 +11,15 @@ class InitialAIAnswerSerializer(serializers.Serializer[Any]):
     using_model = serializers.CharField()
     created_at = serializers.CharField()
 
-class QNAChatbotRequestSerializer(serializers.Serializer):
-    message = serializers.CharField(max_length=1000, trim_whitespace=True)
+
+class QNAChatbotRequestSerializer(serializers.Serializer[str]):
+    message = serializers.CharField(min_length=1, max_length=1000, trim_whitespace=True)
+
+
+class MessageSerializer(serializers.Serializer[str]):
+    role = serializers.CharField()
+    message = serializers.CharField(source="content")
+
+
+class QNAChatbotResponseSerializer(serializers.Serializer[dict[str, list[Message]]]):
+    results = MessageSerializer(many=True)
