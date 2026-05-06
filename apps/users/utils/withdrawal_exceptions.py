@@ -37,7 +37,7 @@ class WithdrawalNotFoundError(WithdrawalError):
 
 class WithdrawalRecordNotFoundError(WithdrawalNotFoundError):
     def __init__(self) -> None:
-        super().__init__("탈퇴 신청 내역이 없습니다.")
+        super().__init__("회원탈퇴 정보를 찾을 수 없습니다.")
 
 
 class DeletedUserError(WithdrawalNotFoundError):
