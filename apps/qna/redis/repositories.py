@@ -12,7 +12,7 @@ class CacheRepository:
         cache.set(key, json.dumps(value), timeout=ttl)
 
     @staticmethod
-    def get(key: str) -> InitialQNA | None:
+    def get_initial(key: str) -> InitialQNA | None:
         cached = cache.get(key)
         if not cached:
             return None

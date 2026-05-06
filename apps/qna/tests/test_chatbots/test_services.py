@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
+from django.core.cache import cache
 
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
@@ -10,6 +10,7 @@ from apps.qna.exceptions import (
     ConflictException,
     ExternalAPIException,
     ExternalAPITimeoutException,
+    GetInitialTimeoutException,
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
@@ -30,6 +31,10 @@ class TestInitialService(IsolatedRedisTestClient):
     def setUp(self) -> None:
         super().setUp()
         self.res = Res.make_res("i am gumba")
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        cache.clear()
 
     def test_returns_full_category_path(self) -> None:
         self.assertEqual(self.category, "top > middle > bottom")
@@ -85,7 +90,7 @@ class TestInitialService(IsolatedRedisTestClient):
     def test_save_initial_answer_save_data_equal_cached_data(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         save_data = InitialService.save_initial_answer(self.question.id)
-        cached_data = CacheRepository.get(f"qna_initial:{self.question.id}")
+        cached_data = CacheRepository.get_initial(f"qna_initial:{self.question.id}")
         self.assertEqual(save_data, cached_data)
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
@@ -95,19 +100,20 @@ class TestInitialService(IsolatedRedisTestClient):
         result = InitialService.get_initial_answer(self.question.id)
         self.assertEqual(result.answer, "i am gumba")
 
+    @patch("apps.qna.services.chatbot_services.sleep")
     @patch("apps.qna.services.chatbot_services.CacheRepository.acquire_lock")
     @patch("apps.qna.chatbot.clients.groq.requests.post")
-    def test_get_initial_answer_raise_conflict(self, mock_post: MagicMock, mock_lock: MagicMock) -> None:
+    def test_get_initial_answer_raises_timeout(
+        self, mock_post: MagicMock, mock_lock: MagicMock, mock_sleep: MagicMock
+    ) -> None:
         mock_post.return_value = self.res
         mock_lock.return_value = False
-        with self.assertRaises(ConflictException) as e:
+        with self.assertRaises(GetInitialTimeoutException):
             InitialService.get_initial_answer(self.question.id)
-        self.assertEqual(e.exception.status_code, 409)
-        self.assertEqual(str(e.exception), "이미 AI가 답변을 생성했습니다.")
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_get_initial_answer_saves_and_returns(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         result = InitialService.get_initial_answer(self.question.id)
-        cached = CacheRepository.get(f"qna_initial:{self.question.id}")
+        cached = CacheRepository.get_initial(f"qna_initial:{self.question.id}")
         self.assertEqual(result, cached)

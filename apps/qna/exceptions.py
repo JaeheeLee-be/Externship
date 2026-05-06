@@ -62,3 +62,18 @@ class ExternalAPIException(BaseCustomException):
 class ExternalAPITimeoutException(BaseCustomException):
     status_code = 504
     default_message = "외부 API 응답 시간이 초과되었습니다."
+
+
+class InactiveSessionException(BaseCustomException):
+    status_code = 403
+    default_message = "활성화된 채팅 세션이 아닙니다."
+
+
+class ConversationOverException(BaseCustomException):
+    status_code = 429
+    default_message = "더 필요한 질문은 질문 게시판을 이용해 주세요."
+
+
+class GetInitialTimeoutException(BaseCustomException):
+    status_code = 408
+    default_message = "응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."

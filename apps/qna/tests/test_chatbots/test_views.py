@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+from django.core.cache import cache
 from django.urls import reverse
 
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
@@ -24,6 +25,10 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
     def setUp(self) -> None:
         super().setUp()
         self.res = Res.make_res("i am gumba")
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        cache.clear()
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_get_initial_answer_success(self, mock: MagicMock) -> None:

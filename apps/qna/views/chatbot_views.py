@@ -39,3 +39,7 @@ class InitialAiAnswerAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
+        except Exception:
+            return Response(
+                {"error_detail": "서버 내부 오류가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

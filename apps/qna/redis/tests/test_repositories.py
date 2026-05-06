@@ -1,4 +1,5 @@
 import json
+from time import sleep
 
 from django.core.cache import cache
 
@@ -24,15 +25,24 @@ class TestCacheRepository(IsolatedRedisTestClient):
         self.key = "key"
         CacheRepository.initial_save(self.key, self.data, ttl=5)
 
+    def tearDown(self) -> None:
+        super().tearDown()
+        cache.clear()
+
     def test_initial_save(self) -> None:
         cashed = json.loads(cache.get(self.key))
         self.assertEqual(cashed, self.data)
 
+    def test_initial_save_ttl(self) -> None:
+        CacheRepository.initial_save(self.key, self.data, ttl=1)
+        sleep(1.5)
+        self.assertIsNone(CacheRepository.get_initial(self.key))
+
     def test_get_returns_none_when_key_not_exists(self) -> None:
-        self.assertIsNone(CacheRepository.get("nonexistent_key"))
+        self.assertIsNone(CacheRepository.get_initial("nonexistent_key"))
 
     def test_get_returns_InitialQNA(self) -> None:
-        self.assertIsInstance(CacheRepository.get(self.key), InitialQNA)
+        self.assertIsInstance(CacheRepository.get_initial(self.key), InitialQNA)
 
     def test_acquire_lock_returns_true_first_time(self) -> None:
         self.assertTrue(CacheRepository.acquire_lock("lock_key"))
@@ -43,4 +53,4 @@ class TestCacheRepository(IsolatedRedisTestClient):
 
     def test_get_returns_none_after_delete(self) -> None:
         CacheRepository.delete(self.key)
-        self.assertIsNone(CacheRepository.get(self.key))
+        self.assertIsNone(CacheRepository.get_initial(self.key))
