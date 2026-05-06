@@ -7,6 +7,11 @@ class DuplicateNicknameError(Exception):
         super().__init__("중복된 닉네임이 존재합니다.")
 
 
+class ConflictError(Exception):
+    def __init__(self, message: str = "이미 중복된 회원 가입 내역이 존재 합니다.") -> None:
+        super().__init__(message)
+
+
 class InvalidLoginError(Exception):
     def __init__(self) -> None:
         super().__init__("입력한 이메일 또는 비밀번호가 잘못되었습니다.")
