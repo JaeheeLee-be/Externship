@@ -1,4 +1,4 @@
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
@@ -9,6 +9,7 @@ from rest_framework.exceptions import (
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
@@ -24,6 +25,7 @@ from apps.exams.serializers.admin_exam_serializer import (
     ExamErrorSerializer,
     ExamListQuerySerializer,
     ExamListSerializer,
+    ExamPageResponseSerializer,
     ExamValidationErrorSerializer,
 )
 from apps.exams.services.admin_exam_service import (
@@ -33,6 +35,14 @@ from apps.exams.services.admin_exam_service import (
     get_exam_list,
     put_exam,
 )
+
+
+class CustomExamPagination(PageNumberPagination):
+    def get_paginated_response(self, data: ReturnList[Any] | ReturnDict[str, Any]) -> Response:
+        assert self.page is not None
+        return Response(
+            {"page": self.page.number, "size": self.page_size, "total_count": self.page.paginator.count, "exams": data}
+        )
 
 
 class ExamListCreateView(APIView):
@@ -73,7 +83,7 @@ class ExamListCreateView(APIView):
             ),
         ],
         responses={
-            200: ExamListSerializer,
+            200: ExamPageResponseSerializer,
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 목록 조회 권한이 없습니다."),
         },
@@ -89,7 +99,7 @@ class ExamListCreateView(APIView):
             sort=request.query_params.get("sort"),
             order=request.query_params.get("order"),
         )
-        paginator = PageNumberPagination()
+        paginator = CustomExamPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = ExamListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
