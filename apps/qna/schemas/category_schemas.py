@@ -1,7 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 
 from apps.qna.serializers.category_serializers import (
-
     CategoryTreeSerializer,
 )
 

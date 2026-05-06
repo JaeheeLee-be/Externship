@@ -8,6 +8,11 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.schemas.category_admin_schemas import (
+    admin_category_create_schema,
+    admin_category_delete_schema,
+    admin_category_list_schema,
+)
 from apps.qna.serializers.category_serializers import (
     AdminCategoryCreateResponseSerializer,
     AdminCategoryCreateSerializer,
@@ -15,11 +20,7 @@ from apps.qna.serializers.category_serializers import (
     AdminCategoryListSerializer,
 )
 from apps.qna.services.admin_category_services import CategoryService
-from apps.qna.schemas.category_admin_schemas import (
-    admin_category_create_schema,
-    admin_category_list_schema,
-    admin_category_delete_schema,
-)
+
 
 class AdminCategoryListCreateAPIView(APIView):
     permission_classes = [IsRoleAdminUser]
@@ -29,9 +30,7 @@ class AdminCategoryListCreateAPIView(APIView):
             raise NotAuthenticated(detail="로그인이 필요합니다.")
         raise PermissionDenied(
             detail=(
-                "카테고리 목록 조회 권한이 없습니다."
-                if request.method == "GET"
-                else "카테고리 등록 권한이 없습니다."
+                "카테고리 목록 조회 권한이 없습니다." if request.method == "GET" else "카테고리 등록 권한이 없습니다."
             )
         )
 
