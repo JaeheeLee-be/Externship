@@ -1,4 +1,5 @@
-from django.core.cache import cache
+from datetime import date, timedelta
+
 from django.urls import reverse
 from rest_framework import status
 
@@ -8,18 +9,22 @@ from apps.users.services.user_login_service import UserLoginService
 
 
 class AuthAPITestCase(IsolatedRedisTestClient):
-    def setUp(self) -> None:
-        super().setUp()
+    # 테스트에 사용할 테스트 유저
+    user: User
+    user_password: str = "TestPassword123!"
 
-        # 테스트에 사용할 테스트 유저
-        self.user_password: str = "TestPassword123!"
-        self.user: User = User.objects.create_user(
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.user = User.objects.create_user(
             email="testuser@ozcoding.com",
-            password=self.user_password,
+            password=cls.user_password,
             name="테스트지형",
             nickname="test_jh",
             phone_number="010-1234-5678",
         )
+
+    def setUp(self) -> None:
+        super().setUp()
 
         # 테스트에 사용할 API URL.
         self.login_url: str = reverse("users:login")
@@ -27,7 +32,6 @@ class AuthAPITestCase(IsolatedRedisTestClient):
         self.refresh_url: str = reverse("users:token_refresh")
 
     def test_login_success(self) -> None:
-        """이메일/비밀번호로 로그인 시 토큰이 정상 발급되는지 테스트."""
         data: dict[str, str] = {"email": "testuser@ozcoding.com", "password": self.user_password}
 
         response = self.client.post(self.login_url, data)
@@ -37,6 +41,47 @@ class AuthAPITestCase(IsolatedRedisTestClient):
         self.assertIn("access_token", response.data)
         # 쿠키에 refresh_token이 있는지 확인
         self.assertIn("refresh_token", response.cookies)
+
+    def test_login_with_wrong_password_returns_403(self) -> None:
+        data = {"email": "testuser@ozcoding.com", "password": "WrongPassword!"}
+        response = self.client.post(self.login_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data["error_detail"],
+            "입력한 이메일 또는 비밀번호가 잘못되었습니다.",
+        )
+
+    def test_login_inactive_user(self) -> None:
+        """비활성화 된계정 로그인 시 403과 에러 메시지 반환"""
+        self.user.is_active = False
+        self.user.save()
+
+        data = {"email": "testuser@ozcoding.com", "password": self.user_password}
+        response = self.client.post(self.login_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["error_detail"], "비활성된 계정입니다.")
+
+    def test_login_withdrawn_user(self) -> None:
+        """탈퇴 신청 계정 로그인 시 403과 expire_at 반환."""
+        from apps.users.models import Withdrawal  # 모델 경로/필드명에 맞춰 조정
+
+        due = date.today() + timedelta(days=30)
+        Withdrawal.objects.create(user=self.user, due_date=due)
+
+        data = {"email": "testuser@ozcoding.com", "password": self.user_password}
+        response = self.client.post(self.login_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data["error_detail"]["detail"],
+            "탈퇴 신청한 계정입니다.",
+        )
+        self.assertEqual(
+            response.data["error_detail"]["expire_at"],
+            due.strftime("%Y-%m-%d"),
+        )
 
     def test_logout_success(self) -> None:
         """로그아웃 시 토큰이 Redis 블랙리스트에 등록되는지 테스트"""
@@ -52,11 +97,11 @@ class AuthAPITestCase(IsolatedRedisTestClient):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         #  토큰이 블랙리스트에 올랐는지 검증
         self.assertTrue(UserLoginService.is_blacklisted(refresh_token))
-        # 5. 쿠키가 삭제되었는지 확인
+        #  쿠키가 삭제되었는지 확인
         self.assertEqual(response.cookies["refresh_token"].value, "")
 
     def test_token_refresh_success(self) -> None:
-        """유효한 리프레시 토큰으로 재발급을 요청할 때 성공하는지 테스트합니다."""
+        """유효한 리프레시 토큰으로 재발급을 요청할 때 성공하는지 테스트"""
         _, refresh_token = UserLoginService.generate_token_pair(self.user)
 
         # 요청 바디에 refresh token 담아서 넘김
@@ -70,7 +115,7 @@ class AuthAPITestCase(IsolatedRedisTestClient):
         self.assertTrue(UserLoginService.is_blacklisted(refresh_token))
 
     def test_blacklisted_token_rejected(self) -> None:
-        """이미 블랙리스트에 등록된 토큰으로 재발급 시도 시 403 에러가 발생하는지 테스트합니다."""
+        """이미 블랙리스트에 등록된 토큰으로 재발급 시도 시 403 에러과 에러 메시지 반환."""
         _, refresh_token = UserLoginService.generate_token_pair(self.user)
 
         # 토큰을 블랙리스트에 추가
@@ -82,4 +127,18 @@ class AuthAPITestCase(IsolatedRedisTestClient):
 
         # 403 상태 코드 반환 확인
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data["error_detail"]["detail"], "로그인 세션이 만료되었습니다.")
+
+        self.assertEqual(response.data["error_detail"], "로그인 세션이 만료되었습니다.")
+
+    def test_malformed_token_rejected(self) -> None:
+        """변조된 토큰으로 재발급 시도 시 403과 에러 메시지 반환."""
+        response = self.client.post(
+            self.refresh_url,
+            {"refresh_token": "this.is.not.a.valid.jwt"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data["error_detail"],
+            "로그인 세션이 만료되었습니다.",
+        )
