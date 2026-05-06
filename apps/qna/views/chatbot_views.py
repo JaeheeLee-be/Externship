@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer
 from apps.qna.services.chatbot_services import InitialService
-
+from apps.qna.schemas.chatbot_schemas import ai_answer_get_schema, ai_answer_post_schema
 
 class InitialAiAnswerAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -20,6 +20,7 @@ class InitialAiAnswerAPIView(APIView):
             raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
         raise PermissionDenied(message)
 
+    @ai_answer_get_schema
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         try:
             instance = InitialService.get_initial_answer(kwargs["question_id"])
@@ -28,6 +29,7 @@ class InitialAiAnswerAPIView(APIView):
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
 
+    @ai_answer_post_schema
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         try:
             question_id = kwargs["question_id"]
