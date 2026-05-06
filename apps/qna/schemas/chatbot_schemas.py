@@ -1,6 +1,9 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 
-from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer
+from apps.qna.serializers.chatbot_serializers import (
+    InitialAIAnswerSerializer,
+    QNAChatbotResponseSerializer,
+)
 
 ai_answer_post_schema = extend_schema(
     tags=["Chatbot"],
@@ -26,6 +29,35 @@ ai_answer_get_schema = extend_schema(
         404: OpenApiResponse(description="질문 데이터를 찾을 수 없습니다."),
         408: OpenApiResponse(description="응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."),
         409: OpenApiResponse(description="이미 AI가 답변을 생성했습니다."),
+        502: OpenApiResponse(description="외부 API 호출에 실패했습니다."),
+        504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다."),
+    },
+)
+
+
+qna_chatbot_post_schema = extend_schema(
+    tags=["Qna"],
+    summary="qna 챗봇 대화",
+    description="활성화된 채팅창에서 qna 챗봇과 질의응답을 합니다.",
+    responses={
+        200: OpenApiResponse(description="SSE 스트림 (text/event-stream)"),
+        401: OpenApiResponse(description="로그인한 사용자만 이용할 수 있습니다."),
+        404: OpenApiResponse(description="해당 질문을 찾을 수 없습니다."),
+        429: OpenApiResponse(description="더 필요한 질문은 질문 게시판을 이용해 주세요."),
+        502: OpenApiResponse(description="외부 API 호출에 실패했습니다."),
+        504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다."),
+    },
+)
+
+qna_chatbot_get_schema = extend_schema(
+    tags=["Qna"],
+    summary="qna 챗봇 히스토리 조회",
+    description="캐시에 저장된 히스토리를 불러옵니다.",
+    responses={
+        200: QNAChatbotResponseSerializer,
+        401: OpenApiResponse(description="로그인한 사용자만 이용할 수 있습니다."),
+        404: OpenApiResponse(description="해당 질문을 찾을 수 없습니다."),
+        429: OpenApiResponse(description="더 필요한 질문은 질문 게시판을 이용해 주세요."),
         502: OpenApiResponse(description="외부 API 호출에 실패했습니다."),
         504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다."),
     },
