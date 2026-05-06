@@ -22,10 +22,10 @@ class AvailableCoursesView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["Accounts (회원관리)"],
+        tags=["accounts"],
         summary="수강신청 가능한 기수 조회 API",
         description="모집 중인 기수만 소속된 과정 정보와 함께 반환합니다",
-        responses={200: AvailableCoursesSerializer, 401: OpenApiResponse(description="인증실패")},
+        responses={200: AvailableCoursesSerializer, 401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다.")},
     )
     def get(self, request: Request) -> Response:
         user = cast(User, request.user)

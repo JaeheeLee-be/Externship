@@ -23,12 +23,12 @@ class UserInfoView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["Accounts (회원관리)"],
+        tags=["accounts"],
         summary="내 정보 조회 API",
         description="로그인한 유저는 회원정보 조회가능, 수강생 등록이 되어있을 경우 수강중 과정, 기수도 조회가능",
         responses={
             200: UserInfoSerializer,
-            401: OpenApiResponse(description="인증 실패"),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
         },
     )
     def get(self, request: Request) -> Response:

@@ -22,13 +22,13 @@ class MyCoursesView(APIView):
         raise PermissionDenied("수강 목록 조회 권한이 없습니다.")
 
     @extend_schema(
-        tags=["Accounts (회원관리)"],
+        tags=["accounts"],
         summary="내 수강목록 조회 API",
         description="로그인한 유저의 수강목록만 조회",
         responses={
             200: MyCoursesSerializer(many=True),
-            401: OpenApiResponse(description="인증 실패"),
-            403: OpenApiResponse(description="수강생 권한 없음"),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403: OpenApiResponse(description="수강 목록 조회 권한이 없습니다."),
         },
     )
     def get(self, request: Request) -> Response:
