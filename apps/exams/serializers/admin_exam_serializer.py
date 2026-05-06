@@ -113,3 +113,10 @@ class ExamValidationErrorSerializer(serializers.Serializer[Any]):
 
 class ExamDeleteResponseSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
+
+
+class ExamPageResponseSerializer(serializers.Serializer[Any]):
+    page = serializers.IntegerField()
+    size = serializers.IntegerField()
+    total_count = serializers.IntegerField()
+    exams = ExamListSerializer(many=True)

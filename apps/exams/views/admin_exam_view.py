@@ -6,7 +6,6 @@ from rest_framework.exceptions import (
     NotAuthenticated,
     PermissionDenied,
 )
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,9 +23,11 @@ from apps.exams.serializers.admin_exam_serializer import (
     ExamErrorSerializer,
     ExamListQuerySerializer,
     ExamListSerializer,
+    ExamPageResponseSerializer,
     ExamValidationErrorSerializer,
 )
 from apps.exams.services.admin_exam_service import (
+    CustomExamPagination,
     create_exam,
     delete_exam,
     get_exam,
@@ -73,7 +74,7 @@ class ExamListCreateView(APIView):
             ),
         ],
         responses={
-            200: ExamListSerializer,
+            200: ExamPageResponseSerializer,
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 목록 조회 권한이 없습니다."),
         },
@@ -89,7 +90,7 @@ class ExamListCreateView(APIView):
             sort=request.query_params.get("sort"),
             order=request.query_params.get("order"),
         )
-        paginator = PageNumberPagination()
+        paginator = CustomExamPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = ExamListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
