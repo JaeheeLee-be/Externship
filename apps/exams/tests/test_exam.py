@@ -556,6 +556,7 @@ class TestExamDetail(ExamBaseTestCase):
         self.assertEqual(response.data["error_detail"], "쪽지시험 삭제 중 충돌이 발생했습니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
+
 class TestExamPagination(ExamBaseTestCase):
     def setUp(self) -> None:
         self.client = APIClient()
@@ -567,4 +568,3 @@ class TestExamPagination(ExamBaseTestCase):
         self.assertEqual(response.data["page"], 1)
         self.assertEqual(response.data["size"], 10)
         self.assertEqual(response.data["total_count"], 2)
-
