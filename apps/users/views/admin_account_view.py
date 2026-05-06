@@ -88,7 +88,6 @@ class AdminAccountListView(APIView):
         query_params["page"] = str(page - 1)
         previous_url = f"{base_url}?{query_params.urlencode()}" if page > 1 else None
 
-
         response_serializer = AdminAccountListResponseSerializer(
             {
                 "count": count,
