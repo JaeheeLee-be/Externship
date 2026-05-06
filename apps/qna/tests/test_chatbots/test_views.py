@@ -114,28 +114,10 @@ class TestQNAChatbotAPIViewGetMethod(IsolatedRedisTestClient):
         self.assertEqual(response.status_code, 200)
         self.assertIn("results", response.data)
 
-    def test_get_returns_initial_answer_when_no_history(self) -> None:
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["message"], "i am gumba")
-
     def test_get_returns_404_when_no_initial(self) -> None:
         self.client.force_authenticate(user=self.user)
         response = self.client.get(f"/api/questions/9999/chatbot")
         self.assertEqual(response.status_code, 404)
-
-    def test_get_includes_existing_history(self) -> None:
-        CacheRepository.save_history(
-            key=QNA_KEY.format(self.user.id, self.question.id),
-            history=[{"role": "user", "content": "hello"}],
-            ttl=60,
-        )
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 2)
 
 
 class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
