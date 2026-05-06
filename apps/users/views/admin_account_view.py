@@ -32,16 +32,19 @@ class AdminAccountListView(APIView):
                 name="page",
                 type=int,
                 description="페이지 번호 (기본값: 1)",
+                required=False,
             ),
             OpenApiParameter(
                 name="page_size",
                 type=int,
                 description="페이지당 항목 수 (기본값: 10, 최대: 100)",
+                required=False,
             ),
             OpenApiParameter(
                 name="search",
                 type=str,
                 description="이메일 또는 닉네임으로 검색",
+                required=False,
             ),
             OpenApiParameter(
                 name="status",
