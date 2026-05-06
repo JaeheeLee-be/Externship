@@ -6,6 +6,7 @@ from rest_framework.exceptions import (
     NotAuthenticated,
     PermissionDenied,
 )
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
@@ -28,7 +29,6 @@ from apps.exams.serializers.admin_exam_serializer import (
     ExamValidationErrorSerializer,
 )
 from apps.exams.services.admin_exam_service import (
-    CustomExamPagination,
     create_exam,
     delete_exam,
     get_exam,
