@@ -142,6 +142,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
     question: Question
     user: User
     url: str
+    lines: list[str]
 
     @classmethod
     def setUpTestData(cls) -> None:

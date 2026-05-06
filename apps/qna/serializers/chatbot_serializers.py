@@ -16,7 +16,7 @@ class QNAChatbotRequestSerializer(serializers.Serializer[str]):
     message = serializers.CharField(min_length=1, max_length=1000, trim_whitespace=True)
 
 
-class MessageSerializer(serializers.Serializer[str]):
+class MessageSerializer(serializers.Serializer[dict[str, str]]):
     role = serializers.CharField()
     message = serializers.CharField(source="content")
 
