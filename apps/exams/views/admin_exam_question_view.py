@@ -45,7 +45,7 @@ class AdminQuestionCreateView(APIView):
     def post(self, request: Request, exam_id: int) -> Response:
         serializer = QuestionCreateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": serializer.errors})
         try:
             data = serializer.validated_data
             with AdminQuestionService(method="create", exam_id=exam_id) as service:
@@ -67,7 +67,9 @@ class AdminQuestionUpdateDeleteView(APIView):
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         if request.method == "PUT":
             raise PermissionDenied("쪽지시험 문제 수정 권한이 없습니다.")
-        raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
+        elif request.method == "DELETE":
+            raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
+        raise PermissionDenied("권한이 없습니다.")
 
     @extend_schema(
         tags=["exams_question"],
@@ -76,7 +78,7 @@ class AdminQuestionUpdateDeleteView(APIView):
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": serializer.errors})
         try:
             mod_data = serializer.validated_data
             with AdminQuestionService(method="update", question_id=question_id) as service:
