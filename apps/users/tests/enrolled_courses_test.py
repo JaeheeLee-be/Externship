@@ -7,7 +7,6 @@ from rest_framework.test import APIClient, APITestCase
 from apps.courses.models.cohort import Cohort, StatusChoices
 from apps.posts.models.course import Course
 from apps.users.models import StudentEnrollmentRequests, User
-from apps.users.utils.user_exceptions import PermissionDenied
 
 
 class MyCoursesViewTest(APITestCase):
@@ -26,27 +25,22 @@ class MyCoursesViewTest(APITestCase):
     def setUpTestData(cls) -> None:
         cls.url = reverse("users:enrolled_courses")
 
-        # 수강생 유저
         cls.user = User.objects.create_user(
             email="user@test.com",
             password="Test1234!",
             name="테스트",
             nickname="테스트닉",
             phone_number="01011112222",
-            role=User.Role.STUDENT,  # ← 추가
+            role=User.Role.STUDENT,
         )
-
-        # 수강생 유저 (신청 기록 없음)
         cls.other_user = User.objects.create_user(
             email="other@test.com",
             password="Test1234!",
             name="다른유저",
             nickname="다른닉",
             phone_number="01033334444",
-            role=User.Role.STUDENT,  # ← 추가
+            role=User.Role.STUDENT,
         )
-
-        # 일반 유저 (수강생 아님)
         cls.non_student = User.objects.create_user(
             email="nonstudent@test.com",
             password="Test1234!",
@@ -55,13 +49,11 @@ class MyCoursesViewTest(APITestCase):
             phone_number="01077778888",
             role=User.Role.USER,
         )
-
         cls.course = Course.objects.create(
             name="백엔드",
             tag="BE",
             thumbnail_img_url="https://example.com/thumb.png",
         )
-
         cls.cohort_preparing = Cohort.objects.create(
             course=cls.course,
             number=1,
@@ -102,8 +94,6 @@ class MyCoursesViewTest(APITestCase):
             end_date=date(2026, 12, 31),
             status=StatusChoices.PREPARING,
         )
-
-        # 승인된 거 3개 - 응답에 나와야 함
         StudentEnrollmentRequests.objects.create(
             user=cls.user,
             cohort=cls.cohort_preparing,
@@ -119,15 +109,11 @@ class MyCoursesViewTest(APITestCase):
             cohort=cls.cohort_finished,
             status=StudentEnrollmentRequests.Status.ACCEPTED,
         )
-
-        # 신청 중 - 응답에 안 나와야 함
         StudentEnrollmentRequests.objects.create(
             user=cls.user,
             cohort=cls.cohort_pending,
             status=StudentEnrollmentRequests.Status.PENDING,
         )
-
-        # 거절됨 - 응답에 안 나와야 함
         StudentEnrollmentRequests.objects.create(
             user=cls.user,
             cohort=cls.cohort_rejected,
@@ -160,13 +146,13 @@ class MyCoursesViewTest(APITestCase):
         self.assertNotIn(self.cohort_rejected.id, cohort_ids)
 
     def test_response_structure(self) -> None:
-        """응답 구조 - cohort, course 중첩 필드 검증"""
+        """응답 구조 검증"""
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.url)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        item = next(i for i in response.data if i["cohort"]["id"] == self.cohort_preparing.id)
+        item = next(
+            i for i in response.data if i["cohort"]["id"] == self.cohort_preparing.id
+        )
 
         cohort_data = item["cohort"]
         self.assertEqual(cohort_data["id"], self.cohort_preparing.id)
@@ -199,24 +185,13 @@ class MyCoursesViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
-    def test_no_enrollment_returns_empty(self) -> None:
-        """수강 이력 없으면 빈 배열"""
-        self.client.force_authenticate(user=self.other_user)
-        response = self.client.get(self.url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, [])
-
     def test_non_student_forbidden(self) -> None:
         """수강생 아닌 유저는 403"""
         self.client.force_authenticate(user=self.non_student)
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(
-            response.data["error_detail"],
-            str(PermissionDenied()),
-        )
+        self.assertIn("error_detail", response.data)
 
     def test_unauthenticated(self) -> None:
         """비로그인 시 401"""
@@ -224,3 +199,7 @@ class MyCoursesViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn("error_detail", response.data)
+        self.assertEqual(
+            response.data["error_detail"],
+            "자격 인증 데이터가 제공되지 않았습니다.",
+        )

@@ -2,6 +2,7 @@ from typing import Never, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -13,14 +14,13 @@ from apps.users.serializers.user_info_serializer import (
     UserInfoUpdateResponseSerializer,
     UserInfoUpdateSerializer,
 )
-from apps.users.utils.user_exceptions import NotAuthenticatedError
 
 
 class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
-        raise NotAuthenticatedError()
+        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
         tags=["Accounts (회원관리)"],
