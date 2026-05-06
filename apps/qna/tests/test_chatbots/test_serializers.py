@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+from apps.qna.chatbot import Message
 from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
     MessageSerializer,
@@ -58,7 +59,7 @@ class TestMessageSerializer(TestCase):
 
 class TestQNAChatbotResponseSerializer(TestCase):
     def test_results_serialized(self) -> None:
-        data = {"results": [{"role": "user", "content": "hello"}, {"role": "assistant", "content": "hi"}]}
+        data = {"results": [Message(role="user", content="hello"), Message(role="assistant", content="hi")]}
         serializer = QNAChatbotResponseSerializer(data)
         self.assertEqual(len(serializer.data["results"]), 2)
         self.assertEqual(serializer.data["results"][0]["message"], "hello")

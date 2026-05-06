@@ -70,6 +70,7 @@ class TestCacheRepository(IsolatedRedisTestClient):
         CacheRepository.save_history("history_key", history, ttl=5)
         result = CacheRepository.get_history("history_key")
         self.assertIsInstance(result, list)
+        assert result is not None
         self.assertIsInstance(result[0], Message)
 
     def test_set_session(self) -> None:

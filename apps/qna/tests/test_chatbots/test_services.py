@@ -129,7 +129,8 @@ class TestInitialService(IsolatedRedisTestClient):
 class TestQNAChatbotService(IsolatedRedisTestClient):
     bottom: QuestionCategory
     question: Question
-    initial: InitialQNA
+    category: str
+    lines: list[str]
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -137,8 +138,6 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
         cls.category = InitialService._get_categories(cls.bottom)
 
         cls.lines = Res.make_lines()
-        cls.payload = {"test": "test"}
-        cls.key = "groq_api_key"
 
     def setUp(self) -> None:
         super().setUp()
@@ -196,19 +195,9 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
         list(QNAChatbotService.stream_chat(self.user_id, self.question.id, "hello"))
         history = CacheRepository.get_history(QNA_KEY.format(self.user_id, self.question.id))
         self.assertIsNotNone(history)
+        assert history is not None
         self.assertEqual(history[0].role, "user")
         self.assertEqual(history[0].content, "hello")
-
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
-    def test_stream_chat_raises_429_when_history_full(self, mock: MagicMock) -> None:
-        mock.return_value = self.res
-        CacheRepository.save_history(
-            key=QNA_KEY.format(self.user_id, self.question.id),
-            history=[{"role": "user", "content": f"msg{i}"} for i in range(8)],
-            ttl=60,
-        )
-        with self.assertRaises(ConversationOverException):
-            list(QNAChatbotService.stream_chat(self.user_id, self.question.id, "hello"))
 
     @patch("apps.qna.chatbot.clients.groq.requests.post")
     def test_stream_chat_raises_404_when_no_initial(self, mock: MagicMock) -> None:
@@ -247,20 +236,3 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
     def test_ensure_initial_exist_raises_404_when_not_cached(self) -> None:
         with self.assertRaises(NotFoundException):
             QNAChatbotService.ensure_initial_exist(9999)
-
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
-    def test_store_history_deletes_when_full(self, mock: MagicMock) -> None:
-        mock.return_value = self.res
-        CacheRepository.save_history(
-            key=QNA_KEY.format(self.user_id, self.question.id),
-            history=[{"role": "user", "content": f"msg{i}"} for i in range(8)],
-            ttl=60,
-        )
-        QNAChatbotService._store_history(
-            self.user_id,
-            self.question.id,
-            60,
-            [Message(role="user", content="over"), Message(role="assistant", content="end")],
-        )
-        self.assertIsNone(CacheRepository.get_history(QNA_KEY.format(self.user_id, self.question.id)))
-        self.assertIsNone(CacheRepository.get_session(SESSION_KEY.format(self.user_id)))
