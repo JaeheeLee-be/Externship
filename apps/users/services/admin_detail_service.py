@@ -1,5 +1,5 @@
 from apps.users.models import User
-from envs.admin_account_detail.utils.admin_exceptions import AccountNotFoundError
+from apps.users.utils.admin_exceptions import AccountNotFoundError
 
 
 class AdminAccountDetailService:

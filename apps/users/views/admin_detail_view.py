@@ -7,13 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
-from envs.admin_account_detail.serializers.admin_detail_serializer import (
+from apps.users.serializers.admin_detail_serializer import (
     AdminAccountDetailSerializer,
 )
-from envs.admin_account_detail.services.admin_detail_service import (
+from apps.users.services.admin_detail_service import (
     AdminAccountDetailService,
 )
-from envs.admin_account_detail.utils.admin_exceptions import AdminAccountException
+from apps.users.utils.admin_exceptions import AdminAccountException
 
 
 class AdminAccountDetailView(APIView):
