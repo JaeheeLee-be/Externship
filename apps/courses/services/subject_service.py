@@ -1,11 +1,11 @@
 from django.db import IntegrityError
 from django.db.models import QuerySet
 
+from apps.courses.models import Subject
 from apps.courses.utils.exceptions import (
     SubjectDuplicateTitleError,
     SubjectNotFoundError,
 )
-from apps.courses.models import Subject
 from apps.posts.models import Course
 
 
