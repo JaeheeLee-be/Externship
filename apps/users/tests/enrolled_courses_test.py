@@ -150,9 +150,7 @@ class MyCoursesViewTest(APITestCase):
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.url)
 
-        item = next(
-            i for i in response.data if i["cohort"]["id"] == self.cohort_preparing.id
-        )
+        item = next(i for i in response.data if i["cohort"]["id"] == self.cohort_preparing.id)
 
         cohort_data = item["cohort"]
         self.assertEqual(cohort_data["id"], self.cohort_preparing.id)
