@@ -57,10 +57,6 @@ class AdminQuestionCreateView(APIView):
         return Response(QuestionCreateResponseSerializer(new_question).data, status=status.HTTP_201_CREATED)
 
 
-@extend_schema(
-    tags=["exams_question"],
-    summary="쪽지시험 문제 수정 및 삭제",
-)
 class AdminQuestionUpdateDeleteView(APIView):
     permission_classes = [IsRoleAdminUser]
 
@@ -73,6 +69,10 @@ class AdminQuestionUpdateDeleteView(APIView):
             raise PermissionDenied("쪽지시험 문제 수정 권한이 없습니다.")
         raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
 
+    @extend_schema(
+        tags=["exams_question"],
+        summary="쪽지시험 문제 수정",
+    )
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -87,6 +87,10 @@ class AdminQuestionUpdateDeleteView(APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(QuestionUpdateResponseSerializer(mod_question).data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["exams_question"],
+        summary="쪽지시험 문제 삭제",
+    )
     def delete(self, request: Request, question_id: int) -> Response:
         try:
             with AdminQuestionService(method="delete", question_id=question_id) as service:
