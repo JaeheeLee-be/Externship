@@ -1,20 +1,31 @@
 from dataclasses import asdict
 from time import sleep
+from typing import Iterator
 
 from django.conf import settings
 
-from apps.qna.chatbot import GROQ_MODEL, QNA_PROMPT, GroqFactory, call_groq_once
+from apps.qna.chatbot import (
+    GROQ_MODEL,
+    QNA_PROMPT,
+    GroqFactory,
+    Message,
+    call_groq,
+    call_groq_once,
+)
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.exceptions import (
     ConflictException,
+    ConversationOverException,
     ExternalAPIException,
     ExternalAPITimeoutException,
     GetInitialTimeoutException,
+    InactiveSessionException,
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
 from apps.qna.redis import INITIAL_KEY, LOCK_KEY, CacheFactory, CacheRepository
 from apps.qna.redis.dtos import InitialQNA
+from apps.qna.redis.keys import QNA_KEY, SESSION_KEY
 
 
 class InitialService:
@@ -48,6 +59,11 @@ class InitialService:
 
     @staticmethod
     def save_initial_answer(question_id: int) -> InitialQNA:
+        """
+        초기응답 생성용 서비스 함수입니다.
+        동시요청 가능성이 없어 락을 구현하지 않았습니다.
+        초기응답은 모든 클라이언트에게 동일하게 제공되므로 캐시 키에 user_id를 포함하지 않습니다.
+        """
         if CacheRepository.get_initial(INITIAL_KEY.format(question_id)):
             raise ConflictException("이미 AI가 답변을 생성했습니다.")
 
@@ -66,7 +82,7 @@ class InitialService:
         )
 
         key = INITIAL_KEY.format(question.id)
-        CacheRepository.initial_save(key=key, value=asdict(save_data), ttl=InitialService.TTL)
+        CacheRepository.save_initial(key=key, value=asdict(save_data), ttl=InitialService.TTL)
 
         return save_data
 
@@ -99,3 +115,120 @@ class InitialService:
             return f"{middle.name} > {category.name}"
 
         return f"{top.name} > {middle.name} > {category.name}"
+
+
+class QNAChatbotService:
+    MODEL = GROQ_MODEL["gpt_120"]
+    TTL = 60 * 30
+
+    @staticmethod
+    def response_history(user_id: int, question_id: int) -> list[Message]:
+        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
+        if initial is None:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+        QNAChatbotService._make_session(user_id, question_id)
+        history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
+        return QNAChatbotService._build_history_for_response(initial, history)
+
+    @staticmethod
+    def stream_chat(user_id: int, question_id: int, message: str) -> Iterator[str]:
+        history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
+        if history is not None and len(history) >= 8:
+            raise ConversationOverException()
+        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
+        if initial is None:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+        payload = GroqFactory.create_payload(
+            prompt=QNA_PROMPT,
+            message=message,
+            history=QNAChatbotService._build_history_for_payload(initial, history),
+            model=QNAChatbotService.MODEL,
+        )
+
+        try:
+            answer = ""
+
+            for chunk in call_groq(asdict(payload), settings.GROQ_API_KEY):
+                answer += chunk
+                yield chunk
+        except GroqTimeoutError:
+            raise ExternalAPITimeoutException()
+        except GroqAPIError:
+            raise ExternalAPIException()
+
+        QNAChatbotService._store_history(
+            user_id, question_id, QNAChatbotService.TTL, QNAChatbotService._build_messages(message, answer)
+        )
+
+    @staticmethod
+    def ensure_active_session(user_id: int, question_id: int) -> None:
+        if not QNAChatbotService._check_session(user_id, question_id):
+            raise InactiveSessionException()
+
+    @staticmethod
+    def ensure_initial_exist(question_id: int) -> None:
+        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
+        if initial is None:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+
+    @staticmethod
+    def _make_session(user_id: int, question_id: int) -> None:
+        CacheRepository.set_session(key=SESSION_KEY.format(user_id), value=question_id, ttl=QNAChatbotService.TTL)
+
+    @staticmethod
+    def _build_history_for_response(initial: InitialQNA, history: list[Message] | None) -> list[Message]:
+        initial_history = [Message(role="assistant", content=initial.answer)]
+
+        return initial_history + (history or [])
+
+    @staticmethod
+    def _build_history_for_payload(
+        initial: InitialQNA,
+        history: list[Message] | None = None,
+    ) -> list[Message]:
+        initial_history = [
+            Message(
+                role="user",
+                content=f"""
+                    <category>{initial.category}</category>
+                    <client_question>
+                        <title>{initial.title}</title>
+                        <message>{initial.content}</message>
+                    </client_question>
+                """,
+            ),
+            Message(role="assistant", content=initial.answer),
+        ]
+
+        return initial_history + (history or [])
+
+    @staticmethod
+    def _store_history(user_id: int, question_id: int, ttl: int, messages: list[Message]) -> None:
+        key = QNA_KEY.format(user_id, question_id)
+        history = CacheRepository.get_history(key)
+
+        if history is None:
+            CacheRepository.save_history(
+                key=key,
+                history=[asdict(m) for m in messages],
+                ttl=ttl,
+            )
+            QNAChatbotService._make_session(user_id, question_id)
+        elif len(history) < 8:
+            CacheRepository.save_history(
+                key=key,
+                history=[asdict(m) for m in (history + messages)],
+                ttl=ttl,
+            )
+            QNAChatbotService._make_session(user_id, question_id)
+        else:
+            CacheRepository.delete(key)
+            CacheRepository.delete(key=SESSION_KEY.format(user_id))
+
+    @staticmethod
+    def _build_messages(message: str, answer: str) -> list[Message]:
+        return [Message(role="user", content=message), Message(role="assistant", content=answer)]
+
+    @staticmethod
+    def _check_session(user_id: int, question_id: int) -> bool:
+        return CacheRepository.get_session(SESSION_KEY.format(user_id)) == question_id
