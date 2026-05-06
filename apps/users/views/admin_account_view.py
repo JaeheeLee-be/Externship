@@ -71,7 +71,11 @@ class AdminAccountListView(APIView):
     def get(self, request: Request) -> Response:
         # 쿼리 파라미터 검증
         query_serializer = AdminAccountQuerySerializer(data=request.query_params)
-        query_serializer.is_valid(raise_exception=True)
+        if not query_serializer.is_valid():
+            return Response(
+                {"error_detail": "유효하지 않은 요청 파라미터입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # 서비스 호출
         data = AdminAccountService.get_account_list(query_serializer.validated_data)
