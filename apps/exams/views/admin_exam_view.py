@@ -1,4 +1,4 @@
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
@@ -6,8 +6,10 @@ from rest_framework.exceptions import (
     NotAuthenticated,
     PermissionDenied,
 )
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
@@ -27,13 +29,20 @@ from apps.exams.serializers.admin_exam_serializer import (
     ExamValidationErrorSerializer,
 )
 from apps.exams.services.admin_exam_service import (
-    CustomExamPagination,
     create_exam,
     delete_exam,
     get_exam,
     get_exam_list,
     put_exam,
 )
+
+
+class CustomExamPagination(PageNumberPagination):
+    def get_paginated_response(self, data: ReturnList[Any] | ReturnDict[str, Any]) -> Response:
+        assert self.page is not None
+        return Response(
+            {"page": self.page.number, "size": self.page_size, "total_count": self.page.paginator.count, "exams": data}
+        )
 
 
 class ExamListCreateView(APIView):
