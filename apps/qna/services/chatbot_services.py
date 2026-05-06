@@ -1,6 +1,6 @@
 from dataclasses import asdict
 from time import sleep
-from typing import Iterator
+from typing import Iterator, Any
 
 from django.conf import settings
 
@@ -123,12 +123,10 @@ class QNAChatbotService:
 
     @staticmethod
     def response_history(user_id: int, question_id: int) -> list[Message]:
-        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
-        if initial is None:
-            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+        QNAChatbotService.ensure_initial_exist(question_id)
         QNAChatbotService._make_session(user_id, question_id)
         history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
-        return QNAChatbotService._build_history_for_response(initial, history)
+        return history or []
 
     @staticmethod
     def stream_chat(user_id: int, question_id: int, message: str) -> Iterator[str]:
@@ -180,12 +178,6 @@ class QNAChatbotService:
     @staticmethod
     def _make_session(user_id: int, question_id: int) -> None:
         CacheRepository.set_session(key=SESSION_KEY.format(user_id), value=question_id, ttl=QNAChatbotService.TTL)
-
-    @staticmethod
-    def _build_history_for_response(initial: InitialQNA, history: list[Message] | None) -> list[Message]:
-        initial_history = [Message(role="assistant", content=initial.answer)]
-
-        return initial_history + (history or [])
 
     @staticmethod
     def _build_history_for_payload(

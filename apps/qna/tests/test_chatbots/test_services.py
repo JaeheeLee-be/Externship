@@ -5,16 +5,12 @@ from django.core.cache import cache
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
-from apps.qna.chatbot import Message
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.exceptions import (
     ConflictException,
-    ConversationOverException,
     ExternalAPIException,
     ExternalAPITimeoutException,
     GetInitialTimeoutException,
-    NotFoundException,
-    NotFoundException, ConversationOverException, InactiveSessionException,
     InactiveSessionException,
     NotFoundException,
 )
@@ -158,25 +154,6 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
             value=self.initial.__dict__,
             ttl=60,
         )
-
-    def test_response_history_raises_404_when_no_initial(self) -> None:
-        with self.assertRaises(NotFoundException):
-            QNAChatbotService.response_history(self.user_id, 9999)
-
-    def test_response_history_returns_initial_answer_when_no_history(self) -> None:
-        result = QNAChatbotService.response_history(self.user_id, self.question.id)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].role, "assistant")
-        self.assertEqual(result[0].content, "i am gumba")
-
-    def test_response_history_includes_existing_history(self) -> None:
-        CacheRepository.save_history(
-            key=QNA_KEY.format(self.user_id, self.question.id),
-            history=[{"role": "user", "content": "hello"}],
-            ttl=60,
-        )
-        result = QNAChatbotService.response_history(self.user_id, self.question.id)
-        self.assertEqual(len(result), 2)
 
     def test_response_history_makes_session(self) -> None:
         QNAChatbotService.response_history(self.user_id, self.question.id)
