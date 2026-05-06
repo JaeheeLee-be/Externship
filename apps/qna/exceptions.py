@@ -22,6 +22,7 @@ class ConflictException(BaseCustomException):
     default_message = "이미 채택된 답변이 존재합니다."
 
 
+
 class ParentNotFoundException(NotFoundException):
     default_message = "부모 카테고리를 찾을 수 없습니다."
 
