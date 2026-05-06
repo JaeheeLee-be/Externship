@@ -1,6 +1,8 @@
 from typing import Optional
 
 from django.db.models import Count, Q, QuerySet
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 
 from apps.exams.exceptions.exam_exception import (
     ExamDeleteConflict,
@@ -96,3 +98,11 @@ def delete_exam(exam_id: int) -> None:
         raise ExamDeleteConflict()
 
     exam.delete()
+
+
+class CustomExamPagination(PageNumberPagination):
+
+    def get_paginated_response(self, data):
+        return Response(
+            {"page": self.page.number, "size": self.page_size, "total_count": self.page.paginator.count, "exams": data}
+        )
