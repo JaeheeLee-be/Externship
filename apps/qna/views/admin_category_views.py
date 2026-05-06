@@ -15,7 +15,11 @@ from apps.qna.serializers.category_serializers import (
     AdminCategoryListSerializer,
 )
 from apps.qna.services.admin_category_services import CategoryService
-
+from apps.qna.schemas.category_admin_schemas import (
+    admin_category_create_schema,
+    admin_category_list_schema,
+    admin_category_delete_schema,
+)
 
 class AdminCategoryListCreateAPIView(APIView):
     permission_classes = [IsRoleAdminUser]
@@ -25,11 +29,14 @@ class AdminCategoryListCreateAPIView(APIView):
             raise NotAuthenticated(detail="로그인이 필요합니다.")
         raise PermissionDenied(
             detail=(
-                "카테고리 목록 조회 권한이 없습니다." if request.method == "GET" else "카테고리 등록 권한이 없습니다."
+                "카테고리 목록 조회 권한이 없습니다."
+                if request.method == "GET"
+                else "카테고리 등록 권한이 없습니다."
             )
         )
 
     # 생성
+    @admin_category_create_schema
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         try:
             serializer = AdminCategoryCreateSerializer(data=request.data)
@@ -53,6 +60,7 @@ class AdminCategoryListCreateAPIView(APIView):
             )
 
     # 조회
+    @admin_category_list_schema
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = AdminCategoryListQuerySerializer(data=request.query_params)
 
@@ -90,6 +98,7 @@ class AdminCategoryDestroyAPIView(APIView):
         raise PermissionDenied(detail="카테고리 삭제 권한이 없습니다.")
 
     # 삭제
+    @admin_category_delete_schema
     def delete(self, request: Request, category_id: int, *args: Any, **kwargs: Any) -> Response:
         try:
             result = CategoryService.delete_category(category_id=category_id)

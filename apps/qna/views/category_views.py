@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from apps.core.utils.permissions import IsStudentUser
 from apps.qna.serializers.category_serializers import CategoryTreeSerializer
 from apps.qna.services.category_services import CategoryService
-
+from apps.qna.schemas.category_schemas import category_list_schema
 
 class CategoryListAPIView(APIView):
     permission_classes = [IsStudentUser]
@@ -19,6 +19,7 @@ class CategoryListAPIView(APIView):
             raise NotAuthenticated(detail="로그인이 필요합니다.")
         raise PermissionDenied(detail="카테고리 조회 권한이 없습니다.")
 
+    @category_list_schema
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         categories = CategoryService.get_category_tree()
 
