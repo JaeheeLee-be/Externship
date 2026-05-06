@@ -17,12 +17,11 @@ from apps.users.utils.user_exceptions import NotAuthenticatedError, PermissionDe
 class MyCoursesView(APIView):
     permission_classes = [IsAuthenticated, IsStudentUser]
 
-    def check_permissions_custom(self, request: Request)-> None:
+    def check_permissions_custom(self, request: Request) -> None:
         if not request.user.is_authenticated:
             raise NotAuthenticatedError()
         if request.user.role != User.Role.STUDENT:
             raise PermissionDenied()
-
 
     @extend_schema(
         tags=["Accounts (회원관리)"],
