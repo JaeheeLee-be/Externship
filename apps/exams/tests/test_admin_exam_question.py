@@ -25,6 +25,8 @@ class TestAdminExamQuestionCreateView(APITestCase):
     update_data: Dict[str, Any]
     update_fail_point_data: Dict[str, Any]
     create_url: str
+    fail_create_url: str
+    fail_update_delete_url:str
     update_delete_url: str
     error_400_create: str
     error_401_create: str
@@ -108,7 +110,9 @@ class TestAdminExamQuestionCreateView(APITestCase):
             "point": 9,
         }
         cls.create_url = reverse("exam-question-create", kwargs={"exam_id": cls.exam.id})
+        cls.fail_create_url = reverse("exam-question-create", kwargs={"exam_id": 9999})
         cls.update_delete_url = reverse("exam-question-update-delete", kwargs={"question_id": cls.question.id})
+        cls.fail_update_delete_url = reverse("exam-question-update-delete", kwargs={"question_id": 99999})
         cls.error_400_create = "유효하지 않은 문제 생성 데이터 입니다."
         cls.error_401_create = "자격 인증 데이터가 제공되지 않았습니다."
         cls.error_403_create = "쪽지시험 문제 등록 권한이 없습니다."
@@ -150,6 +154,11 @@ class TestAdminExamQuestionCreateView(APITestCase):
         response = self.client.post(self.create_url, self.data, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data.get("error_detail"), self.error_401_create)
+
+    def test_admin_create_not_found(self)->None:
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(self.fail_create_url, self.data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_admin_check_limit_point(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
@@ -193,6 +202,11 @@ class TestAdminExamQuestionCreateView(APITestCase):
         response = self.client.put(self.update_delete_url, self.update_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data.get("error_detail"), self.error_401_update)
+
+    def test_admin_update_not_found(self)->None:
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.put(self.fail_update_delete_url, self.update_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_admin_check_update_limit_point(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
@@ -238,3 +252,8 @@ class TestAdminExamQuestionCreateView(APITestCase):
         response = self.client.delete(self.update_delete_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(ExamQuestion.objects.filter(exam=self.exam).count(), 1)
+
+    def test_admin_fail_delete_question(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(self.fail_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
