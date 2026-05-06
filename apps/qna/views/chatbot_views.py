@@ -8,9 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.schemas.chatbot_schemas import ai_answer_get_schema, ai_answer_post_schema
 from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer
 from apps.qna.services.chatbot_services import InitialService
-from apps.qna.schemas.chatbot_schemas import ai_answer_get_schema, ai_answer_post_schema
+
 
 class InitialAiAnswerAPIView(APIView):
     permission_classes = [IsAuthenticated]

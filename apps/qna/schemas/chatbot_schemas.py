@@ -12,7 +12,7 @@ ai_answer_post_schema = extend_schema(
         404: OpenApiResponse(description="질문 데이터를 찾을 수 없습니다."),
         409: OpenApiResponse(description="이미 AI가 답변을 생성했습니다."),
         502: OpenApiResponse(description="외부 API 호출에 실패했습니다."),
-        504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다.")
+        504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다."),
     },
 )
 
@@ -26,6 +26,6 @@ ai_answer_get_schema = extend_schema(
         404: OpenApiResponse(description="질문 데이터를 찾을 수 없습니다."),
         409: OpenApiResponse(description="이미 AI가 답변을 생성했습니다."),
         502: OpenApiResponse(description="외부 API 호출에 실패했습니다."),
-        504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다.")
+        504: OpenApiResponse(description="외부 API 응답 시간이 초과되었습니다."),
     },
 )
