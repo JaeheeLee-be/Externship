@@ -51,7 +51,7 @@ class AdminAccountDetailSerializer(serializers.ModelSerializer[User]):
 
     @staticmethod
     def get_status(obj: User) -> str:
-        if obj.withdrawal:
+        if hasattr(obj, "withdrawal"):
             return "withdrew"
         return "active" if obj.is_active else "inactive"
 

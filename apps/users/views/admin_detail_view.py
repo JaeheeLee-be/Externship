@@ -22,7 +22,7 @@ class AdminAccountDetailView(APIView):
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
 
-        if request.authenticators and not request.successful_authenticator:
+        if not request.user or not request.user.is_authenticated:
             raise exceptions.NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise exceptions.PermissionDenied("권한이 없습니다.")
 
