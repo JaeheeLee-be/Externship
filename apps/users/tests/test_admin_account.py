@@ -3,11 +3,14 @@ from __future__ import annotations
 import itertools
 from typing import Any
 
+from django.http import QueryDict
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.users.models import User
 from apps.users.services.admin_account_service import AdminAccountService
+
+_BASE_URL = "http://testserver/api/v1/admin/accounts"
 
 URL = "/api/v1/admin/accounts"
 
@@ -61,22 +64,38 @@ class AdminAccountServiceUnitTest(APITestCase):
         self.student = make_user(role="STUDENT")
 
     def test_returns_all_users(self) -> None:
-        result = AdminAccountService.get_account_list({"page": 1, "page_size": 10})
+        result = AdminAccountService.get_account_list(
+            {"page": 1, "page_size": 10},
+            base_url=_BASE_URL,
+            query_params=QueryDict(),
+        )
 
         self.assertEqual(result["count"], User.objects.count())
 
     def test_search_filter(self) -> None:
-        result = AdminAccountService.get_account_list({"search": self.user1.email})
+        result = AdminAccountService.get_account_list(
+            {"search": self.user1.email},
+            base_url=_BASE_URL,
+            query_params=QueryDict(),
+        )
 
         self.assertEqual(result["count"], 1)
 
     def test_status_filter(self) -> None:
-        result = AdminAccountService.get_account_list({"status": "inactive"})
+        result = AdminAccountService.get_account_list(
+            {"status": "inactive"},
+            base_url=_BASE_URL,
+            query_params=QueryDict(),
+        )
 
         self.assertEqual(result["count"], 1)
 
     def test_role_filter(self) -> None:
-        result = AdminAccountService.get_account_list({"role": "student"})
+        result = AdminAccountService.get_account_list(
+            {"role": "student"},
+            base_url=_BASE_URL,
+            query_params=QueryDict(),
+        )
 
         self.assertEqual(result["count"], 1)
 
