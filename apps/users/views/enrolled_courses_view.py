@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Never, cast
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -17,11 +17,10 @@ from apps.users.utils.user_exceptions import NotAuthenticatedError, PermissionDe
 class MyCoursesView(APIView):
     permission_classes = [IsAuthenticated, IsStudentUser]
 
-    def check_permissions_custom(self, request: Request) -> None:
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
         if not request.user.is_authenticated:
             raise NotAuthenticatedError()
-        if request.user.role != User.Role.STUDENT:
-            raise PermissionDenied()
+        raise PermissionDenied()
 
     @extend_schema(
         tags=["Accounts (회원관리)"],
@@ -35,7 +34,7 @@ class MyCoursesView(APIView):
     )
     def get(self, request: Request) -> Response:
         try:
-            self.check_permissions_custom(request)
+            self.check_permissions(request)
 
             user = cast(User, request.user)
             data = get_my_courses(user)
