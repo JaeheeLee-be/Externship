@@ -51,12 +51,8 @@ class AdminAccountDetailSerializer(serializers.ModelSerializer[User]):
 
     @staticmethod
     def get_status(obj: User) -> str:
-
-        try:
-            if obj.withdrawal:
-                return "withdrew"
-        except AttributeError:
-            pass
+        if obj.withdrawal:
+            return "withdrew"
         return "active" if obj.is_active else "inactive"
 
     @staticmethod
@@ -65,6 +61,6 @@ class AdminAccountDetailSerializer(serializers.ModelSerializer[User]):
 
     @staticmethod
     def get_assigned_courses(obj: User) -> list[dict[str, Any]]:
-        cohort_students = obj.cohort_students.select_related("cohort__course").all()
+        cohort_students = obj.cohort_students.all()
         ser = AdminAssignedCourseSerializer(cohort_students, many=True)
         return list(ser.data)
