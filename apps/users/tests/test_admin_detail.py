@@ -1,7 +1,3 @@
-"""
-행 30 - GET /api/v1/admin/accounts/{account_id}  회원 상세 조회
-"""
-
 from __future__ import annotations
 
 from typing import ClassVar
