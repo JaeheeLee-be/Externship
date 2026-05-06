@@ -25,7 +25,10 @@ class AvailableCoursesView(APIView):
         tags=["accounts"],
         summary="수강신청 가능한 기수 조회 API",
         description="모집 중인 기수만 소속된 과정 정보와 함께 반환합니다",
-        responses={200: AvailableCoursesSerializer, 401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다.")},
+        responses={
+            200: AvailableCoursesSerializer,
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+        },
     )
     def get(self, request: Request) -> Response:
         user = cast(User, request.user)
