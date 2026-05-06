@@ -62,7 +62,7 @@ class AdminAccountListView(APIView):
             ),
         ],
         responses={
-            200: AdminAccountListResponseSerializer,
+            200: OpenApiResponse(description="어드민 회원목록 조회를 성공했습니다."),
             400: OpenApiResponse(description="유효하지 않은 요청 파라미터입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="권한이 없습니다."),
@@ -78,30 +78,12 @@ class AdminAccountListView(APIView):
             )
 
         # 서비스 호출
-        data = AdminAccountService.get_account_list(query_serializer.validated_data)
-
-        # next / previous URL 구성 (기존 쿼리파라미터 유지)
-        base_url = request.build_absolute_uri(request.path)
-        page = data["page"]
-        page_size = data["page_size"]
-        count = data["count"]
-
-        query_params = request.query_params.copy()
-        query_params["page_size"] = str(page_size)
-
-        query_params["page"] = str(page + 1)
-        next_url = f"{base_url}?{query_params.urlencode()}" if (page * page_size) < count else None
-
-        query_params["page"] = str(page - 1)
-        previous_url = f"{base_url}?{query_params.urlencode()}" if page > 1 else None
-
-        response_serializer = AdminAccountListResponseSerializer(
-            {
-                "count": count,
-                "next": next_url,
-                "previous": previous_url,
-                "results": data["results"],
-            }
+        data = AdminAccountService.get_account_list(
+            validated_params=query_serializer.validated_data,
+            base_url=request.build_absolute_uri(request.path),
+            query_params=request.query_params,
         )
+
+        response_serializer = AdminAccountListResponseSerializer(data)
 
         return Response(response_serializer.data, status=status.HTTP_200_OK)
