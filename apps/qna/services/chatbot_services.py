@@ -133,7 +133,7 @@ class QNAChatbotService:
     @staticmethod
     def stream_chat(user_id: int, question_id: int, message: str) -> Iterator[str]:
         history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
-        if history is not None and len(history) >= 8:
+        if history is not None and len(history) >= 10:
             raise ConversationOverException()
         initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
         if initial is None:
@@ -170,6 +170,12 @@ class QNAChatbotService:
         initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
         if initial is None:
             raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+
+    @staticmethod
+    def ensure_conversation_not_over(user_id: int, question_id: int) -> None:
+        history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
+        if history is not None and len(history) >= 10:
+            raise ConversationOverException()
 
     @staticmethod
     def _make_session(user_id: int, question_id: int) -> None:
@@ -214,16 +220,13 @@ class QNAChatbotService:
                 ttl=ttl,
             )
             QNAChatbotService._make_session(user_id, question_id)
-        elif len(history) < 8:
+        elif len(history) < 10:
             CacheRepository.save_history(
                 key=key,
                 history=[asdict(m) for m in (history + messages)],
                 ttl=ttl,
             )
             QNAChatbotService._make_session(user_id, question_id)
-        else:
-            CacheRepository.delete(key)
-            CacheRepository.delete(key=SESSION_KEY.format(user_id))
 
     @staticmethod
     def _build_messages(message: str, answer: str) -> list[Message]:
