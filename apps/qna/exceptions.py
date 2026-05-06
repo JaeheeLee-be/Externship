@@ -52,3 +52,13 @@ class CategoryNotFoundException(BaseCustomException):
 
 class DefaultCategoryDeleteException(ConflictException):
     default_message = "기본 카테고리는 삭제할 수 없습니다."
+
+
+class ExternalAPIException(BaseCustomException):
+    status_code = 502
+    default_message = "외부 API 호출에 실패했습니다."
+
+
+class ExternalAPITimeoutException(BaseCustomException):
+    status_code = 504
+    default_message = "외부 API 응답 시간이 초과되었습니다."

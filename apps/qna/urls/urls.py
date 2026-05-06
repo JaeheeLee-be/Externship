@@ -36,5 +36,4 @@ urlpatterns = [
     path("categories", CategoryListAPIView.as_view(), name="category-list"),
     # 챗봇
     path("questions/<int:question_id>/ai-answer", chatbot_views.InitialAiAnswerAPIView.as_view(), name="ai_answer"),
-
 ]
