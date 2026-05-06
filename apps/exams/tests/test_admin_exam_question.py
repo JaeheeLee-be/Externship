@@ -26,7 +26,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
     update_fail_point_data: Dict[str, Any]
     create_url: str
     fail_create_url: str
-    fail_update_delete_url:str
+    fail_update_delete_url: str
     update_delete_url: str
     error_400_create: str
     error_401_create: str
@@ -155,7 +155,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data.get("error_detail"), self.error_401_create)
 
-    def test_admin_create_not_found(self)->None:
+    def test_admin_create_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.post(self.fail_create_url, self.data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -203,7 +203,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data.get("error_detail"), self.error_401_update)
 
-    def test_admin_update_not_found(self)->None:
+    def test_admin_update_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.put(self.fail_update_delete_url, self.update_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
