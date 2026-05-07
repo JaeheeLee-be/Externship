@@ -99,7 +99,7 @@ class InitialService:
         )
 
         try:
-            return call_groq_once(asdict(payload), key=settings.GROQ_API_KEY)
+            return call_groq_once(asdict(payload), key=settings.GROQ_API_KEY, timeout=(5, 60))
         except GroqTimeoutError:
             raise ExternalAPITimeoutException()
         except GroqAPIError:
@@ -161,7 +161,7 @@ class QNAChatbotService:
         try:
             answer = ""
 
-            for chunk in call_groq(asdict(payload), settings.GROQ_API_KEY):
+            for chunk in call_groq(asdict(payload), settings.GROQ_API_KEY, timeout=(5, 60)):
                 answer += chunk
                 yield chunk
         except GroqTimeoutError:
