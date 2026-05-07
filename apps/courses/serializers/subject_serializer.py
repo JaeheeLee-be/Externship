@@ -13,10 +13,7 @@ class SubjectCourseSerializer(serializers.ModelSerializer[Course]):
 
 class SubjectCreateSerializer(serializers.ModelSerializer[Subject]):
     id = serializers.IntegerField(read_only=True)
-    course_id = serializers.PrimaryKeyRelatedField(
-        queryset=Course.objects.all(),
-        source="course",
-    )
+    course_id = serializers.IntegerField()
 
     class Meta:
         model = Subject

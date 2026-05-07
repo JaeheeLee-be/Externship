@@ -28,7 +28,7 @@ class SubjectListView(APIView):
         responses={
             200: SubjectListSerializer(many=True),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
-            403: OpenApiResponse(description="조회 권한이 없습니다."),
+            403: OpenApiResponse(description="이 리소스를 조회할 권한이 없습니다."),
         },
     )
     def get(self, request: Request, course_id: int) -> Response:
@@ -49,7 +49,7 @@ class SubjectCreateView(APIView):
         summary="어드민 과목 생성",
         request=SubjectCreateSerializer,
         responses={
-            201: SubjectCreateSerializer,
+            200: SubjectCreateSerializer,
             400: OpenApiResponse(description="유효하지 않은 과목 생성입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="과목 생성 권한이 없습니다."),
@@ -60,6 +60,6 @@ class SubjectCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SubjectCreateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": str(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": "유효하지 않은 과목 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
         subject = subject_service.create_subject(**serializer.validated_data)
-        return Response(SubjectCreateSerializer(subject).data, status=status.HTTP_201_CREATED)
+        return Response(SubjectCreateSerializer(subject).data)

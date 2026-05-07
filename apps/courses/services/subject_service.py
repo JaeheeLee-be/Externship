@@ -3,6 +3,7 @@ from django.db.models import QuerySet
 
 from apps.courses.models import Subject
 from apps.courses.utils.exceptions import (
+    CourseNotFoundError,
     SubjectDuplicateTitleError,
     SubjectNotFoundError,
 )
@@ -10,13 +11,17 @@ from apps.posts.models import Course
 
 
 def create_subject(
-    course: Course,
+    course_id: int,
     title: str,
     number_of_days: int,
     number_of_hours: int,
     thumbnail_img_url: str | None,
     status: bool = True,
 ) -> Subject:
+    try:
+        course = Course.objects.get(id=course_id)
+    except Course.DoesNotExist:
+        raise CourseNotFoundError()
     try:
         return Subject.objects.create(
             course=course,

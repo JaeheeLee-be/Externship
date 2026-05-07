@@ -14,6 +14,7 @@ from apps.posts.exceptions import (
 )
 from apps.posts.serializers.comment_serializer import (
     CommentCreateSerializer,
+    CommentQuerySerializer,
     PostCommentSerializer,
 )
 from apps.posts.services import comment_service as comment_service
@@ -34,8 +35,10 @@ class CommentListCreateView(APIView):
         responses={200: PostCommentSerializer(many=True), 404: None},
     )
     def get(self, request: Request, post_id: int) -> Response:
-        page = int(request.query_params.get("page", 1))
-        page_size = int(request.query_params.get("page_size", 10))
+        query_serializer = CommentQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        page = query_serializer.validated_data["page"]
+        page_size = query_serializer.validated_data["page_size"]
 
         try:
             total_count, comments = comment_service.get_comments(

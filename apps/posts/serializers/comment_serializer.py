@@ -42,3 +42,8 @@ class CommentCreateSerializer(serializers.ModelSerializer[PostComment]):
         if not value.strip():
             raise serializers.ValidationError("댓글 내용을 입력해주세요.")
         return value
+
+
+class CommentQuerySerializer(serializers.Serializer[Any]):
+    page = serializers.IntegerField(required=False, default=1, min_value=1)
+    page_size = serializers.IntegerField(required=False, default=10, min_value=1)
