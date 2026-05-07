@@ -7,6 +7,9 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
 from apps.qna.models.question_models import QuestionCategory
+from apps.qna.schemas.question_schemas import (
+    question_create_schema,
+)
 from apps.qna.serializers.question_serializers import (
     QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
@@ -15,9 +18,11 @@ from apps.qna.services.question_services import QuestionService
 from apps.users.models import User
 
 
-class QuestionCreateAPIView(APIView):
+class QuestionAPIView(APIView):
     permission_classes = [IsStudentUser]
 
+    # ── POST /api/v1/qna/questions ──────────────────────────────────────────────────────
+    @question_create_schema
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = QuestionCreateSerializer(data=request.data)
 
