@@ -18,13 +18,15 @@ from apps.exams.exceptions.exam_question_exceptions import (
 )
 from apps.exams.serializers.admin_exam_question_serializer import (
     QuestionCreateResponseSerializer,
-    QuestionCreateSerializer,
     QuestionDeleteResponseSerializer,
     QuestionUpdateResponseSerializer,
     QuestionUpdateSerializer,
 )
 from apps.exams.services.admin_exam_question_service import (
-    AdminQuestionService,
+    create_question,
+    delete_question,
+    get_serializer_class,
+    update_question,
 )
 
 
@@ -43,13 +45,13 @@ class AdminQuestionCreateView(APIView):
         raise PermissionDenied("쪽지시험 문제 등록 권한이 없습니다.")
 
     def post(self, request: Request, exam_id: int) -> Response:
-        serializer = QuestionCreateSerializer(data=request.data)
+        type_serializer = get_serializer_class(request.data.get("type", "FILL_BLANK"))
+        serializer = type_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors})
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
             data = serializer.validated_data
-            with AdminQuestionService(method="create", exam_id=exam_id) as service:
-                new_question = service.create_question(data)
+            new_question = create_question(exam_id, data)
         except ExamQuestionCreateConflict as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         except ExamQuestionCreateNotFound as e:
@@ -78,11 +80,10 @@ class AdminQuestionUpdateDeleteView(APIView):
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors})
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
             mod_data = serializer.validated_data
-            with AdminQuestionService(method="update", question_id=question_id) as service:
-                mod_question = service.update_question(mod_data)
+            mod_question = update_question(question_id, mod_data, "update")
         except ExamQuestionUpdateConflict as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         except ExamQuestionUpdateNotFound as e:
@@ -95,13 +96,12 @@ class AdminQuestionUpdateDeleteView(APIView):
     )
     def delete(self, request: Request, question_id: int) -> Response:
         try:
-            with AdminQuestionService(method="delete", question_id=question_id) as service:
-                question_id, exam_id = service.delete_question()
+            data = delete_question(question_id, "delete")
         except ExamQuestionDeleteConflict as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         except ExamQuestionDeleteNotFound as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(
-            QuestionDeleteResponseSerializer({"question_id": question_id, "exam_id": exam_id}).data,
+            QuestionDeleteResponseSerializer(data).data,
             status=status.HTTP_200_OK,
         )

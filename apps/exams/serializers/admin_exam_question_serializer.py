@@ -6,13 +6,56 @@ from rest_framework import serializers
 from apps.exams.models.exam_question_model import ExamQuestion
 
 
-class QuestionCreateSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(source="options_json", required=False)
+class BlankRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
     correct_answer = serializers.JSONField(source="answer")
 
     class Meta:
         model = ExamQuestion
-        fields = ["type", "question", "prompt", "options", "blank_count", "correct_answer", "point", "explanation"]
+        fields = [
+            "question",
+            "prompt",
+            "blank_count",
+            "correct_answer",
+            "point",
+            "type",
+            "explanation",
+        ]
+        extra_kwargs = {
+            "question": {"required": True},
+            "prompt": {"required": True},
+            "blank_count": {"required": True},
+            "point": {"required": True},
+            "type": {"required": True},
+        }
+
+
+class OrderRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.JSONField(source="options_json")
+    correct_answer = serializers.JSONField(source="answer")
+
+    class Meta:
+        model = ExamQuestion
+        fields = ["question", "options", "correct_answer", "point", "type", "explanation"]
+        extra_kwargs = {"question": {"required": True}, "point": {"required": True}, "type": {"required": True}}
+
+
+class MulAndSingleRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.JSONField(required=True)
+    correct_answer = serializers.JSONField(required=True)
+
+    class Meta:
+        model = ExamQuestion
+        fields = ["question", "options", "correct_answer", "point", "type", "explanation"]
+        extra_kwargs = {"question": {"required": True}, "point": {"required": True}, "type": {"required": True}}
+
+
+class OXAndShortRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
+    correct_answer = serializers.JSONField(required=True)
+
+    class Meta:
+        model = ExamQuestion
+        fields = ["question", "correct_answer", "point", "type", "explanation"]
+        extra_kwargs = {"question": {"required": True}, "point": {"required": True}, "type": {"required": True}}
 
 
 class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
