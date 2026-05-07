@@ -168,3 +168,19 @@ class AdminCategoryListSerializer(serializers.ModelSerializer[QuestionCategory])
 
     def get_child_categories(self, obj: QuestionCategory) -> list[str]:
         return list(obj.children.values_list("name", flat=True))
+
+
+# 유저 카테고리 조회 응답
+class CategoryTreeSerializer(serializers.ModelSerializer[QuestionCategory]):
+    category_type = serializers.SerializerMethodField()
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = QuestionCategory
+        fields = ["id", "name", "category_type", "children"]
+
+    def get_category_type(self, obj: QuestionCategory) -> str | None:
+        return get_category_type(obj)
+
+    def get_children(self, obj: QuestionCategory) -> Any:
+        return CategoryTreeSerializer(obj.children.all(), many=True).data
