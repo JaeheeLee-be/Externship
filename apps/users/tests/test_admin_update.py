@@ -78,7 +78,7 @@ class AdminAccountPatchTest(APITestCase):
         self.assertEqual(res.data["nickname"], "새닉네임")
 
     def test_patch_response_exact_fields(self) -> None:
-        """응답 필드 명세와 정확히 일치"""
+
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(self._url(self.target.pk), {"name": "김철수"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -103,11 +103,7 @@ class AdminAccountPatchTest(APITestCase):
 
     # ── 400 검증 오류 ─────────────────────────────────────────
     def test_invalid_phone_format_returns_400(self) -> None:
-        """phone_number 형식 오류 → 400 {"error_detail": {"phone_number": ["..."]}}
-        validate_phone_number 가 serializers.ValidationError 를 raise 하므로
-        is_valid() 가 False 를 반환하고 view 에서 req_serializer.errors 를 그대로 반환.
-        명세: {"error_detail": {"phone_number": ["11자리 숫자로 구성된 포맷이어야 합니다."]}}
-        """
+
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(
             self._url(self.target.pk),
@@ -132,12 +128,7 @@ class AdminAccountPatchTest(APITestCase):
         self.assertIn("phone_number", res.data["error_detail"])
 
     def test_invalid_gender_returns_400(self) -> None:
-        """잘못된 gender 값 → 400 {"error_detail": {"gender": ["..."]}}
-        gender 는 DRF ChoiceField 기본 검증 실패 → serializers.ValidationError 발생.
-        is_valid() 가 False 를 반환하고 view 에서 {"error_detail": req_serializer.errors} 로 응답.
-        따라서 error_detail 은 {"gender": [...]} 형태의 dict 이다.
-        """형태의 dict 이다.
-        """
+
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(
             self._url(self.target.pk),
