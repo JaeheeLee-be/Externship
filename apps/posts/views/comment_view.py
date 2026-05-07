@@ -12,11 +12,12 @@ from apps.posts.exceptions import (
     CommentPermissionDeniedError,
     PostNotFoundError,
 )
-from apps.posts.serializers.comment import (
+from apps.posts.serializers.comment_serializer import (
     CommentCreateSerializer,
+    CommentQuerySerializer,
     PostCommentSerializer,
 )
-from apps.posts.services import comment as comment_service
+from apps.posts.services import comment_service as comment_service
 from apps.users.models import User
 
 
@@ -34,29 +35,27 @@ class CommentListCreateView(APIView):
         responses={200: PostCommentSerializer(many=True), 404: None},
     )
     def get(self, request: Request, post_id: int) -> Response:
-        page = int(request.query_params.get("page", 1))
-        page_size = int(request.query_params.get("page_size", 10))
+        query_serializer = CommentQuerySerializer(data=request.query_params)
+        query_serializer.is_valid()
+        page = query_serializer.validated_data["page"]
+        page_size = query_serializer.validated_data["page_size"]
 
         try:
-            total_count, comments = comment_service.get_comments(
+            data = comment_service.get_comments(
                 post_id=post_id,
                 page=page,
                 page_size=page_size,
+                base_url=request.build_absolute_uri(request.path),
             )
         except PostNotFoundError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        base_url = request.build_absolute_uri(request.path)
-
-        next_page = f"{base_url}?page={page + 1}&page_size={page_size}" if (page * page_size) < total_count else None
-        previous_page = f"{base_url}?page={page - 1}&page_size={page_size}" if page > 1 else None
-
         return Response(
             {
-                "count": total_count,
-                "next": next_page,
-                "previous": previous_page,
-                "results": PostCommentSerializer(comments, many=True).data,
+                "count": data["count"],
+                "next": data["next"],
+                "previous": data["previous"],
+                "results": PostCommentSerializer(data["results"], many=True).data,
             }
         )
 

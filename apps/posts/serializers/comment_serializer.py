@@ -22,7 +22,7 @@ class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
 
     class Meta:
         model = PostComment
-        fields = ["id", "author", "tagged_users", "content", "created_at"]
+        fields = ["id", "author", "tagged_users", "content", "created_at", "updated_at"]
 
     def get_tagged_users(self, obj: PostComment) -> Any:
         tags = obj.tags.all()
@@ -42,3 +42,8 @@ class CommentCreateSerializer(serializers.ModelSerializer[PostComment]):
         if not value.strip():
             raise serializers.ValidationError("댓글 내용을 입력해주세요.")
         return value
+
+
+class CommentQuerySerializer(serializers.Serializer[Any]):
+    page = serializers.IntegerField(required=False, default=1)
+    page_size = serializers.IntegerField(required=False, default=10)
