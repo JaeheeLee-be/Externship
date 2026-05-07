@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
+from apps.core.utils.s3 import PresignedUrlView
 from apps.courses.serializers.subject_serializer import (
     SubjectCreateSerializer,
     SubjectDetailSerializer,
@@ -86,9 +87,12 @@ class SubjectDetailView(APIView):
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
         if not request.successful_authenticator:
             raise exceptions.NotAuthenticated(
-                detail=self._401_messages.get(request.method or "", "자격 인증 데이터가 제공되지 않았습니다."), code=code
+                detail=self._401_messages.get(request.method or "", "자격 인증 데이터가 제공되지 않았습니다."),
+                code=code,
             )
-        raise exceptions.PermissionDenied(detail=self._403_messages.get(request.method or "", "권한이 없습니다."), code=code)
+        raise exceptions.PermissionDenied(
+            detail=self._403_messages.get(request.method or "", "권한이 없습니다."), code=code
+        )
 
     @extend_schema(
         tags=["Admin - Subject"],
@@ -136,3 +140,8 @@ class SubjectDetailView(APIView):
     def delete(self, request: Request, subject_id: int) -> Response:
         subject_service.delete_subject(subject_id=subject_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SubjectPresignedUrlView(PresignedUrlView):
+    permission_classes = [IsRoleAdminUser]
+    path = "uploads/images/subjects/"
