@@ -79,9 +79,10 @@ class PostListCreateViewListTest(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]["id"], self.newer_post.id)
-        self.assertEqual(response.data[1]["id"], self.older_post.id)
+        self.assertEqual(response.data["count"], 2)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.assertEqual(response.data["results"][0]["id"], self.newer_post.id)
+        self.assertEqual(response.data["results"][1]["id"], self.older_post.id)
 
 
 class PostDetailViewPutTest(APITestCase):
