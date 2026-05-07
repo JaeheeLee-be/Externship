@@ -81,6 +81,11 @@ class QNAChatbotAPIView(APIView):
 
     @qna_chatbot_post_schema
     def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
+        """
+        StreamingHttpResponse를 사용하면 응답 헤더가 먼저 전송되므로
+        스트리밍 도중 발생한 예외로는 상태 코드를 변경할 수 없습니다.
+        따라서 검증 로직을 별도 메서드로 분리해 뷰에서 스트리밍 시작 전에 호출합니다.
+        """
         serializer = QNAChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:

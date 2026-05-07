@@ -34,6 +34,7 @@ class InitialService:
 
     @staticmethod
     def get_initial_answer(question_id: int) -> InitialQNA:
+
         key = INITIAL_KEY.format(question_id)
         cached = CacheRepository.get_initial(key)
         if cached:
@@ -123,6 +124,13 @@ class QNAChatbotService:
 
     @staticmethod
     def response_history(user_id: int, question_id: int) -> list[Message]:
+        """
+        qna 채팅 히스토리 조회용 함수입니다.
+        유저가 히스토리를 조회함으로써 세션이 처음 활성화됩니다.
+        히스토리가 없는 경우 빈 문자열을 반환합니다.
+        채팅 히스토리에는 초기응답이 포함되지 않지만, 올바른 question_id를 체크하기 위해
+        ensure_initial_exist를 사용합니다.
+        """
         QNAChatbotService.ensure_initial_exist(question_id)
         QNAChatbotService._make_session(user_id, question_id)
         history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
@@ -130,6 +138,13 @@ class QNAChatbotService:
 
     @staticmethod
     def stream_chat(user_id: int, question_id: int, message: str) -> Iterator[str]:
+        """
+        qna 채팅 대화용 함수입니다.
+        대화 히스토리를 챗봇에게 넘겨주기 위해 캐시 조회를 하며,
+        유저의 질문과 챗봇의 응답 한 쌍을 하나의 대화로 취급합니다.
+        만약 대화의 길이가 5쌍 이상일 경우, 사용자의 다음 채팅에 대해 429를 반환합니다.
+        ttl은 30분이며, 대화가 갱신될때마다 같이 갱신됩니다.
+        """
         history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
         if history is not None and len(history) >= 10:
             raise ConversationOverException()
