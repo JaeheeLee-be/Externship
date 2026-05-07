@@ -42,7 +42,7 @@ def find_password_service(validated_data: dict[str, Any]) -> None:
             user.set_password(new_password)
             user.save()
 
-            cache.delete(email_key)
+        cache.delete(email_key)
 
     # 동록된 이메일이 아닐경우
     except User.DoesNotExist:

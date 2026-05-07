@@ -15,11 +15,11 @@ class FindPasswordView(APIView):
 
     @extend_schema(
         tags=["accounts"],
-        summary="이메일 로그인 API",
-        description="이메일과 비밀번호로 로그인합니다. Access 토큰은 바디로, Refresh 토큰은 쿠키로 반환됩니다.",
+        summary="비밀번호 분실시 재설정 api",
+        description="이메일 인증 후 발급받은 토큰을 활용하여 유저 비밀번호 재설정",
         request=FindPasswordSerializer,
         responses={
-            200: OpenApiResponse(description="로그인 성공"),
+            200: OpenApiResponse(description="비밀번호 재설정 성공"),
             400: OpenApiResponse(description="유효성 검사 실패"),
         },
     )
