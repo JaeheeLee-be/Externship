@@ -90,10 +90,49 @@ class PostDetailResponseSerializer(serializers.ModelSerializer[Post]):
         ]
 
     def get_thumbnail_img_url(self, obj: Post) -> str | None:
-        return None
+        # Post 모델 실제 필드명에 맞게 수정 필요
+        # 예: obj.thumbnail.url, obj.image_url 등
+        return getattr(obj, "thumbnail_img_url", None)
 
     def get_like_count(self, obj: Post) -> int:
-        return 0
+        return getattr(obj, "like_count", 0)
 
     def get_comment_count(self, obj: Post) -> int:
-        return 0
+        return getattr(obj, "comment_count", 0)
+
+
+class PostListResponseSerializer(serializers.ModelSerializer[Post]):
+    author = AuthorSerializer(read_only=True)
+    content_preview = serializers.SerializerMethodField()
+    thumbnail_img_url = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = [
+            "id",
+            "author",
+            "title",
+            "thumbnail_img_url",
+            "content",
+            "comment_count",
+            "view_count",
+            "like_count",
+            "created_at",
+            "updated_at",
+            "category",
+        ]
+
+    def get_thumbnail_img_url(self, obj: Post) -> str | None:
+
+        return getattr(obj, "thumbnail_img_url", None)
+
+    def get_like_count(self, obj: Post) -> int:
+        return getattr(obj, "like_count", 0)
+
+    def get_comment_count(self, obj: Post) -> int:
+        return getattr(obj, "comment_count", 0)
+
+    def get_content_preview(self, obj: Post) -> str:
+        return obj.content[:50]

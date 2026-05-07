@@ -1,12 +1,47 @@
-from typing import Any
+from typing import Any, Optional
+
+from django.db.models import Count, Q, QuerySet
 
 from apps.posts.exceptions import PostNotFoundError, PostPermissionDeniedError
 from apps.posts.models import Post
 from apps.users.models import User
 
+SORT_MAP = {
+    "latest": "-created_at",
+    "oldest": "created_at",
+    "most_views": "-view_count",
+    "most_likes": "-like_count",
+    "most_comments": "-comment_count",
+}
 
-def list_posts() -> list[Post]:
-    return list(Post.objects.all())
+DEFAULT_SORT = "-created_at"
+
+
+def list_posts(
+    search: Optional[str] = None,
+    search_filter: Optional[str] = None,
+    category_id: Optional[int] = None,
+    sort: str = "latest",
+) -> QuerySet[Post]:
+    queryset = Post.objects.annotate(
+        like_count=Count("likes", distinct=True),
+        comment_count=Count("comments", distinct=True),
+    ).select_related("author", "category")
+
+    if category_id:
+        queryset = queryset.filter(category_id=category_id)
+
+    if search and search_filter:
+        if search_filter == "author":
+            queryset = queryset.filter(author__nickname__icontains=search)
+        elif search_filter == "title":
+            queryset = queryset.filter(title__icontains=search)
+        elif search_filter == "content":
+            queryset = queryset.filter(content__icontains=search)
+        elif search_filter == "title_or_content":
+            queryset = queryset.filter(Q(title__icontains=search) | Q(content__icontains=search))
+
+    return queryset.order_by(SORT_MAP.get(sort, DEFAULT_SORT))
 
 
 def create_post(author: User, validated_data: dict[str, Any]) -> Post:
