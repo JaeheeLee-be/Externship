@@ -32,10 +32,12 @@ def create_course(validated_data: dict[str, Any]) -> Course:
 def update_course(course_id: int, validated_data: dict[str, Any]) -> Course:
     course = get_course_detail(course_id)
 
-    for field, value in validated_data.items():
-        setattr(course, field, value)
+    # 수정된 데이터 반영
+    for key, value in validated_data.items():
+        setattr(course, key, value)
 
-    course.save()
+    # 수정된 필드만 저장 (update_fields)
+    course.save(update_fields=validated_data.keys())
     return course
 
 

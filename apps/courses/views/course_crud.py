@@ -2,6 +2,7 @@ from typing import Any, NoReturn
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -20,10 +21,28 @@ from apps.courses.serializers.course_crud import (
 )
 from apps.courses.services import course_crud as coursecrud_service
 from apps.courses.utils.exceptions import (
-    CommentPermissionDeniedError,
     CourseAlreadyExistsError,
     CourseNotFoundError,
 )
+
+
+class AdminBaseView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def handle_exception(self, exc: Exception) -> Response:
+        # 401 - 미인증
+        if isinstance(exc, NotAuthenticated):
+            return Response(
+                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        # 403 - 권한 없음
+        if isinstance(exc, PermissionDenied):
+            return Response(
+                {"error_detail": "관리자 권한이 필요합니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().handle_exception(exc)
 
 
 class CourseListView(APIView):
@@ -46,14 +65,7 @@ class CourseListView(APIView):
         )
 
 
-class AdminCourseCreateView(APIView):
-    # 어드민만 접근 가능하도록 설정
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    # 403 처리 - 퍼미션 디나이드
-    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
-        raise CommentPermissionDeniedError()
-
+class AdminCourseCreateView(AdminBaseView):
     @extend_schema(
         tags=["admin-courses"],
         summary="어드민 페이지 과정 등록",
@@ -87,12 +99,7 @@ class AdminCourseCreateView(APIView):
         )
 
 
-class AdminCourseDetailView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
-        raise CommentPermissionDeniedError()
-
+class AdminCourseDetailView(AdminBaseView):
     @extend_schema(
         tags=["admin-courses"],
         summary="어드민 페이지 과정 상세 조회",
@@ -178,14 +185,7 @@ class AdminCourseDetailView(APIView):
         )
 
 
-class CourseCreateView(APIView):
-    # 어드민만 생성 가능하도록 설정
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    # 403 에러 발생 시 처리
-    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
-        raise CommentPermissionDeniedError()
-
+class CourseCreateView(AdminBaseView):
     def post(self, request: Request) -> Response:
         serializer = CourseCreateRequestSerializer(data=request.data)
 
