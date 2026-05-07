@@ -3,8 +3,7 @@ from typing import Any
 
 from django.core.cache import cache
 
-from apps.qna.chatbot import Message
-from apps.qna.redis.dtos import InitialQNA
+from apps.qna.dtos import InitialQNA, Message
 
 
 class CacheRepository:
@@ -31,8 +30,8 @@ class CacheRepository:
         cache.set(key, json.dumps(history), timeout=ttl)
 
     @staticmethod
-    def acquire_lock(key: str) -> bool:
-        return cache.add(key, "1", timeout=60)
+    def acquire_lock(key: str, ttl: int = 60) -> bool:
+        return cache.add(key, "1", timeout=ttl)
 
     @staticmethod
     def delete(key: str) -> None:

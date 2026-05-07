@@ -1,7 +1,7 @@
 from django.test import TestCase
 
+from apps.qna.dtos import InitialQNA
 from apps.qna.redis import CacheFactory
-from apps.qna.redis.dtos import InitialQNA
 
 
 class TestCacheFactory(TestCase):

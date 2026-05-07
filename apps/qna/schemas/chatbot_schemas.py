@@ -2,7 +2,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
-    QNAChatbotResponseSerializer,
+    QNAHistoryResponseSerializer,
 )
 
 ai_answer_post_schema = extend_schema(
@@ -36,7 +36,7 @@ ai_answer_get_schema = extend_schema(
 
 
 qna_chatbot_post_schema = extend_schema(
-    tags=["Qna"],
+    tags=["Chatbot"],
     summary="qna 챗봇 대화",
     description="활성화된 채팅창에서 qna 챗봇과 질의응답을 합니다.",
     responses={
@@ -50,11 +50,11 @@ qna_chatbot_post_schema = extend_schema(
 )
 
 qna_chatbot_get_schema = extend_schema(
-    tags=["Qna"],
+    tags=["Chatbot"],
     summary="qna 챗봇 히스토리 조회",
     description="캐시에 저장된 히스토리를 불러옵니다.",
     responses={
-        200: QNAChatbotResponseSerializer,
+        200: QNAHistoryResponseSerializer(many=True),
         401: OpenApiResponse(description="로그인한 사용자만 이용할 수 있습니다."),
         404: OpenApiResponse(description="해당 질문을 찾을 수 없습니다."),
         429: OpenApiResponse(description="더 필요한 질문은 질문 게시판을 이용해 주세요."),

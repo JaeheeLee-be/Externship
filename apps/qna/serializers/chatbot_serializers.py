@@ -2,7 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.qna.chatbot import Message
+from apps.qna.dtos import Message
 
 
 class InitialAIAnswerSerializer(serializers.Serializer[Any]):
@@ -12,14 +12,16 @@ class InitialAIAnswerSerializer(serializers.Serializer[Any]):
     created_at = serializers.CharField()
 
 
-class QNAChatbotRequestSerializer(serializers.Serializer[str]):
+class QNAChatbotRequestSerializer(serializers.Serializer[Any]):
     message = serializers.CharField(min_length=1, max_length=1000, trim_whitespace=True)
 
 
-class MessageSerializer(serializers.Serializer[dict[str, str]]):
-    role = serializers.CharField()
+ROLE = (
+    ("user", "user"),
+    ("assistant", "assistant"),
+)
+
+
+class QNAHistoryResponseSerializer(serializers.Serializer[Any]):
+    role = serializers.ChoiceField(choices=ROLE)
     message = serializers.CharField(source="content")
-
-
-class QNAChatbotResponseSerializer(serializers.Serializer[dict[str, list[Message]]]):
-    results = MessageSerializer(many=True)

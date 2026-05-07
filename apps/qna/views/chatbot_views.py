@@ -1,5 +1,5 @@
 import json
-from typing import Any, Iterator, NoReturn
+from typing import Any, Callable, Iterator, NoReturn
 
 from django.http import StreamingHttpResponse
 from rest_framework import status
@@ -20,9 +20,17 @@ from apps.qna.schemas.chatbot_schemas import (
 from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
     QNAChatbotRequestSerializer,
-    QNAChatbotResponseSerializer,
+    QNAHistoryResponseSerializer,
 )
-from apps.qna.services.chatbot_services import InitialService, QNAChatbotService
+from apps.qna.services.chatbot_services import ChatbotService, InitialService
+
+StreamFn = Callable[[int, int, str], Iterator[str]]
+
+
+def build_event_stream(user_id: int, question_id: int, message: str, func: StreamFn) -> Iterator[str]:
+    for chunk in func(user_id, question_id, message):
+        yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
+    yield "data: [DONE]\n\n"
 
 
 class InitialAiAnswerAPIView(APIView):
@@ -64,38 +72,28 @@ class QNAChatbotAPIView(APIView):
             raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
         raise PermissionDenied(message)
 
-    @staticmethod
-    def _build_event_stream(user_id: int, question_id: int, message: str) -> Iterator[str]:
-        for chunk in QNAChatbotService.stream_chat(user_id, question_id, message):
-            yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
-        yield "data: [DONE]\n\n"
-
     @qna_chatbot_get_schema
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
         try:
-            instance = QNAChatbotService.response_history(request.user.id, kwargs["question_id"])
-            serializer = QNAChatbotResponseSerializer(instance={"results": instance})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            history = ChatbotService.response_qna_history(request.user.id, kwargs["question_id"])
+            serializer = QNAHistoryResponseSerializer(history, many=True)
+            return Response({"results": serializer.data}, status=status.HTTP_200_OK)
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
 
     @qna_chatbot_post_schema
     def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
-        """
-        StreamingHttpResponse를 사용하면 응답 헤더가 먼저 전송되므로
-        스트리밍 도중 발생한 예외로는 상태 코드를 변경할 수 없습니다.
-        따라서 검증 로직을 별도 메서드로 분리해 뷰에서 스트리밍 시작 전에 호출합니다.
-        """
         serializer = QNAChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            user_id = request.user.id
-            question_id = kwargs["question_id"]
-            QNAChatbotService.ensure_conversation_not_over(user_id, question_id)
-            QNAChatbotService.ensure_active_session(user_id, question_id)
-            QNAChatbotService.ensure_initial_exist(question_id)
+            ChatbotService.validate_qna_chat(request.user.id, kwargs["question_id"])
             return StreamingHttpResponse(
-                QNAChatbotAPIView._build_event_stream(user_id, question_id, serializer.validated_data["message"]),
+                build_event_stream(
+                    request.user.id,
+                    kwargs["question_id"],
+                    serializer.validated_data["message"],
+                    ChatbotService.response_qna_chat,
+                ),
                 content_type="text/event-stream",
             )
         except BaseCustomException as e:
