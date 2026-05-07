@@ -8,6 +8,9 @@ from apps.users.models import User, Withdrawal
 
 POSITION_CHOICES = ("TA", "OM", "LC", "ENROLLED")
 WITHDRAWAL_LIST_ROLE_CHOICES = tuple(choice[0] for choice in User.Role.choices) + POSITION_CHOICES[:3]
+WITHDRAWAL_REASON_DISPLAY_OVERRIDES: dict[str, str] = {
+    "NO_LONGER_NEEDED": "더 이상 필요하지 않음",
+}
 
 
 class WithdrawalListQuerySerializer(serializers.Serializer[Any]):
@@ -50,7 +53,7 @@ class WithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
         read_only_fields = fields
 
     def get_reason_display(self, obj: Withdrawal) -> str:
-        return obj.get_reason_display()
+        return WITHDRAWAL_REASON_DISPLAY_OVERRIDES.get(obj.reason, obj.get_reason_display())
 
 
 class WithdrawalListResponseSerializer(serializers.Serializer[Any]):

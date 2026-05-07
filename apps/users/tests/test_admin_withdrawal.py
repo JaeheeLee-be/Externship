@@ -103,7 +103,7 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         self.assertEqual(len(data["results"]), 2)
         self.assertIn("reason_display", data["results"][0])
         self.assertIn("withdrawn_at", data["results"][0])
-        self.assertEqual(data["results"][0]["reason_display"], "더 이상 필요없음")
+        self.assertEqual(data["results"][0]["reason_display"], "더 이상 필요하지 않음")
         student_result = next(result for result in data["results"] if result["id"] == self.withdrawal.id)
         self.assertEqual(
             set(student_result["user"].keys()),
