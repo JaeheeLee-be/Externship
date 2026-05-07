@@ -144,9 +144,9 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam2")
-        self.assertEqual(response.data["results"][0]["subject_name"], "python")
+        self.assertEqual(response.data["total_count"], 2)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam2")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "python")
 
     def test_get_exam_list_as_user(self) -> None:
         self.client.force_authenticate(user=self.user)
@@ -168,9 +168,9 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"subject_id": self.subject_html.id})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam")
-        self.assertEqual(response.data["results"][0]["subject_name"], "html")
+        self.assertEqual(response.data["total_count"], 1)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "html")
 
     def test_get_exam_list_with_subject_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -178,7 +178,7 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"subject_id": self.subject_python.id + 9999})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["total_count"], 0)
 
     def test_get_exam_list_with_subject_insert_text(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -192,25 +192,25 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"search_keyword": "exam"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam2")
-        self.assertEqual(response.data["results"][0]["subject_name"], "python")
+        self.assertEqual(response.data["total_count"], 2)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam2")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "python")
 
     def test_get_exam_list_with_search_subject(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(reverse("exam-list"), {"search_keyword": "html"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 1)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam")
-        self.assertEqual(response.data["results"][0]["subject_name"], "html")
+        self.assertEqual(response.data["total_count"], 1)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "html")
 
     def test_get_exam_list_with_search_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(reverse("exam-list"), {"search_keyword": "not_found"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["total_count"], 0)
 
     # 쪽지시험 목록 조회: sort
     def test_get_exam_list_with_sort(self) -> None:
@@ -218,9 +218,9 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"sort": "created_at"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam")
-        self.assertEqual(response.data["results"][0]["subject_name"], "html")
+        self.assertEqual(response.data["total_count"], 2)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "html")
 
     # 쪽지시험 목록 조회: order
     def test_get_exam_list_with_order(self) -> None:
@@ -228,9 +228,9 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"order": "desc"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam2")
-        self.assertEqual(response.data["results"][0]["subject_name"], "python")
+        self.assertEqual(response.data["total_count"], 2)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam2")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "python")
 
     # 쪽지시험 목록 조회: sort + order
     def test_get_exam_list_with_sort_and_order(self) -> None:
@@ -238,9 +238,9 @@ class TestExamBaseAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"sort": "subject__title", "order": "asc"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results"][0]["title"], "test_exam")
-        self.assertEqual(response.data["results"][0]["subject_name"], "html")
+        self.assertEqual(response.data["total_count"], 2)
+        self.assertEqual(response.data["exams"][0]["title"], "test_exam")
+        self.assertEqual(response.data["exams"][0]["subject_name"], "html")
 
     # 쪽지시험 생성: 권한
     def test_exam_create_as_admin(self) -> None:
@@ -555,3 +555,16 @@ class TestExamDetail(ExamBaseTestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.data["error_detail"], "쪽지시험 삭제 중 충돌이 발생했습니다.")
         self.assertEqual(Exam.objects.count(), 2)
+
+
+class TestExamPagination(ExamBaseTestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+
+    def test_exam_pagination(self) -> None:
+        response = self.client.get(reverse("exam-list"))
+
+        self.assertEqual(response.data["page"], 1)
+        self.assertEqual(response.data["size"], 10)
+        self.assertEqual(response.data["total_count"], 2)
