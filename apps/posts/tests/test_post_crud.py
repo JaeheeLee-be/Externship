@@ -84,6 +84,7 @@ class PostListCreateViewListTest(APITestCase):
         self.assertEqual(response.data["results"][0]["id"], self.newer_post.id)
         self.assertEqual(response.data["results"][1]["id"], self.older_post.id)
 
+
 class PostDetailViewPutTest(APITestCase):
     def setUp(self) -> None:
         self.client = APIClient()
