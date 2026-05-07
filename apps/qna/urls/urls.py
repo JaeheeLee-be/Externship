@@ -1,9 +1,7 @@
 from django.urls import path
 
-from apps.qna.views.category_views import CategoryListAPIView
-
 from apps.qna.views import answer_views, chatbot_views
-
+from apps.qna.views.category_views import CategoryListAPIView
 
 urlpatterns = [
     # 답변
