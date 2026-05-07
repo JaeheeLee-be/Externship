@@ -14,7 +14,9 @@ class CheckNicknameSerializer(ModelSerializer[User]):
         fields = [
             "nickname",
         ]
-        extra_kwargs : dict[str, Any] = {"nickname": {"validators": []}}  # 409에러를 400으로 drf unique검사가 먼저 잡아서 건너뛰게 설정
+        extra_kwargs: dict[str, Any] = {
+            "nickname": {"validators": []}
+        }  # 409에러를 400으로 drf unique검사가 먼저 잡아서 건너뛰게 설정
 
     def validate_nickname(self, value: str) -> str:
         if not re.match(r"^[가-힣a-zA-Z0-9]{2,10}$", value):
