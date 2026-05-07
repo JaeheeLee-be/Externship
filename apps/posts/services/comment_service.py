@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.db import transaction
 from django.db.models import QuerySet
 
@@ -11,7 +13,7 @@ from apps.posts.models.post import Post
 from apps.users.models import User
 
 
-def get_comments(post_id: int, page: int, page_size: int, base_url: str) -> dict:
+def get_comments(post_id: int, page: int, page_size: int, base_url: str) -> dict[str, Any]:
     if not Post.objects.filter(id=post_id).exists():
         raise PostNotFoundError("해당 게시글을 찾을 수 없습니다.")
 
