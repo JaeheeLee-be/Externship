@@ -22,5 +22,5 @@ from apps.posts.views.post_crud import (
 
 urlpatterns = [
     path("", PostListCreateView.as_view(), name="post_list_create"),
-    path("<int:post_id>", PostDetailView.as_view(), name="post_rud"),
+    path("<int:post_id>", PostDetailView.as_view(), name="post_detail"),
 ]
