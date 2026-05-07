@@ -3,7 +3,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer
 
 ai_answer_post_schema = extend_schema(
-    tags=["Qna"],
+    tags=["Chatbot"],
     summary="AI 초기응답 생성",
     description="질문글을 기준으로 AI가 초기응답을 생성합니다.",
     responses={
@@ -17,7 +17,7 @@ ai_answer_post_schema = extend_schema(
 )
 
 ai_answer_get_schema = extend_schema(
-    tags=["Qna"],
+    tags=["Chatbot"],
     summary="AI 초기응답 조회",
     description="캐시에 저장된 초기응답을 불러옵니다.",
     responses={
