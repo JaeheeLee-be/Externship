@@ -2,11 +2,6 @@ from datetime import date
 from typing import Optional
 
 
-class NotAuthenticatedError(Exception):
-    def __init__(self) -> None:
-        super().__init__("자격 인증 데이터가 제공되지 않았습니다.")
-
-
 class DuplicateNicknameError(Exception):
     def __init__(self) -> None:
         super().__init__("중복된 닉네임이 존재합니다.")

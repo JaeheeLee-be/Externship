@@ -20,14 +20,14 @@ class EnrollmentView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["Accounts (회원관리)"],
+        tags=["accounts"],
         summary="수강생 등록 신청 API",
         description="로그인한 유저만 과정과 기수를 선택하여 수강생 등록 신청할 수 있습니다",
         request=EnrollmentSerializer,
         responses={
             201: OpenApiResponse(description="수강생 등록 신청완료."),
-            400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="인증 실패"),
+            400: OpenApiResponse(description="이 필드는 필수 항목입니다."),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
         },
     )
     def post(self, request: Request) -> Response:
