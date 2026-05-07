@@ -33,7 +33,7 @@ class AdminAccountUpdateView(APIView):
         description="어드민 전용 특정 회원의 정보를 수정하는 API입니다.",
         request=AdminAccountUpdateSerializer,
         responses={
-            200: OpenApiResponse(description="어드민 회원 수정를 성공했습니다."),
+            200: OpenApiResponse(description="어드민 회원 수정을 성공했습니다."),
             400: OpenApiResponse(description="11자리 숫자로 구성된 포맷이어야 합니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="권한이 없습니다."),

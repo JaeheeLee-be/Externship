@@ -4,7 +4,6 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.users.models import User
-from apps.users.utils.admin_exceptions import AccountValidationError
 
 _UPDATE_RESPONSE_FIELDS = [
     "id",
@@ -30,7 +29,7 @@ class AdminAccountUpdateSerializer(serializers.Serializer[Any]):
     @staticmethod
     def validate_phone_number(value: str) -> str:
         if not re.fullmatch(r"\d{11}", value):
-            raise AccountValidationError("11자리 숫자로 구성된 포맷이어야 합니다.")
+            raise serializers.ValidationError("11자리 숫자로 구성된 포맷이어야 합니다.")
         return value
 
 

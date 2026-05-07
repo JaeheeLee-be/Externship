@@ -68,6 +68,7 @@ class AdminAccountPatchTest(APITestCase):
         res = self.client.patch(self._url(99999), {"nickname": "새닉"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("error_detail", res.data)
+        self.assertEqual(res.data["error_detail"], "사용자 정보를 찾을 수 없습니다.")
 
     # ── 정상 수정 (200) ───────────────────────────────────────
     def test_patch_nickname_returns_200(self) -> None:
@@ -102,7 +103,11 @@ class AdminAccountPatchTest(APITestCase):
 
     # ── 400 검증 오류 ─────────────────────────────────────────
     def test_invalid_phone_format_returns_400(self) -> None:
-        """phone_number 형식 오류 → 400 {"error_detail": {"phone_number": [...]}}"""
+        """phone_number 형식 오류 → 400 {"error_detail": {"phone_number": ["..."]}}
+        validate_phone_number 가 serializers.ValidationError 를 raise 하므로
+        is_valid() 가 False 를 반환하고 view 에서 req_serializer.errors 를 그대로 반환.
+        명세: {"error_detail": {"phone_number": ["11자리 숫자로 구성된 포맷이어야 합니다."]}}
+        """
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(
             self._url(self.target.pk),
@@ -112,9 +117,10 @@ class AdminAccountPatchTest(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error_detail", res.data)
         self.assertIn("phone_number", res.data["error_detail"])
+        self.assertIn("11자리 숫자로 구성된 포맷이어야 합니다.", res.data["error_detail"]["phone_number"])
 
     def test_phone_10_digits_returns_400(self) -> None:
-        """10자리 → 400"""
+        """10자리 phone_number → 400, phone_number 필드 오류 메시지 확인"""
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(
             self._url(self.target.pk),
@@ -122,9 +128,16 @@ class AdminAccountPatchTest(APITestCase):
             format="json",
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error_detail", res.data)
+        self.assertIn("phone_number", res.data["error_detail"])
 
     def test_invalid_gender_returns_400(self) -> None:
-        """잘못된 gender 값 → 400"""
+        """잘못된 gender 값 → 400 {"error_detail": {"gender": ["..."]}}
+        gender 는 DRF ChoiceField 기본 검증 실패 → serializers.ValidationError 발생.
+        is_valid() 가 False 를 반환하고 view 에서 {"error_detail": req_serializer.errors} 로 응답.
+        따라서 error_detail 은 {"gender": [...]} 형태의 dict 이다.
+        """형태의 dict 이다.
+        """
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(
             self._url(self.target.pk),
@@ -132,6 +145,8 @@ class AdminAccountPatchTest(APITestCase):
             format="json",
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error_detail", res.data)
+        self.assertIn("gender", res.data["error_detail"])
 
     # ── 409 중복 ──────────────────────────────────────────────
     def test_duplicate_phone_returns_409(self) -> None:
@@ -145,3 +160,4 @@ class AdminAccountPatchTest(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_409_CONFLICT)
         self.assertIn("error_detail", res.data)
         self.assertIsInstance(res.data["error_detail"], str)
+        self.assertEqual(res.data["error_detail"], "휴대폰 번호 중복으로 인하여 요청 처리에 실패하였습니다.")
