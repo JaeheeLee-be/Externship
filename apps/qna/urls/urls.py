@@ -1,7 +1,9 @@
-from django.urls import include, path
+from django.urls import path
 
-from apps.qna.views import answer_views
 from apps.qna.views.category_views import CategoryListAPIView
+
+from apps.qna.views import answer_views, chatbot_views
+
 
 urlpatterns = [
     # 답변
@@ -32,4 +34,7 @@ urlpatterns = [
     ),
     # 카테고리
     path("categories", CategoryListAPIView.as_view(), name="category-list"),
+    # 챗봇
+    path("questions/<int:question_id>/ai-answer", chatbot_views.InitialAiAnswerAPIView.as_view(), name="ai_answer"),
+
 ]
