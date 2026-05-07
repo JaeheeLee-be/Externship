@@ -12,6 +12,7 @@ from apps.courses.serializers.subject_serializer import (
     SubjectListSerializer,
 )
 from apps.courses.services import subject_service
+from apps.courses.utils.exceptions import SubjectBadRequestError
 
 
 class SubjectListView(APIView):
@@ -60,6 +61,6 @@ class SubjectCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SubjectCreateSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": "유효하지 않은 과목 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            raise SubjectBadRequestError()
         subject = subject_service.create_subject(**serializer.validated_data)
         return Response(SubjectCreateSerializer(subject).data)
