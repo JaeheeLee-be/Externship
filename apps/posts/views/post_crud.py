@@ -1,8 +1,10 @@
-from typing import cast
+from typing import NoReturn, cast
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,6 +16,7 @@ from apps.posts.serializers.post_crud import (
     PostCreateResponseSerializer,
     PostDeleteResponseSerializer,
     PostDetailResponseSerializer,
+    PostListResponseSerializer,
     PostUpdateRequestSerializer,
     PostUpdateResponseSerializer,
     ValidationErrorResponseSerializer,
@@ -22,25 +25,48 @@ from apps.posts.services import post_crud as postcrud_service
 from apps.users.models import User
 
 
+class PostPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+
+
 # 목록 응답용 시리얼라이저 추후에 추가해서 수정할 예정
-class PostListView(APIView):
-    permission_classes = [AllowAny]
+class PostListCreateView(APIView):
+
+    def get_permissions(self) -> list[BasePermission]:
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def permission_denied(
+        self,
+        request: Request,
+        message: str | None = None,
+        code: str | None = None,
+    ) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        raise PermissionDenied("권한이 없습니다.")
 
     @extend_schema(
         tags=["posts"],
         summary="글 목록 조회",
-        responses={200: PostDetailResponseSerializer(many=True)},
+        responses={200: PostListResponseSerializer(many=True)},
     )
     def get(self, request: Request) -> Response:
-        posts = postcrud_service.list_posts()
-        return Response(
-            PostDetailResponseSerializer(posts, many=True).data,
-            status=status.HTTP_200_OK,
+        category_id = request.query_params.get("category_id")
+
+        posts = postcrud_service.list_posts(
+            search=request.query_params.get("search"),
+            search_filter=request.query_params.get("search_filter"),
+            category_id=int(category_id) if category_id else None,
+            sort=request.query_params.get("sort", "latest"),
         )
 
-
-class PostCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+        paginator = PostPagination()
+        page = paginator.paginate_queryset(posts, request)
+        serializer = PostListResponseSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
         tags=["posts"],
@@ -67,7 +93,21 @@ class PostCreateView(APIView):
 
 
 class PostDetailView(APIView):
-    permission_classes = [AllowAny]
+
+    def get_permissions(self) -> list[BasePermission]:
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def permission_denied(
+        self,
+        request: Request,
+        message: str | None = None,
+        code: str | None = None,
+    ) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        raise PermissionDenied("권한이 없습니다.")
 
     @extend_schema(
         tags=["posts"],
@@ -89,10 +129,6 @@ class PostDetailView(APIView):
             PostDetailResponseSerializer(post).data,
             status=status.HTTP_200_OK,
         )
-
-
-class PostUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=["posts"],
@@ -127,10 +163,6 @@ class PostUpdateView(APIView):
             PostUpdateResponseSerializer(updated_post).data,
             status=status.HTTP_200_OK,
         )
-
-
-class PostDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=["posts"],
