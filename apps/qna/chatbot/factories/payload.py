@@ -1,7 +1,7 @@
-from .dtos import Message, Payload
+from apps.qna.dtos import GroqPayload, InitialQNA, Message
 
 
-class GroqFactory:
+class GroqPayloadFactory:
     @staticmethod
     def create_initial_payload(
         prompt: str,
@@ -11,7 +11,7 @@ class GroqFactory:
         model: str = "openai/gpt-oss-120b",
         stream: bool = False,
         temperature: float = 0.1,
-    ) -> Payload:
+    ) -> GroqPayload:
         """
         챗봇 초기응답용 페이로드 생성 함수입니다.
         XML 태그로 클라이언트의 질문과 그 외 텍스트를 구분합니다.
@@ -33,7 +33,7 @@ class GroqFactory:
             ),
         ]
 
-        return Payload(
+        return GroqPayload(
             messages=messages,
             model=model,
             stream=stream,
@@ -48,7 +48,7 @@ class GroqFactory:
         model: str = "openai/gpt-oss-120b",
         stream: bool = True,
         temperature: float = 0.1,
-    ) -> Payload:
+    ) -> GroqPayload:
         """
         챗봇 채팅창용 페이로드 생성 함수입니다.
         초기응답을 포함한 대화 히스토리를 포함하며,
@@ -65,9 +65,30 @@ class GroqFactory:
             ),
         ]
 
-        return Payload(
+        return GroqPayload(
             messages=messages,
             model=model,
             stream=stream,
             temperature=temperature,
         )
+
+    @staticmethod
+    def build_history_for_qna_payload(
+        initial: InitialQNA,
+        history: list[Message] | None = None,
+    ) -> list[Message]:
+        initial_history = [
+            Message(
+                role="user",
+                content=f"""
+                    <category>{initial.category}</category>
+                    <client_question>
+                        <title>{initial.title}</title>
+                        <message>{initial.content}</message>
+                    </client_question>
+                """,
+            ),
+            Message(role="assistant", content=initial.answer),
+        ]
+
+        return initial_history + (history or [])

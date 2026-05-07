@@ -6,11 +6,12 @@ from django.urls import reverse
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
+from apps.qna.dtos import InitialQNA
+from apps.qna.exceptions import ConversationOverException
 from apps.qna.models import Question
 from apps.qna.redis import CacheRepository
-from apps.qna.redis.dtos import InitialQNA
 from apps.qna.redis.keys import QNA_KEY, SESSION_KEY
-from apps.qna.services.chatbot_services import InitialService
+from apps.qna.services.chatbot_services import ChatbotService, InitialService
 from apps.users.models import User
 
 
