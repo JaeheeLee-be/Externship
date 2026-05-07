@@ -6,18 +6,15 @@ from rest_framework import serializers
 
 from apps.users.models import User, Withdrawal
 
-POSITION_CHOICES = ("TA", "OM", "LC", "ENROLLED")
-WITHDRAWAL_LIST_ROLE_CHOICES = tuple(choice[0] for choice in User.Role.choices) + POSITION_CHOICES[:3]
-WITHDRAWAL_REASON_DISPLAY_OVERRIDES: dict[str, str] = {
-    "NO_LONGER_NEEDED": "더 이상 필요하지 않음",
-}
-
 
 class WithdrawalListQuerySerializer(serializers.Serializer[Any]):
     page = serializers.IntegerField(required=False)
     page_size = serializers.IntegerField(required=False)
     search = serializers.CharField(required=False, allow_blank=True)
-    role = serializers.ChoiceField(required=False, choices=WITHDRAWAL_LIST_ROLE_CHOICES)
+    role = serializers.ChoiceField(
+        required=False,
+        choices=tuple(choice[0] for choice in User.Role.choices) + ("TA", "OM", "LC"),
+    )
     sort = serializers.ChoiceField(required=False, choices=("latest", "oldest"))
 
 
@@ -37,7 +34,7 @@ class WithdrawalListUserSerializer(serializers.ModelSerializer[User]):
             return "OM"
         if _has_related(obj.learning_coachs):
             return "LC"
-        if obj.role == User.Role.STUDENT:
+        if _has_related(obj.cohort_students) or obj.role == User.Role.STUDENT:
             return "ENROLLED"
         return None
 
@@ -53,7 +50,9 @@ class WithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
         read_only_fields = fields
 
     def get_reason_display(self, obj: Withdrawal) -> str:
-        return WITHDRAWAL_REASON_DISPLAY_OVERRIDES.get(obj.reason, obj.get_reason_display())
+        if obj.reason == Withdrawal.Reason.NO_LONGER_NEEDED:
+            return "더 이상 필요하지 않음"
+        return obj.get_reason_display()
 
 
 class WithdrawalListResponseSerializer(serializers.Serializer[Any]):

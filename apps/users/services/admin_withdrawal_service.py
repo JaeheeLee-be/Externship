@@ -15,6 +15,7 @@ def get_withdrawal_list(
     queryset = (
         Withdrawal.objects.select_related("user")
         .prefetch_related(
+            "user__cohort_students",
             "user__training_assistants",
             "user__operation_managers",
             "user__learning_coachs",

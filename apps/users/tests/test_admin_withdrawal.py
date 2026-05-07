@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.courses.models.cohort import Cohort
 from apps.posts.models.course import Course
-from apps.users.models import TrainigAssistants, User, Withdrawal
+from apps.users.models import CohortStudents, TrainigAssistants, User, Withdrawal
 
 
 def create_user(
@@ -87,6 +87,8 @@ class AdminWithdrawalListViewGetTest(APITestCase):
             role=User.Role.STUDENT,
         )
         self.other_user = create_user(email="other@oz.com", nickname="기타유저", phone_number="01033334444")
+        _, self.cohort = create_course_and_cohort()
+        CohortStudents.objects.create(user=self.user, cohort=self.cohort)
         self.withdrawal = create_withdrawal(self.user)
         self.other_withdrawal = create_withdrawal(self.other_user)
         self.auth = get_auth_header(self.admin)
@@ -119,14 +121,13 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         self.assertEqual(data["results"][0]["id"], self.withdrawal.id)
 
     def test_admin_can_filter_withdrawal_list_by_position(self) -> None:
-        _, cohort = create_course_and_cohort()
         ta_user = create_user(
             email="ta@oz.com",
             nickname="조교",
             phone_number="01055556666",
         )
         ta_withdrawal = create_withdrawal(ta_user)
-        TrainigAssistants.objects.create(user=ta_user, cohort=cohort)
+        TrainigAssistants.objects.create(user=ta_user, cohort=self.cohort)
 
         response = self.client.get(self.url, {"role": "TA"}, **self.auth)
 
