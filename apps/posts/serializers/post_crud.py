@@ -103,7 +103,6 @@ class PostDetailResponseSerializer(serializers.ModelSerializer[Post]):
 
 class PostListResponseSerializer(serializers.ModelSerializer[Post]):
     author = AuthorSerializer(read_only=True)
-    content_preview = serializers.SerializerMethodField()
     thumbnail_img_url = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
@@ -133,6 +132,3 @@ class PostListResponseSerializer(serializers.ModelSerializer[Post]):
 
     def get_comment_count(self, obj: Post) -> int:
         return getattr(obj, "comment_count", 0)
-
-    def get_content_preview(self, obj: Post) -> str:
-        return obj.content[:50]

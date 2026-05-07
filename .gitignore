@@ -10,4 +10,4 @@ htmlcov/
 media/
 static/
 staticfiles/
-.claude/
+.claude/docker-compose.override.yml
