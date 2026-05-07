@@ -39,7 +39,6 @@ class SocialLoginView(APIView):
         description="지정된 provider의 OAuth 인증 URL로 리다이렉트합니다.",
         responses={302: None},
     )
-
     def get(self, request: HttpRequest, provider: str) -> HttpResponse:
         try:
             auth_url = SocialAuthService.get_auth_url(provider)
@@ -60,7 +59,6 @@ class SocialCallbackView(APIView):
         description="OAuth 콜백 코드를 처리하고 프론트엔드로 리다이렉트합니다. 성공 시 refresh_token 쿠키를 설정합니다.",
         responses={302: None},
     )
-
     def get(self, request: HttpRequest, provider: str) -> HttpResponse:
         frontend_url: str = getattr(settings, "FRONTEND_REDIRECT_URI", "")
 
