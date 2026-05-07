@@ -6,8 +6,8 @@ from apps.qna.models.question_models import QuestionCategory, QuestionImage
 
 
 class QuestionCreateSerializer(serializers.Serializer[Any]):
-    title = serializers.CharField(max_length=50)
-    content = serializers.CharField()
+    title = serializers.CharField(max_length=50, allow_blank=False)
+    content = serializers.CharField(allow_blank=False)
     category_id = serializers.IntegerField()
     img_urls = serializers.ListField(
         child=serializers.URLField(),

@@ -1,6 +1,7 @@
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,16 +22,21 @@ from apps.users.models import User
 class QuestionAPIView(APIView):
     permission_classes = [IsStudentUser]
 
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated(detail="로그인한 수강생만 질문을 등록할 수 있습니다.")
+        raise PermissionDenied(detail="질문 등록 권한이 없습니다.")
+
     # ── POST /api/v1/qna/questions ──────────────────────────────────────────────────────
     @question_create_schema
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def post(self, request: Request) -> Response:
         serializer = QuestionCreateSerializer(data=request.data)
 
         if not serializer.is_valid():
             first_error = next(iter(serializer.errors.values()))
             error_message = first_error[0] if isinstance(first_error, list) else str(first_error)
             return Response(
-                {"error_detail": error_message},
+                {"error_detail": "유효하지 않은 질문 등록 요청입니다."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
