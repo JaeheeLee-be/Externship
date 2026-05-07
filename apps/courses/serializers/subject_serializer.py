@@ -11,39 +11,26 @@ class SubjectCourseSerializer(serializers.ModelSerializer[Course]):
         fields = ("id", "name", "tag")
 
 
-class SubjectCreateSerializer(serializers.ModelSerializer[Subject]):
-    id = serializers.IntegerField(read_only=True)
-    course_id = serializers.IntegerField()
+class SubjectDetailSerializer(serializers.ModelSerializer[Subject]):
+    course = SubjectCourseSerializer(read_only=True)
 
     class Meta:
         model = Subject
         fields = (
             "id",
-            "course_id",
+            "course",
             "title",
             "number_of_days",
             "number_of_hours",
             "thumbnail_img_url",
             "status",
+            "created_at",
+            "updated_at",
         )
-
-
-class SubjectUpdateSerializer(serializers.ModelSerializer[Subject]):
-
-    class Meta:
-        model = Subject
-        fields = (
-            "title",
-            "thumbnail_img_url",
-            "number_of_days",
-            "number_of_hours",
-            "status",
-        )
-        extra_kwargs = {field: {"required": False} for field in fields}
 
 
 class SubjectListSerializer(serializers.ModelSerializer[Subject]):
-    course_id = serializers.IntegerField(source="course.id")
+    course_id = serializers.IntegerField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -60,19 +47,18 @@ class SubjectListSerializer(serializers.ModelSerializer[Subject]):
         return "ACTIVATED" if obj.status else "DEACTIVATED"
 
 
-class SubjectDetailSerializer(serializers.ModelSerializer[Subject]):
-    course = SubjectCourseSerializer(read_only=True)
+class SubjectCreateSerializer(serializers.ModelSerializer[Subject]):
+    id = serializers.IntegerField(read_only=True)
+    course_id = serializers.IntegerField()
 
     class Meta:
         model = Subject
         fields = (
             "id",
-            "course",
+            "course_id",
             "title",
             "number_of_days",
             "number_of_hours",
             "thumbnail_img_url",
             "status",
-            "created_at",
-            "updated_at",
         )

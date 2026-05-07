@@ -9,10 +9,34 @@ from rest_framework.views import APIView
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.courses.serializers.subject_serializer import (
     SubjectCreateSerializer,
+    SubjectDetailSerializer,
     SubjectListSerializer,
 )
 from apps.courses.services import subject_service
 from apps.courses.utils.exceptions import SubjectBadRequestError
+
+
+class SubjectDetailView(APIView):
+    permission_classes = [IsRoleAdminUser]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
+        if not request.successful_authenticator:
+            raise exceptions.NotAuthenticated(detail="로그인이 필요합니다.", code=code)
+        raise exceptions.PermissionDenied(detail="관리자 권한이 필요합니다.", code=code)
+
+    @extend_schema(
+        tags=["Admin - Subject"],
+        summary="어드민 과목 상세 조회",
+        responses={
+            200: SubjectDetailSerializer,
+            401: OpenApiResponse(description="로그인이 필요합니다."),
+            403: OpenApiResponse(description="관리자 권한이 필요합니다."),
+            404: OpenApiResponse(description="해당 과목을 찾을 수 없습니다."),
+        },
+    )
+    def get(self, request: Request, subject_id: int) -> Response:
+        subject = subject_service.get_subject_detail(subject_id=subject_id)
+        return Response(SubjectDetailSerializer(subject).data)
 
 
 class SubjectListView(APIView):
@@ -34,7 +58,7 @@ class SubjectListView(APIView):
     )
     def get(self, request: Request, course_id: int) -> Response:
         subjects = subject_service.get_subject_list(course_id=course_id)
-        return Response(SubjectListSerializer(subjects, many=True).data)
+        return Response(SubjectListSerializer(subjects, many=True).data, status=status.HTTP_200_OK)
 
 
 class SubjectCreateView(APIView):
@@ -63,4 +87,4 @@ class SubjectCreateView(APIView):
         if not serializer.is_valid():
             raise SubjectBadRequestError()
         subject = subject_service.create_subject(**serializer.validated_data)
-        return Response(SubjectCreateSerializer(subject).data)
+        return Response(SubjectCreateSerializer(subject).data, status=status.HTTP_200_OK)

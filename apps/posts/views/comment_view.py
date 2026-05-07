@@ -36,30 +36,26 @@ class CommentListCreateView(APIView):
     )
     def get(self, request: Request, post_id: int) -> Response:
         query_serializer = CommentQuerySerializer(data=request.query_params)
-        query_serializer.is_valid(raise_exception=True)
+        query_serializer.is_valid()
         page = query_serializer.validated_data["page"]
         page_size = query_serializer.validated_data["page_size"]
 
         try:
-            total_count, comments = comment_service.get_comments(
+            data = comment_service.get_comments(
                 post_id=post_id,
                 page=page,
                 page_size=page_size,
+                base_url=request.build_absolute_uri(request.path),
             )
         except PostNotFoundError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-        base_url = request.build_absolute_uri(request.path)
-
-        next_page = f"{base_url}?page={page + 1}&page_size={page_size}" if (page * page_size) < total_count else None
-        previous_page = f"{base_url}?page={page - 1}&page_size={page_size}" if page > 1 else None
-
         return Response(
             {
-                "count": total_count,
-                "next": next_page,
-                "previous": previous_page,
-                "results": PostCommentSerializer(comments, many=True).data,
+                "count": data["count"],
+                "next": data["next"],
+                "previous": data["previous"],
+                "results": PostCommentSerializer(data["results"], many=True).data,
             }
         )
 

@@ -11,7 +11,7 @@ from apps.posts.models.post import Post
 from apps.users.models import User
 
 
-def get_comments(post_id: int, page: int, page_size: int) -> tuple[int, QuerySet["PostComment"]]:
+def get_comments(post_id: int, page: int, page_size: int, base_url: str) -> dict:
     if not Post.objects.filter(id=post_id).exists():
         raise PostNotFoundError("해당 게시글을 찾을 수 없습니다.")
 
@@ -24,7 +24,15 @@ def get_comments(post_id: int, page: int, page_size: int) -> tuple[int, QuerySet
     total_count = qs.count()
     comments = qs[offset : offset + page_size]
 
-    return total_count, comments
+    next_page = f"{base_url}?page={page + 1}&page_size={page_size}" if (page * page_size) < total_count else None
+    previous_page = f"{base_url}?page={page - 1}&page_size={page_size}" if page > 1 else None
+
+    return {
+        "count": total_count,
+        "next": next_page,
+        "previous": previous_page,
+        "results": comments,
+    }
 
 
 @transaction.atomic
