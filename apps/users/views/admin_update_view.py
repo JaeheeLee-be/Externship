@@ -7,14 +7,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
-from envs.admin_account_detail.serializers.admin_update_serializer import (
+from apps.users.serializers.admin_update_serializer import (
     AdminAccountUpdateResponseSerializer,
     AdminAccountUpdateSerializer,
 )
-from envs.admin_account_detail.services.admin_update_service import (
+from apps.users.services.admin_update_service import (
     AdminAccountUpdateService,
 )
-from envs.admin_account_detail.utils.admin_exceptions import AdminAccountException
+from apps.users.utils.admin_exceptions import AdminAccountException
 
 
 class AdminAccountUpdateView(APIView):
@@ -50,9 +50,7 @@ class AdminAccountUpdateView(APIView):
             )
 
         try:
-            user = AdminAccountUpdateService.update_account(
-                account_id, req_serializer.validated_data
-            )
+            user = AdminAccountUpdateService.update_account(account_id, req_serializer.validated_data)
         except AdminAccountException as exc:
             return Response({"error_detail": exc.detail}, status=exc.status_code)
 
