@@ -86,6 +86,9 @@ class AdminWithdrawalListViewGetTest(APITestCase):
             phone_number="01022223333",
             role=User.Role.STUDENT,
         )
+        self.user.gender = User.Gender.MALE
+        self.user.profile_img_url = "https://example.com/images/profiles/image.png"
+        self.user.save(update_fields=["gender", "profile_img_url"])
         self.other_user = create_user(email="other@oz.com", nickname="기타유저", phone_number="01033334444")
         _, self.cohort = create_course_and_cohort()
         CohortStudents.objects.create(user=self.user, cohort=self.cohort)
@@ -164,3 +167,82 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         auth = get_auth_header(normal_user)
         response = self.client.get(self.url, **auth)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminWithdrawalDetailViewTest(APITestCase):
+    """GET/DELETE /api/v1/admin/withdrawals/{withdrawal_id} 탈퇴 상세/취소"""
+
+    url_name: ClassVar[str] = "admin-withdrawal-detail"
+
+    def setUp(self) -> None:
+        self.admin = create_admin()
+        self.user = create_user(
+            email="detail@oz.com",
+            nickname="상세유저",
+            phone_number="01066667777",
+            role=User.Role.STUDENT,
+        )
+        self.user.gender = User.Gender.MALE
+        self.user.profile_img_url = "https://example.com/images/profiles/image.png"
+        self.user.save(update_fields=["gender", "profile_img_url"])
+        _, self.cohort = create_course_and_cohort()
+        CohortStudents.objects.create(user=self.user, cohort=self.cohort)
+        self.withdrawal = create_withdrawal(self.user)
+        self.auth = get_auth_header(self.admin)
+        self.url = reverse(self.url_name, kwargs={"withdrawal_id": self.withdrawal.id})
+
+    def test_admin_can_retrieve_withdrawal_detail(self) -> None:
+        response = self.client.get(self.url, **self.auth)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["id"], self.withdrawal.id)
+        self.assertEqual(data["user"]["id"], self.user.id)
+        self.assertEqual(data["user"]["email"], self.user.email)
+        self.assertEqual(data["user"]["nickname"], self.user.nickname)
+        self.assertEqual(data["user"]["name"], self.user.name)
+        self.assertEqual(data["user"]["gender"], "M")
+        self.assertEqual(data["user"]["role"], "STUDENT")
+        self.assertEqual(data["user"]["status"], "WITHDREW")
+        self.assertEqual(data["user"]["profile_img_url"], "https://example.com/images/profiles/image.png")
+        self.assertIn("created_at", data["user"])
+        self.assertEqual(data["reason"], "NO_LONGER_NEEDED")
+        self.assertEqual(data["reason_display"], "더 이상 필요하지 않음")
+        self.assertEqual(data["reason_detail"], "테스트 탈퇴")
+        self.assertEqual(data["due_date"], str(self.withdrawal.due_date))
+        self.assertIn("withdrawn_at", data)
+        self.assertEqual(len(data["assigned_courses"]), 1)
+        assigned_course = data["assigned_courses"][0]
+        self.assertEqual(assigned_course["course"]["id"], self.cohort.course.id)
+        self.assertEqual(assigned_course["course"]["name"], self.cohort.course.name)
+        self.assertEqual(assigned_course["course"]["tag"], self.cohort.course.tag)
+        self.assertEqual(assigned_course["cohort"]["id"], self.cohort.id)
+        self.assertEqual(assigned_course["cohort"]["number"], self.cohort.number)
+        self.assertEqual(assigned_course["cohort"]["status"], "PENDING")
+        self.assertEqual(assigned_course["cohort"]["start_date"], str(self.cohort.start_date))
+        self.assertEqual(assigned_course["cohort"]["end_date"], str(self.cohort.end_date))
+
+    def test_withdrawal_detail_not_found_returns_404(self) -> None:
+        url = reverse(self.url_name, kwargs={"withdrawal_id": self.withdrawal.id + 999})
+
+        response = self.client.get(url, **self.auth)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.json()["error_detail"], "회원탈퇴 정보를 찾을 수 없습니다.")
+
+    def test_admin_can_cancel_withdrawal(self) -> None:
+        response = self.client.delete(self.url, **self.auth)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["detail"], "회원 탈퇴 취소처리 완료.")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertFalse(Withdrawal.objects.filter(id=self.withdrawal.id).exists())
+
+    def test_cancel_withdrawal_not_found_returns_404(self) -> None:
+        url = reverse(self.url_name, kwargs={"withdrawal_id": self.withdrawal.id + 999})
+
+        response = self.client.delete(url, **self.auth)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.json()["error_detail"], "회원탈퇴 정보를 찾을 수 없습니다.")

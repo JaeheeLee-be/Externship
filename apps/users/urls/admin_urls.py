@@ -3,7 +3,10 @@ from django.urls import path
 from apps.users.views.admin_account_view import AdminAccountListView
 from apps.users.views.admin_detail_view import AdminAccountView
 from apps.users.views.admin_permission_view import AdminPermissionView
-from apps.users.views.admin_withdrawal_view import AdminWithdrawalListView
+from apps.users.views.admin_withdrawal_view import (
+    AdminWithdrawalDetailView,
+    AdminWithdrawalListView,
+)
 from apps.users.views.enrollment_accept_view import AdminStudentEnrollmentAcceptView
 
 urlpatterns = [
@@ -14,4 +17,5 @@ urlpatterns = [
     ),
     path("accounts/<int:account_id>/role", AdminPermissionView.as_view(), name="admin_permission"),
     path("withdrawals", AdminWithdrawalListView.as_view(), name="admin-withdrawal-list"),
+    path("withdrawals/<int:withdrawal_id>", AdminWithdrawalDetailView.as_view(), name="admin-withdrawal-detail"),
 ]
