@@ -32,6 +32,7 @@ class InitialService:
     MODEL = GROQ_MODEL["gpt_120"]
     INITIAL_TTL = 60 * 60 * 24 * 7
     LOCK_TTL = 60
+    GROQ_TIMEOUT = (5, 60)
 
     @staticmethod
     def get_initial_answer(question_id: int) -> InitialQNA:
@@ -100,7 +101,7 @@ class InitialService:
         )
 
         try:
-            return call_groq_once(asdict(payload), key=settings.GROQ_API_KEY, timeout=(5, 60))
+            return call_groq_once(asdict(payload), key=settings.GROQ_API_KEY, timeout=InitialService.GROQ_TIMEOUT)
         except GroqTimeoutError:
             raise ExternalAPITimeoutException()
         except GroqAPIError:
@@ -122,6 +123,7 @@ class InitialService:
 class ChatbotService:
     MODEL = GROQ_MODEL["gpt_120"]
     QNA_TTL = 60 * 30
+    GROQ_TIMEOUT = (5, 60)
 
     @staticmethod
     def response_qna_history(user_id: int, question_id: int) -> list[Message]:
@@ -181,7 +183,7 @@ class ChatbotService:
     ) -> Iterator[str]:
         try:
             answer = ""
-            for chunk in call_groq(asdict(payload), settings.GROQ_API_KEY, timeout=(5, 60)):
+            for chunk in call_groq(asdict(payload), settings.GROQ_API_KEY, timeout=ChatbotService.GROQ_TIMEOUT):
                 answer += chunk
                 yield chunk
         except GroqTimeoutError:
