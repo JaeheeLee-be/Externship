@@ -11,24 +11,6 @@ class SubjectCourseSerializer(serializers.ModelSerializer[Course]):
         fields = ("id", "name", "tag")
 
 
-class SubjectDetailSerializer(serializers.ModelSerializer[Subject]):
-    course = SubjectCourseSerializer(read_only=True)
-
-    class Meta:
-        model = Subject
-        fields = (
-            "id",
-            "course",
-            "title",
-            "number_of_days",
-            "number_of_hours",
-            "thumbnail_img_url",
-            "status",
-            "created_at",
-            "updated_at",
-        )
-
-
 class SubjectListSerializer(serializers.ModelSerializer[Subject]):
     course_id = serializers.IntegerField()
     status = serializers.SerializerMethodField()
@@ -39,8 +21,8 @@ class SubjectListSerializer(serializers.ModelSerializer[Subject]):
             "id",
             "course_id",
             "title",
-            "status",
             "thumbnail_img_url",
+            "status",
         )
 
     def get_status(self, obj: Subject) -> str:
@@ -62,3 +44,48 @@ class SubjectCreateSerializer(serializers.ModelSerializer[Subject]):
             "thumbnail_img_url",
             "status",
         )
+
+
+class SubjectDetailSerializer(serializers.ModelSerializer[Subject]):
+    course = SubjectCourseSerializer(read_only=True)
+
+    class Meta:
+        model = Subject
+        fields = (
+            "id",
+            "course",
+            "title",
+            "number_of_days",
+            "number_of_hours",
+            "thumbnail_img_url",
+            "status",
+            "created_at",
+            "updated_at",
+        )
+
+
+class SubjectUpdateSerializer(serializers.ModelSerializer[Subject]):
+    course_id = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(),
+        source="course",
+        required=False,
+    )
+
+    class Meta:
+        model = Subject
+        fields = (
+            "id",
+            "course_id",
+            "title",
+            "number_of_days",
+            "number_of_hours",
+            "thumbnail_img_url",
+            "status",
+        )
+        extra_kwargs = {
+            "title": {"required": False},
+            "number_of_days": {"required": False},
+            "number_of_hours": {"required": False},
+            "thumbnail_img_url": {"required": False},
+            "status": {"required": False},
+        }

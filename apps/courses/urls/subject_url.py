@@ -7,7 +7,7 @@ from apps.courses.views.subject_view import (
 )
 
 urlpatterns = [
-    path("admin/subjects/<int:subject_id>/", SubjectDetailView.as_view(), name="subject_detail"),
     path("courses/<int:course_id>/subjects/", SubjectListView.as_view(), name="subject_list"),
     path("admin/subjects/", SubjectCreateView.as_view(), name="subject_create"),
+    path("admin/subjects/<int:subject_id>/", SubjectDetailView.as_view(), name="subject_detail"),
 ]
