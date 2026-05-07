@@ -11,5 +11,5 @@ urlpatterns = [
     path("enroll-student", EnrollmentView.as_view(), name="enroll-student"),
     path("me", UserInfoView.as_view(), name="me"),
     path("available-courses", AvailableCoursesView.as_view(), name="available-courses"),
-    path("me/enrolled-courses", MyCoursesView.as_view(), name="enrolled_courses"),
+    path("me/enrolled-courses", MyCoursesView.as_view(), name="enrolled-courses"),
 ]
