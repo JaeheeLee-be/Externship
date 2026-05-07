@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from datetime import datetime
 from time import sleep
-from typing import Iterator, Any
+from typing import Any, Iterator
 
 from django.conf import settings
 
@@ -238,7 +238,10 @@ class QNAChatbotService:
 
     @staticmethod
     def _build_messages(message: str, answer: str) -> list[Message]:
-        return [Message(role="user", content=message), Message(role="assistant", content=answer, timestamp=datetime.now().isoformat())]
+        return [
+            Message(role="user", content=message),
+            Message(role="assistant", content=answer, timestamp=datetime.now().isoformat()),
+        ]
 
     @staticmethod
     def _check_session(user_id: int, question_id: int) -> bool:
