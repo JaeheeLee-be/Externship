@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Message:
     role: str
     content: str
+    timestamp: str | None = None
 
 
 @dataclass
