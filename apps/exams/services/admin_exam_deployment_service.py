@@ -9,9 +9,12 @@ from django.db.models import Avg, Count, QuerySet
 from apps.core.utils.base62 import Base62
 from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentConflictError,
+    DeploymentDeleteConflictError,
+    DeploymentDeleteNotFoundError,
     DeploymentDetailNotFoundError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
+    DeploymentUpdateNotFoundError,
 )
 from apps.exams.models.exam_deployment_model import ExamDeployment
 from apps.exams.models.exam_model import Exam
@@ -117,7 +120,6 @@ def calculate_not_submitted_count(
 
 
 def get_deployment_detail(deployment_id: int) -> ExamDeployment:
-
     try:
         deployment = ExamDeployment.objects.select_related(
             "exam__subject",
@@ -144,4 +146,31 @@ def get_deployment_detail(deployment_id: int) -> ExamDeployment:
         ),
     )
 
+    return deployment
+
+
+@transaction.atomic
+def update_deployment(deployment_id: int, validated_data: dict[str, Any]) -> ExamDeployment:
+    try:
+        deployment = ExamDeployment.objects.get(id=deployment_id)
+    except ExamDeployment.DoesNotExist:
+        raise DeploymentUpdateNotFoundError()
+
+    for field, value in validated_data.items():
+        setattr(deployment, field, value)
+    deployment.save(update_fields=list(validated_data.keys()))
+
+    return deployment
+
+
+@transaction.atomic
+def delete_deployment(deployment_id: int) -> ExamDeployment:
+    try:
+        deployment = ExamDeployment.objects.select_for_update(nowait=True).get(id=deployment_id)
+    except ExamDeployment.DoesNotExist:
+        raise DeploymentDeleteNotFoundError()
+    except Exception:
+        raise DeploymentDeleteConflictError()
+
+    deployment.delete()
     return deployment

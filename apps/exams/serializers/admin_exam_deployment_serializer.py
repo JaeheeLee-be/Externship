@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from apps.courses.models.cohort import Cohort
 from apps.courses.models.subject import Subject
+from apps.exams.models.exam_deployment_model import ExamDeployment
 from apps.exams.models.exam_model import Exam
 from apps.posts.models.course import Course
 
@@ -121,3 +122,35 @@ class AdminExamDeploymentDetailSerializer(serializers.Serializer[Any]):
 
     def get_exam_access_url(self, obj: Any) -> str:
         return reverse("exam-deployment-detail", kwargs={"deployment_id": obj.id})
+
+
+class AdminExamDeploymentUpdateSerializer(serializers.Serializer[Any]):
+    open_at = serializers.DateTimeField()
+    close_at = serializers.DateTimeField()
+    duration_time = serializers.IntegerField(
+        min_value=1,
+        max_value=99,
+    )
+
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        now = timezone.now()
+
+        if data["open_at"] < now:
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 수정 요청입니다."})
+        if data["close_at"] < now:
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 수정 요청입니다."})
+        if data["open_at"] >= data["close_at"]:
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 수정 요청입니다."})
+        return data
+
+
+class AdminExamDeploymentUpdateResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
+    deployment_id = serializers.IntegerField(source="id")
+
+    class Meta:
+        model = ExamDeployment
+        fields = ["deployment_id", "duration_time", "open_at", "close_at", "updated_at"]
+
+
+class AdminExamDeploymentDeleteResponseSerializer(serializers.Serializer[Any]):
+    deployment_id = serializers.IntegerField(source="id")

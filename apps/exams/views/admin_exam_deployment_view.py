@@ -11,9 +11,16 @@ from rest_framework.views import APIView
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentConflictError,
+    DeploymentDeleteConflictError,
+    DeploymentDeleteInvalidRequestError,
+    DeploymentDeleteNotFoundError,
+    DeploymentDetailInvalidRequestError,
     DeploymentDetailNotFoundError,
+    DeploymentListInvalidRequestError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
+    DeploymentUpdateInvalidRequestError,
+    DeploymentUpdateNotFoundError,
 )
 from apps.exams.serializers.admin_exam_deployment_serializer import (
     AdminExamDeploymentCreateSerializer,
@@ -22,11 +29,15 @@ from apps.exams.serializers.admin_exam_deployment_serializer import (
     AdminExamDeploymentListQuerySerializer,
     AdminExamDeploymentListResponseSerializer,
     AdminExamDeploymentListSerializer,
+    AdminExamDeploymentUpdateResponseSerializer,
+    AdminExamDeploymentUpdateSerializer,
 )
 from apps.exams.services.admin_exam_deployment_service import (
     create_deployment,
+    delete_deployment,
     get_deployment_detail,
     get_deployment_list,
+    update_deployment,
 )
 
 
@@ -58,10 +69,8 @@ class AdminExamDeploymentView(APIView):
         serializer = AdminExamDeploymentCreateSerializer(data=request.data)
 
         if not serializer.is_valid():
-            return Response(
-                {"error_detail": "유효하지 않은 배포 생성 요청입니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            e = DeploymentNoQuestionsError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             deployment = create_deployment(serializer.validated_data)
@@ -83,10 +92,8 @@ class AdminExamDeploymentView(APIView):
         query_serializer = AdminExamDeploymentListQuerySerializer(data=request.query_params)
 
         if not query_serializer.is_valid():
-            return Response(
-                {"error_detail": "유효하지 않은 조회 요청입니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            e = DeploymentListInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         qs = get_deployment_list(query_serializer.validated_data)
 
@@ -116,14 +123,60 @@ class AdminExamDeploymentDetailView(APIView):
         path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
 
         if not path_serializer.is_valid():
-            return Response(
-                {"error_detail": "유효하지 않은 배포 상세 조회 요청입니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            e = DeploymentDetailInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             deployment = get_deployment_detail(path_serializer.validated_data["deployment_id"])
-            serializer = AdminExamDeploymentDetailSerializer(deployment)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         except DeploymentDetailNotFoundError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminExamDeploymentDetailSerializer(deployment)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request: Request, deployment_id: str) -> Response:
+        path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
+
+        if not path_serializer.is_valid():
+            e = DeploymentUpdateInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = AdminExamDeploymentUpdateSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            e = DeploymentUpdateInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            deployment = update_deployment(
+                deployment_id=path_serializer.validated_data["deployment_id"],
+                validated_data=serializer.validated_data,
+            )
+        except DeploymentUpdateNotFoundError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            AdminExamDeploymentUpdateResponseSerializer(deployment).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request: Request, deployment_id: str) -> Response:
+        path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
+
+        if not path_serializer.is_valid():
+            e = DeploymentDeleteInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        validated_deployment_id = path_serializer.validated_data["deployment_id"]
+
+        try:
+            delete_deployment(validated_deployment_id)
+        except DeploymentDeleteNotFoundError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except DeploymentDeleteConflictError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
+
+        return Response(
+            {"deployment_id": validated_deployment_id},
+            status=status.HTTP_200_OK,
+        )
