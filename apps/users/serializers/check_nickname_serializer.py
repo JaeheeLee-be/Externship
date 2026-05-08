@@ -2,13 +2,12 @@ import re
 from typing import Any
 
 from rest_framework import serializers
-from rest_framework.serializers import Serializer
 
 from apps.users.models import User
 from apps.users.utils.user_exceptions import DuplicateNicknameError
 
 
-class CheckNicknameSerializer(serializers.Serializer):
+class CheckNicknameSerializer(serializers.Serializer[Any]):
     nickname = serializers.CharField()
 
     def validate_nickname(self, value: str) -> str:
