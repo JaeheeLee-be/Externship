@@ -4,7 +4,7 @@ from typing import Iterator
 import requests
 from django.conf import settings
 
-from .prompts.qna_chatbot_prompt import QNA_PROMPT
+from apps.qna.chatbot.prompts.qna_prompt import QNA_PROMPT
 
 
 def call_google(model: str, message: str) -> Iterator[str]:

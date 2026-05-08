@@ -1,0 +1,45 @@
+from typing import Any, NoReturn
+
+from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.qna.exceptions import BaseCustomException
+from apps.qna.schemas.chatbot_schemas import ai_answer_get_schema, ai_answer_post_schema
+from apps.qna.serializers.chatbot_serializers import InitialAIAnswerSerializer
+from apps.qna.services.chatbot_services import InitialService
+
+
+class InitialAiAnswerAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
+        raise PermissionDenied(message)
+
+    @ai_answer_get_schema
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        try:
+            instance = InitialService.get_initial_answer(kwargs["question_id"])
+            serializer = InitialAIAnswerSerializer(instance=instance)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
+
+    @ai_answer_post_schema
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        try:
+            question_id = kwargs["question_id"]
+            instance = InitialService.save_initial_answer(question_id)
+            serializer = InitialAIAnswerSerializer(instance=instance)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
+        except Exception:
+            return Response(
+                {"error_detail": "서버 내부 오류가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
