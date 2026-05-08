@@ -19,6 +19,9 @@ from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentListInvalidRequestError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
+    DeploymentStatusConflictError,
+    DeploymentStatusInvalidRequestError,
+    DeploymentStatusNotFoundError,
     DeploymentUpdateInvalidRequestError,
     DeploymentUpdateNotFoundError,
 )
@@ -29,6 +32,8 @@ from apps.exams.serializers.admin_exam_deployment_serializer import (
     AdminExamDeploymentListQuerySerializer,
     AdminExamDeploymentListResponseSerializer,
     AdminExamDeploymentListSerializer,
+    AdminExamDeploymentStatusResponseSerializer,
+    AdminExamDeploymentStatusSerializer,
     AdminExamDeploymentUpdateResponseSerializer,
     AdminExamDeploymentUpdateSerializer,
 )
@@ -38,6 +43,7 @@ from apps.exams.services.admin_exam_deployment_service import (
     get_deployment_detail,
     get_deployment_list,
     update_deployment,
+    update_deployment_status,
 )
 
 
@@ -119,6 +125,11 @@ class AdminExamDeploymentDetailView(APIView):
 
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
+    @extend_schema(
+        tags=["exams-deployments"],
+        summary="쪽지시험 배포 상세 조회",
+        responses={200: AdminExamDeploymentDetailSerializer},
+    )
     def get(self, request: Request, deployment_id: str) -> Response:
         path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
 
@@ -134,6 +145,12 @@ class AdminExamDeploymentDetailView(APIView):
         serializer = AdminExamDeploymentDetailSerializer(deployment)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["exams-deployments"],
+        summary="쪽지시험 배포 수정",
+        request=AdminExamDeploymentUpdateSerializer,
+        responses={200: AdminExamDeploymentUpdateResponseSerializer},
+    )
     def patch(self, request: Request, deployment_id: str) -> Response:
         path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
 
@@ -160,6 +177,11 @@ class AdminExamDeploymentDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        tags=["exams-deployments"],
+        summary="쪽지시험 배포 삭제",
+        responses={200: OpenApiResponse(description="deployment_id")},
+    )
     def delete(self, request: Request, deployment_id: str) -> Response:
         path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
 
@@ -180,3 +202,42 @@ class AdminExamDeploymentDetailView(APIView):
             {"deployment_id": validated_deployment_id},
             status=status.HTTP_200_OK,
         )
+
+
+class AdminExamDeploymentStatusView(APIView):
+    permission_classes = [IsRoleAdminUser]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if request.user and request.user.is_authenticated:
+            raise PermissionDenied("쪽지시험 배포 상태 변경 권한이 없습니다.")
+        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+
+    @extend_schema(
+        tags=["exams-deployments"],
+        summary="쪽지시험 배포 상태 수정",
+        request=AdminExamDeploymentStatusSerializer,
+        responses={200: AdminExamDeploymentStatusResponseSerializer},
+    )
+    def patch(self, request: Request, deployment_id: str) -> Response:
+        path_serializer = AdminExamDeploymentDetailPathSerializer(data={"deployment_id": deployment_id})
+
+        if not path_serializer.is_valid():
+            e = DeploymentStatusInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        validate_serializer = AdminExamDeploymentStatusSerializer(data=request.data)
+
+        if not validate_serializer.is_valid():
+            e = DeploymentStatusInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            deployment = update_deployment_status(
+                deployment_id=path_serializer.validated_data["deployment_id"],
+                status=validate_serializer.validated_data["status"],
+            )
+        except DeploymentStatusNotFoundError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except DeploymentStatusConflictError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
+        return Response(AdminExamDeploymentStatusResponseSerializer(deployment).data, status=status.HTTP_200_OK)
