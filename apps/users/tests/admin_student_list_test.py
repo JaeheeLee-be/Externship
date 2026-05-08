@@ -142,8 +142,16 @@ class AdminStudentListViewTest(APITestCase):
         response = self.client.get(self.url)
         first_user = response.data["results"][0]
         expected_fields = {
-            "id", "email", "nickname", "name", "phone_number",
-            "birthday", "status", "role", "in_progress_course", "created_at",
+            "id",
+            "email",
+            "nickname",
+            "name",
+            "phone_number",
+            "birthday",
+            "status",
+            "role",
+            "in_progress_course",
+            "created_at",
         }
         self.assertEqual(set(first_user.keys()), expected_fields)
 
