@@ -33,7 +33,7 @@ def make_user(**kwargs: object) -> User:
 
 
 def _url(account_id: int) -> str:
-    return reverse("admin-account-update", kwargs={"account_id": account_id})
+    return reverse("admin-account-detail", kwargs={"account_id": account_id})
 
 
 # ── 인증 / 권한 ───────────────────────────────────────────────────────────────
