@@ -4,9 +4,8 @@ from rest_framework import status
 
 
 class AdminAccountException(Exception):
-    """어드민 계정 관련 기본 예외 (APIException 미사용)"""
 
-    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+    status_code: int = status.HTTP_400_BAD_REQUEST  # 500 → 400
     default_detail: str = "알 수 없는 오류가 발생하였습니다."
 
     def __init__(self, detail: str | None = None) -> None:
@@ -32,4 +31,4 @@ class AccountValidationError(AdminAccountException):
     """입력값 유효성 검사 실패 (400)"""
 
     status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "유효하지 않은 입력값입니다."
+    default_detail = "유효하지 않은 요청 파라미터입니다."
