@@ -7,6 +7,10 @@ class SubjectBadRequestError(APIException):
     default_detail = "유효하지 않은 과목 생성 요청입니다."
 
 
+class CourseNotFoundError(NotFound):
+    default_detail = "해당 과정을 찾을 수 없습니다."
+
+
 class SubjectNotFoundError(NotFound):
     default_detail = "해당 과목을 찾을 수 없습니다."
 
@@ -14,7 +18,3 @@ class SubjectNotFoundError(NotFound):
 class SubjectDuplicateTitleError(APIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = "동일한 이름의 과목이 이미 존재합니다."
-
-
-class CourseNotFoundError(NotFound):
-    default_detail = "해당 과정을 찾을 수 없습니다."
