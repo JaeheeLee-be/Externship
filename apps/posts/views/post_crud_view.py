@@ -188,3 +188,4 @@ class PostDetailView(APIView):
             PostDeleteResponseSerializer().data,
             status=status.HTTP_200_OK,
         )
+
