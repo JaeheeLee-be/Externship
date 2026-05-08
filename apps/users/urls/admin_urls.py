@@ -1,7 +1,6 @@
 from django.urls import path
 
 from apps.users.views.admin_account_view import AdminAccountListView
-from apps.users.views.admin_delete_view import AdminAccountDeleteView
 from apps.users.views.admin_detail_view import AdminAccountDetailView
 from apps.users.views.admin_permission_view import AdminPermissionView
 from apps.users.views.admin_update_view import AdminAccountUpdateView
