@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.posts.exceptions import PostNotFoundError, PostPermissionDeniedError
-from apps.posts.serializers.post_crud import (
+from apps.posts.serializers.post_crud_serializer import (
     ErrorResponseSerializer,
     PostCreateRequestSerializer,
     PostCreateResponseSerializer,
@@ -21,7 +21,7 @@ from apps.posts.serializers.post_crud import (
     PostUpdateResponseSerializer,
     ValidationErrorResponseSerializer,
 )
-from apps.posts.services import post_crud as postcrud_service
+from apps.posts.services import post_crud_service as postcrud_service
 from apps.users.models import User
 
 

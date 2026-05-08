@@ -12,12 +12,12 @@ from apps.posts.exceptions import (
     CommentPermissionDeniedError,
     PostNotFoundError,
 )
-from apps.posts.serializers.comment_serializer import (
+from apps.posts.serializers.post_comment_serializer import (
     CommentCreateSerializer,
     CommentQuerySerializer,
     PostCommentSerializer,
 )
-from apps.posts.services import comment_service as comment_service
+from apps.posts.services import post_comment_service as comment_service
 from apps.users.models import User
 
 

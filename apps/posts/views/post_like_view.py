@@ -13,7 +13,7 @@ from apps.posts.exceptions import (
     PostLikeNotRegisteredError,
     PostLikePostNotFoundError,
 )
-from apps.posts.services.like_service import cancel_post_like, create_post_like
+from apps.posts.services.post_like_service import cancel_post_like, create_post_like
 from apps.users.models import User
 
 

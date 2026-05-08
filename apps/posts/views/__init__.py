@@ -1,1 +1,1 @@
-from apps.posts.views.comment_view import CommentDetailView, CommentListCreateView
+from apps.posts.views.post_comment_view import CommentDetailView, CommentListCreateView
