@@ -23,9 +23,7 @@ class AdminEnrollmentAcceptService:
         for enrollment in enrollments:
             enrollment.status = StudentEnrollmentRequests.Status.ACCEPTED
             enrollment.accepted_at = now
-            cohort_students.append(
-                CohortStudents(user=enrollment.user, cohort=enrollment.cohort)
-            )
+            cohort_students.append(CohortStudents(user=enrollment.user, cohort=enrollment.cohort))
             user_ids.append(enrollment.user_id)
 
         StudentEnrollmentRequests.objects.bulk_update(enrollments, ["status", "accepted_at"])

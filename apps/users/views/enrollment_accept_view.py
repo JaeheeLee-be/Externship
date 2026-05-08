@@ -8,7 +8,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
-from apps.users.serializers.enrollment_accept_serializer import AdminEnrollmentAcceptSerializer
+from apps.users.serializers.enrollment_accept_serializer import (
+    AdminEnrollmentAcceptSerializer,
+)
 from apps.users.services.enrollment_accept_service import AdminEnrollmentAcceptService
 
 
