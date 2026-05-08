@@ -15,9 +15,11 @@ def call_groq(payload: dict[str, Any], key: str, timeout: tuple[float, float] = 
     try:
         with requests.post(url, headers=headers, json=payload, stream=True, timeout=timeout) as res:
             res.raise_for_status()
-            for line in res.iter_lines(decode_unicode=True):
+            for line in res.iter_lines():
                 if not line:
                     continue
+                if isinstance(line, bytes):
+                    line = line.decode("utf-8")
                 data = line.removeprefix("data: ").strip()
                 if data == "[DONE]":
                     break

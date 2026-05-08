@@ -101,7 +101,7 @@ class InitialService:
         )
 
         try:
-            return call_groq_once(asdict(payload), key=settings.GROQ_API_KEY, timeout=InitialService.GROQ_TIMEOUT)
+            return call_groq_once(payload.api(), key=settings.GROQ_API_KEY, timeout=InitialService.GROQ_TIMEOUT)
         except GroqTimeoutError:
             raise ExternalAPITimeoutException()
         except GroqAPIError:
@@ -183,7 +183,7 @@ class ChatbotService:
     ) -> Iterator[str]:
         try:
             answer = ""
-            for chunk in call_groq(asdict(payload), settings.GROQ_API_KEY, timeout=ChatbotService.GROQ_TIMEOUT):
+            for chunk in call_groq((payload.api()), settings.GROQ_API_KEY, timeout=ChatbotService.GROQ_TIMEOUT):
                 answer += chunk
                 yield chunk
         except GroqTimeoutError:

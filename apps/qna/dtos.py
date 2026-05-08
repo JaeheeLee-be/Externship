@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -7,6 +8,9 @@ class Message:
     content: str
     timestamp: str | None = None
 
+    def api_dict(self) -> dict[str, str]:
+        return {"role": self.role, "content": self.content}
+
 
 @dataclass
 class GroqPayload:
@@ -14,6 +18,14 @@ class GroqPayload:
     model: str
     stream: bool
     temperature: float
+
+    def api(self) -> dict[str, Any]:
+        return {
+            "messages": [m.api_dict() for m in self.messages],
+            "model": self.model,
+            "stream": self.stream,
+            "temperature": self.temperature,
+        }
 
 
 @dataclass
