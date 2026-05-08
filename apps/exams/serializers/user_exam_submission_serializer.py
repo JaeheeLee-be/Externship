@@ -2,28 +2,29 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.exams.models import ExamSubmission, Exam, ExamQuestion
+from apps.exams.models import Exam, ExamQuestion, ExamSubmission
 
 
-class ExamNestedSerializer(serializers.ModelSerializer):
+class ExamNestedSerializer(serializers.ModelSerializer[Exam]):
     class Meta:
         model = Exam
         fields = ["id", "title", "thumbnail_img_url"]
         read_only_fields = ["id", "title", "thumbnail_img_url"]
 
-class QuestionsNestedSerializer(serializers.ModelSerializer):
+
+class QuestionsNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.JSONField(required=False, source="options_json")
     is_correct = serializers.SerializerMethodField()
     submitted_answer = serializers.SerializerMethodField()
 
-    def get_is_correct(self, obj):
-        answer_json = self.context.get("answer_json", {})
-        return answer_json.get(str(obj.id), []) == obj.answer
+    def get_is_correct(self, obj: ExamQuestion) -> bool:
+        answer_json: dict[str, list[str]] = self.context.get("answer_json", {})
+        submitted: list[str] = answer_json.get(str(obj.id), [])
+        return bool(submitted == obj.answer)
 
-    def get_submitted_answer(self, obj):
-        answer_json = self.context.get("answer_json", {})
+    def get_submitted_answer(self, obj: ExamQuestion) -> list[str]:
+        answer_json: dict[str, list[str]] = self.context.get("answer_json", {})
         return answer_json.get(str(obj.id), [])
-
 
     class Meta:
         model = ExamQuestion
@@ -42,8 +43,6 @@ class QuestionsNestedSerializer(serializers.ModelSerializer):
         ]
 
 
-
-
 class UserExamSubmissionGetSerializer(serializers.ModelSerializer[ExamSubmission]):
     exam = ExamNestedSerializer(source="deployment.exam")
     questions = serializers.SerializerMethodField()
@@ -51,22 +50,17 @@ class UserExamSubmissionGetSerializer(serializers.ModelSerializer[ExamSubmission
     submitted_at = serializers.DateTimeField(source="created_at")
     elapsed_time = serializers.SerializerMethodField()
 
-    def get_questions(self, obj):
+    def get_questions(self, obj: ExamSubmission) -> list[dict[str, Any]]:
         queryset = ExamQuestion.objects.filter(exam=obj.deployment.exam)
-        return QuestionsNestedSerializer(
-            queryset,
-            many=True,
-            context={"answer_json": obj.answer_json}
-        ).data
+        serializer = QuestionsNestedSerializer(queryset, many=True, context={"answer_json": obj.answer_json})
+        return list(serializer.data)
 
-    def get_total_score(self, obj):
+    def get_total_score(self, obj: ExamSubmission) -> int:
         questions = obj.deployment.questions_snapshot_json
         return sum(q.get("point", 0) for q in questions)
 
-    def get_elapsed_time(self, obj):
+    def get_elapsed_time(self, obj: ExamSubmission) -> int:
         return int((obj.created_at - obj.started_at).total_seconds())
-
-
 
     class Meta:
         model = ExamSubmission
@@ -86,8 +80,7 @@ class UserExamSubmissionGetSerializer(serializers.ModelSerializer[ExamSubmission
         ]
 
 
-
-class QuestionsSchemaSerializer(serializers.Serializer):
+class QuestionsSchemaSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     question = serializers.CharField()
     prompt = serializers.CharField()

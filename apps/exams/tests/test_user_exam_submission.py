@@ -1,3 +1,4 @@
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -5,7 +6,7 @@ from rest_framework.test import APIClient, APITestCase
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion, ExamSubmission
 from apps.posts.models import Cohort, Course, Subject
 from apps.users.models import User
-from django.urls import reverse
+
 
 class BaseTestCase(APITestCase):
     student1: User
@@ -187,6 +188,7 @@ class BaseTestCase(APITestCase):
             correct_answer_count=1,
         )
 
+
 class TestUserExamSubmissionGet(BaseTestCase):
     def setUp(self) -> None:
         self.client = APIClient()
@@ -229,4 +231,3 @@ class TestUserExamSubmissionGet(BaseTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
-
