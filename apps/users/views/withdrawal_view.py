@@ -23,7 +23,7 @@ from apps.users.utils.withdrawal_exceptions import (
 from apps.users.views.user_info_view import UserInfoView
 
 
-class WithdrawalView(UserInfoView):
+class WithdrawalView(APIView):
     """
     GET/PATCH: UserInfoView 상속 (회원정보 조회/수정)
     DELETE: 회원 탈퇴 - enrollment_url의 UserInfoView와 동일한 'me' 경로를 공유하므로
