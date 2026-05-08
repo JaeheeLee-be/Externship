@@ -13,6 +13,7 @@ from apps.exams.views.admin_exam_question_view import (
 )
 from apps.exams.views.admin_exam_view import ExamDetailView, ExamListCreateView
 
+
 @extend_schema(tags=["admin-exams"])
 class ExamImageUploadView(PresignedUrlView):
     path = "uploads/exams/thumbnails"
