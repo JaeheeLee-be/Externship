@@ -14,29 +14,50 @@ from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 #     @classmethod
 #     def setUpTestData(cls):
 #         from django.conf import settings
-#         cls.key = settings.GROQ_API_KEY
-#         from apps.qna.chatbot import GroqFactory
+#         from apps.qna.chatbot import GroqPayloadFactory
 #         from apps.qna.chatbot import QNA_PROMPT
-#         cls.first_payload = GroqFactory.create_first_payload(
-#             prompt=QNA_PROMPT,
-#             category="python",
-#             title="파이썬이 뭐야",
-#             message="파이썬에 대해 알려줘",
-#         )
-#         cls.payload = GroqFactory.create_payload(
-#             prompt=QNA_PROMPT,
-#             message="파이썬이 뭐야",
-#         )
+#         from apps.qna.chatbot import GROQ_MODEL
+#         from apps.qna.chatbot.questions.questions import questions
+#         cls.key = settings.GROQ_API_KEY
+#         cls.payloads = [
+#             GroqPayloadFactory.create_payload(
+#                 prompt=QNA_PROMPT,
+#                 message=question,
+#                 model=GROQ_MODEL["gpt_120"]
+#             ) for question in questions["off_topic1"]
+#         ]
 #
 #     def test_call_groq(self):
-#         from dataclasses import asdict
-#         for chunk in call_groq(asdict(self.payload), self.key):
-#             print(chunk, flush=True, end="")
+#         for i, payload in enumerate(self.payloads):
+#                 print(i+1, "==" * 20)
+#                 for chunk in call_groq(payload.api(), self.key):
+#                     print(chunk, flush=True, end="")
+#                 print()
+
+# class TestRealCallOnce(TestCase):
+#     @classmethod
+#     def setUpTestData(cls):
+#         from django.conf import settings
+#         from apps.qna.chatbot import GroqPayloadFactory
+#         from apps.qna.chatbot import QNA_PROMPT
+#         from apps.qna.chatbot import GROQ_MODEL
+#         from apps.qna.chatbot.questions.questions import questions
+#         cls.key = settings.GROQ_API_KEY
+#         cls.payloads = [
+#             GroqPayloadFactory.create_initial_payload(
+#                 prompt=QNA_PROMPT,
+#                 category="python",
+#                 title="파이썬이 뭐야",
+#                 message=question,
+#                 model=GROQ_MODEL["gpt_120"]
+#             ) for question in questions["off_topic1"]
+#         ]
 #
 #     def test_call_groq_once(self):
-#         from dataclasses import asdict
-#         text = call_groq_once(asdict(self.first_payload), self.key)
-#         print(text)
+#         for i, payload in enumerate(self.payloads):
+#             print(i+1, "=="*20)
+#             print(call_groq_once(payload.api(), self.key), flush=True)
+#             print()
 
 
 class TestCallGroq(TestCase):
