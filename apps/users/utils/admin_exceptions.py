@@ -5,7 +5,7 @@ from rest_framework import status
 
 class AdminAccountException(Exception):
 
-    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+    status_code: int = status.HTTP_400_BAD_REQUEST  # 500 → 400
     default_detail: str = "알 수 없는 오류가 발생하였습니다."
 
     def __init__(self, detail: str | None = None) -> None:

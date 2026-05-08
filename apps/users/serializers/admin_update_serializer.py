@@ -5,18 +5,6 @@ from rest_framework import serializers
 
 from apps.users.models import User
 
-_UPDATE_RESPONSE_FIELDS = [
-    "id",
-    "email",
-    "nickname",
-    "name",
-    "phone_number",
-    "birthday",
-    "gender",
-    "profile_img_url",
-    "updated_at",
-]
-
 
 class AdminAccountUpdateSerializer(serializers.Serializer[Any]):
     nickname = serializers.CharField(max_length=10, required=False)
@@ -36,5 +24,15 @@ class AdminAccountUpdateSerializer(serializers.Serializer[Any]):
 class AdminAccountUpdateResponseSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
-        fields = _UPDATE_RESPONSE_FIELDS
-        read_only_fields = _UPDATE_RESPONSE_FIELDS
+        fields = [
+            "id",
+            "email",
+            "nickname",
+            "name",
+            "phone_number",
+            "birthday",
+            "gender",
+            "profile_img_url",
+            "updated_at",
+        ]
+        read_only_fields = fields
