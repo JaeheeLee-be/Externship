@@ -132,7 +132,7 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         ta_withdrawal = create_withdrawal(ta_user)
         TrainigAssistants.objects.create(user=ta_user, cohort=self.cohort)
 
-        response = self.client.get(self.url, {"role": "TA"}, **self.auth)
+        response = self.client.get(self.url, {"position": "TA"}, **self.auth)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()

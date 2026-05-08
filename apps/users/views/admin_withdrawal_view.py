@@ -65,6 +65,7 @@ class AdminWithdrawalListView(APIView):
         queryset = get_withdrawal_list(
             search=query_serializer.validated_data.get("search"),
             role=query_serializer.validated_data.get("role"),
+            position=query_serializer.validated_data.get("position"),
             sort=query_serializer.validated_data.get("sort"),
         )
         paginator = AdminWithdrawalPagination()

@@ -16,6 +16,7 @@ def get_withdrawal_list(
     *,
     search: str | None = None,
     role: str | None = None,
+    position: str | None = None,
     sort: str | None = None,
 ) -> QuerySet[Withdrawal]:
     queryset = (
@@ -34,14 +35,17 @@ def get_withdrawal_list(
             Q(user__email__icontains=search) | Q(user__name__icontains=search) | Q(user__nickname__icontains=search)
         )
 
-    if role == "TA":
-        queryset = queryset.filter(user__training_assistants__isnull=False)
-    elif role == "OM":
-        queryset = queryset.filter(user__operation_managers__isnull=False)
-    elif role == "LC":
-        queryset = queryset.filter(user__learning_coachs__isnull=False)
-    elif role in User.Role.values:
+    if role:
         queryset = queryset.filter(user__role=role)
+
+    if position == "TA":
+        queryset = queryset.filter(user__training_assistants__isnull=False)
+    elif position == "OM":
+        queryset = queryset.filter(user__operation_managers__isnull=False)
+    elif position == "LC":
+        queryset = queryset.filter(user__learning_coachs__isnull=False)
+    elif position == "ENROLLED":
+        queryset = queryset.filter(user__cohort_students__isnull=False)
 
     if sort == "oldest":
         return queryset.distinct().order_by("created_at", "id")

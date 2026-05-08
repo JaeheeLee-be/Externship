@@ -4,25 +4,17 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.courses.models.cohort import Cohort
+from apps.courses.models.cohort import Cohort, StatusChoices
 from apps.posts.models.course import Course
 from apps.users.models import User, Withdrawal
 
-COHORT_STATUS_MAP = {
-    "PREPARING": "PENDING",
-    "IN_PROGRESS": "IN_PROGRESS",
-    "FINISHED": "COMPLETED",
-}
-
 
 class WithdrawalListQuerySerializer(serializers.Serializer[Any]):
-    page = serializers.IntegerField(required=False)
-    page_size = serializers.IntegerField(required=False)
+    page = serializers.IntegerField(required=False, default=1, min_value=1)
+    page_size = serializers.IntegerField(required=False, default=10, min_value=1, max_value=100)
     search = serializers.CharField(required=False, allow_blank=True)
-    role = serializers.ChoiceField(
-        required=False,
-        choices=tuple(choice[0] for choice in User.Role.choices) + ("TA", "OM", "LC"),
-    )
+    role = serializers.ChoiceField(required=False, choices=User.Role.choices)
+    position = serializers.ChoiceField(required=False, choices=("TA", "OM", "LC", "ENROLLED"))
     sort = serializers.ChoiceField(required=False, choices=("latest", "oldest"))
 
 
@@ -71,7 +63,11 @@ class CohortNestedSerializer(serializers.ModelSerializer[Cohort]):
         read_only_fields = fields
 
     def get_status(self, obj: Cohort) -> str:
-        return COHORT_STATUS_MAP.get(obj.status, obj.status)
+        if obj.status == StatusChoices.PREPARING:
+            return "PENDING"
+        if obj.status == StatusChoices.FINISHED:
+            return "COMPLETED"
+        return obj.status
 
 
 class AssignedCourseSerializer(serializers.Serializer[Any]):
