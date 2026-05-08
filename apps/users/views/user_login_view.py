@@ -1,5 +1,7 @@
-from typing import Any
+from datetime import timedelta
+from typing import Any, cast
 
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -98,7 +100,8 @@ class TokenRefreshView(APIView):
     @extend_schema(
         tags=["Account(로그인)"],
         summary="JWT 토큰 재발급 API",
-        request=TokenRefreshSerializer,
+        description="HttpOnly 쿠키의 refresh_token으로 새 access_token 발급. refresh_token도 갱신됨.",
+        request=None,
         responses={
             200: OpenApiResponse(description="토큰 재발급 성공"),
             400: OpenApiResponse(description="refresh 쿠키 없음"),
@@ -106,14 +109,11 @@ class TokenRefreshView(APIView):
         },
     )
     def post(self, request: Request) -> Response:
-        serializer = TokenRefreshSerializer(data=request.data)
-
         #  refresh_token이 없으면 400 에러를 반환.
-        if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 검증을 통과한 토큰.
-        valid_refresh_token = serializer.validated_data.get("refresh_token")
+        valid_refresh_token = request.COOKIES.get("refresh_token")
+        if not valid_refresh_token:
+            return Response({"error_detail": "refresh_token 쿠키가 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # 블랙리스트 여부 확인 요청
@@ -124,13 +124,14 @@ class TokenRefreshView(APIView):
                 )
 
             # 토큰 재발급
-            old_refresh = RefreshToken(valid_refresh_token)
+            old_refresh = RefreshToken(valid_refresh_token)  # type: ignore[arg-type]
             user_id = old_refresh.payload.get("user_id")
             user = User.objects.get(id=user_id)
 
             new_access, new_refresh = UserLoginService.generate_token_pair(user)
 
             UserLoginService.add_to_blacklist(valid_refresh_token)  # 기존 토큰 폐기
+
         except (TokenError, User.DoesNotExist):
             return Response(
                 {"error_detail": "로그인 세션이 만료되었습니다."},
@@ -139,9 +140,15 @@ class TokenRefreshView(APIView):
 
         # 200 성공 응답 (access_token 반환)
         response = Response({"access_token": new_access}, status=status.HTTP_200_OK)
-
+        refresh_lifetime = cast(timedelta, settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"])
         # 쿠키 갱신
         response.set_cookie(
-            key="refresh_token", value=new_refresh, httponly=True, secure=True, samesite="Lax", path="/"
+            key="refresh_token",
+            value=new_refresh,
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            path="/",
+            max_age=int(refresh_lifetime.total_seconds()),
         )
         return response
