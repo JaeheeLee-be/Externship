@@ -19,7 +19,6 @@ def make_user(**kwargs: object) -> User:
     n = next(_counter)
     defaults: dict[str, object] = {
         "email": f"testuser{n}@test.com",
-        "password": "Test1234!@",
         "name": "홍길동",
         "nickname": f"유저{n}",
         "phone_number": f"010{n:08d}",
@@ -27,7 +26,10 @@ def make_user(**kwargs: object) -> User:
         "is_active": True,
     }
     defaults.update(kwargs)
-    return User.objects.create_user(**defaults)
+    user = User(**defaults)
+    user.set_unusable_password()
+    user.save()
+    return user
 
 
 def _url(account_id: int) -> str:
@@ -100,7 +102,7 @@ class AdminAccountUpdateSuccessTest(APITestCase):
         cls.admin = make_user(role=User.Role.ADMIN)
         cls.target = make_user()
 
-    def _patch(self, payload: dict, pk: int | None = None) -> Response:
+    def _patch(self, payload: dict[str, object], pk: int | None = None) -> Response:
         self.client.force_authenticate(user=self.admin)
         return self.client.patch(_url(pk or self.target.pk), payload, format="json")
 
@@ -146,7 +148,7 @@ class AdminAccountUpdateValidationTest(APITestCase):
         cls.admin = make_user(role=User.Role.ADMIN)
         cls.target = make_user()
 
-    def _patch(self, payload: dict) -> Response:
+    def _patch(self, payload: dict[str, object]) -> Response:
         self.client.force_authenticate(user=self.admin)
         return self.client.patch(_url(self.target.pk), payload, format="json")
 
