@@ -21,6 +21,7 @@ from apps.exams.serializers.admin_exam_question_serializer import (
     QuestionDeleteResponseSerializer,
     QuestionUpdateResponseSerializer,
     QuestionUpdateSerializer,
+    ExamQuestionSwaggerSerializer,
 )
 from apps.exams.services.admin_exam_question_service import (
     create_question,
@@ -33,6 +34,7 @@ from apps.exams.services.admin_exam_question_service import (
 @extend_schema(
     tags=["exams_question"],
     summary="쪽지시험 문제 생성",
+    request =ExamQuestionSwaggerSerializer
 )
 class AdminQuestionCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
