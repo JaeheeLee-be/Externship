@@ -154,9 +154,7 @@ class AdminPermissionViewTest(APITestCase):
         response = self.client.patch(self.url, data={"role": "USER"}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(
-            OperationManagers.objects.filter(user=self.target_user).exists()
-        )
+        self.assertFalse(OperationManagers.objects.filter(user=self.target_user).exists())
 
     def test_student_without_cohort_id(self) -> None:
         """STUDENT 권한 변경 시 cohort_id 없으면 400"""
