@@ -12,12 +12,12 @@ from apps.posts.exceptions import (
     CommentPermissionDeniedError,
     PostNotFoundError,
 )
-from apps.posts.serializers.comment_serializer import (
+from apps.posts.serializers.post_comment_serializer import (
     CommentCreateSerializer,
     CommentQuerySerializer,
     PostCommentSerializer,
 )
-from apps.posts.services import comment_service as comment_service
+from apps.posts.services import post_comment_service as comment_service
 from apps.users.models import User
 
 
@@ -30,7 +30,7 @@ class CommentListCreateView(APIView):
         raise exceptions.PermissionDenied(detail="권한이 없습니다.", code=code)
 
     @extend_schema(
-        tags=["comments"],
+        tags=["posts"],
         summary="댓글 목록 조회",
         responses={200: PostCommentSerializer(many=True), 404: None},
     )
@@ -60,7 +60,7 @@ class CommentListCreateView(APIView):
         )
 
     @extend_schema(
-        tags=["comments"],
+        tags=["posts"],
         summary="댓글 작성",
         request=CommentCreateSerializer,
         responses={201: None, 400: None, 401: None, 404: None},
@@ -91,7 +91,7 @@ class CommentDetailView(APIView):
         raise exceptions.PermissionDenied(detail="권한이 없습니다.", code=code)
 
     @extend_schema(
-        tags=["comments"],
+        tags=["posts"],
         summary="댓글 삭제",
         responses={200: None, 401: None, 403: None, 404: None},
     )

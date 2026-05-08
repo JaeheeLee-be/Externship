@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.posts.models import PostCategory
-from apps.posts.serializers.categories_serializer import (
+from apps.posts.serializers.post_categories_serializer import (
     PostCategoryListResponseSerializer,
 )
 
@@ -15,7 +15,7 @@ class PostCategoryListView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Post"],
+        tags=["posts"],
         summary="커뮤니티 게시글 카테고리 목록 조회",
         responses={
             200: PostCategoryListResponseSerializer(many=True),

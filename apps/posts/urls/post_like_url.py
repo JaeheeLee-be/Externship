@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.posts.views.like_view import PostLikeCancelView, PostLikeCreateView
+from apps.posts.views.post_like_view import PostLikeCancelView, PostLikeCreateView
 
 urlpatterns = [
     path(
