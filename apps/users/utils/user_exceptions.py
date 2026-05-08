@@ -26,3 +26,8 @@ class WithdrawnError(Exception):
 class InactiveError(Exception):
     def __init__(self) -> None:
         super().__init__("비활성된 계정입니다.")
+
+
+class UserNotFoundError(Exception):
+    def __init__(self) -> None:
+        super().__init__("사용자 정보를 찾을 수 없습니다.")
