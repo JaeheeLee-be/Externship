@@ -56,7 +56,7 @@ class ExamListCreateView(APIView):
         raise PermissionDenied("쪽지시험 목록 조회 권한이 없습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 목록",
         description="쪽지 시험 목록을 출력합니다. filter(subject), search가 포함돼 있습니다.",
         parameters=[
@@ -105,7 +105,7 @@ class ExamListCreateView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 생성",
         description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.",
         request=ExamCreatePutSerializer,
@@ -151,7 +151,7 @@ class ExamDetailView(APIView):
         raise PermissionDenied("쪽지시험 삭제 권한이 없습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 상세 조회",
         responses={
             200: ExamDetailSerializer,
@@ -169,7 +169,7 @@ class ExamDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 수정",
         description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.",
         request=ExamCreatePutSerializer,
@@ -206,7 +206,7 @@ class ExamDetailView(APIView):
         return Response(ExamCreatePutSerializer(exam, context={"request": request}).data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 삭제",
         responses={
             200: ExamDeleteResponseSerializer,
