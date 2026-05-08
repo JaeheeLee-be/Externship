@@ -121,7 +121,8 @@ class SubjectDetailView(APIView):
         },
     )
     def patch(self, request: Request, subject_id: int) -> Response:
-        serializer = SubjectUpdateSerializer(data=request.data)
+        subject = subject_service.get_subject_detail(subject_id=subject_id)
+        serializer = SubjectUpdateSerializer(instance=subject, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response({"error_detail": "유효하지 않은 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
         subject = subject_service.update_subject(subject_id=subject_id, **serializer.validated_data)
