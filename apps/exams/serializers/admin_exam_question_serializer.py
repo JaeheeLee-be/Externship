@@ -5,9 +5,11 @@ from rest_framework import serializers
 
 from apps.exams.models.exam_question_model import ExamQuestion
 
-class ExamQuestionSwaggerSerializer(serializers.ModelSerializer):
+
+class ExamQuestionSwaggerSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.JSONField(source="options_json")
     correct_answer = serializers.JSONField(source="answer")
+
     class Meta:
         model = ExamQuestion
         fields = [
@@ -20,6 +22,8 @@ class ExamQuestionSwaggerSerializer(serializers.ModelSerializer):
             "point",
             "explanation",
         ]
+
+
 class BlankRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
     correct_answer = serializers.JSONField(source="answer")
 
