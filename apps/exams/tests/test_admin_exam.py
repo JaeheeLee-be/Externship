@@ -133,7 +133,7 @@ class TestExamBaseModel(ExamBaseTestCase):
         self.assertEqual(Exam.objects.count(), 3)
 
 
-class TestExamBaseAPI(ExamBaseTestCase):
+class TestExamAPI(ExamBaseTestCase):
     def setUp(self) -> None:
         self.client = APIClient()
 
@@ -241,6 +241,67 @@ class TestExamBaseAPI(ExamBaseTestCase):
         self.assertEqual(response.data["total_count"], 2)
         self.assertEqual(response.data["exams"][0]["title"], "test_exam")
         self.assertEqual(response.data["exams"][0]["subject_name"], "html")
+
+    # 쪽지시험 목록 조회: 페이지네이션
+    # 성공
+    def test_get_exam_list_with_pagenation_params(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page_size": 1, "page": 2})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["size"], 1)
+        self.assertEqual(response.data["page"], 2)
+        self.assertEqual(response.data["exams"][0]["id"], self.exam1.id)
+
+    # 이상한 값 들어왔을 때 우회시키기
+    def test_get_exam_list_with_page_size_in_str(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page_size": "abc"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["size"], 10)
+
+    def test_get_exam_list_with_page_size_in_minus(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page_size": "-1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["size"], 10)
+
+    def test_get_exam_list_with_page_size_in_zero(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page_size": "0"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["size"], 10)
+
+    def test_get_exam_list_with_page_size_over_max(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page_size": "101"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["size"], 100)
+
+    def test_get_exam_list_with_page_in_str(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page": "abc"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["page"], 1)
+
+    def test_get_exam_list_with_page_in_minus(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page": "-1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["page"], 1)
+
+    def test_get_exam_list_with_page_in_zero(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(reverse("exam-list"), {"page": "0"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["page"], 1)
 
     # 쪽지시험 생성: 권한
     def test_exam_create_as_admin(self) -> None:
