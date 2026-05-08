@@ -1,4 +1,5 @@
 from django.urls import path
+from drf_spectacular.utils import extend_schema
 
 from apps.core.presigned_url.views import PresignedUrlView
 from apps.core.utils.permissions import IsRoleAdminUser
@@ -12,7 +13,7 @@ from apps.exams.views.admin_exam_question_view import (
 )
 from apps.exams.views.admin_exam_view import ExamDetailView, ExamListCreateView
 
-
+@extend_schema(tags=["admin-exams"])
 class ExamImageUploadView(PresignedUrlView):
     path = "uploads/exams/thumbnails"
     permission_classes = [IsRoleAdminUser]
