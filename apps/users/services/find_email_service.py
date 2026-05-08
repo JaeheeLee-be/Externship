@@ -6,8 +6,6 @@ from rest_framework.exceptions import ValidationError
 from apps.users.models import User
 from apps.users.utils.purpose_enum import SmsPurpose
 
-FIND_EMAIL = SmsPurpose.FIND_EMAIL.value
-
 
 def email_mask(email: str) -> str:
 
@@ -43,8 +41,10 @@ def find_email_service(validated_data: dict[str, Any]) -> str:
     if not sms_data:
         raise ValidationError("유효하지 않거나 만료된 인증 토큰입니다.")
 
-    if FIND_EMAIL != sms_data.get("purpose"):
+    purpose = SmsPurpose(sms_data.get("purpose"))
+    if purpose != SmsPurpose.FIND_EMAIL:
         raise ValidationError("유효하지 않거나 만료된 인증 토큰입니다.")
+
     phone_number = sms_data.get("phone_number")
 
     # 이메일 조회

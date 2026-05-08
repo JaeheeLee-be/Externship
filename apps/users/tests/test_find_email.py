@@ -51,7 +51,7 @@ class FindEmailAPITestCase(IsolatedRedisTestClient):
 
         # 상태 코드 및 메시지 확인
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, self.masked_email)
+        self.assertEqual(response.data, {"email": self.masked_email})
         # 사용된 Redis 토큰 삭제 확인
         self.assertIsNone(cache.get(self.cache_key))
 

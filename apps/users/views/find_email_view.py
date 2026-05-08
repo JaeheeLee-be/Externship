@@ -6,7 +6,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.serializers.find_email_serializer import FindEmailSerializer
+from apps.users.serializers.find_email_serializer import (
+    FindEmailResponseSerializer,
+    FindEmailSerializer,
+)
 from apps.users.services.find_email_service import find_email_service
 
 
@@ -30,8 +33,8 @@ class FindEmailView(APIView):
 
         try:
             masked_email = find_email_service(serializer.validated_data)
-
-            return Response(masked_email, status=status.HTTP_200_OK)
+            response_serializer = FindEmailResponseSerializer({"email": masked_email})
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
 
         except ValidationError as e:
             return Response({"error_detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
