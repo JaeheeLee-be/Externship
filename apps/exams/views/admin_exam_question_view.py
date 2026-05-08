@@ -71,11 +71,7 @@ class AdminQuestionUpdateDeleteView(APIView):
             raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
         raise PermissionDenied("권한이 없습니다.")
 
-    @extend_schema(
-        tags=["admin-exams"],
-        summary="쪽지시험 문제 수정",
-        request = QuestionUpdateSerializer
-    )
+    @extend_schema(tags=["admin-exams"], summary="쪽지시험 문제 수정", request=QuestionUpdateSerializer)
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
