@@ -15,7 +15,7 @@ class PostCategoryListView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Post"],
+        tags=["posts"],
         summary="커뮤니티 게시글 카테고리 목록 조회",
         responses={
             200: PostCategoryListResponseSerializer(many=True),
