@@ -34,7 +34,7 @@ class SmsVerificationService:
                 raise ValidationError("등록된 전화번호가 아닙니다.")
 
         elif purpose == SmsPurpose.PHONE_CHANGE:
-            if not User.objects.filter(phone_number=phone_number).exists():
+            if User.objects.filter(phone_number=phone_number).exists():
                 raise ValidationError("변경가능한 번호가 아닙니다")
 
         cache_key = f"sms_code_{phone_number}"
