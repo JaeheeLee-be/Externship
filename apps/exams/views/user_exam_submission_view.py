@@ -31,7 +31,7 @@ class UserExamSubmissionGetView(APIView):
             200: UserExamSubmissionExtendSchemaSerializer,
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="권한이 없습니다."),
-            404: OpenApiResponse(description="해당 쪽지시험 결과 정보를 찾을 수 없습니다."),
+            404: OpenApiResponse(description="해당 시험 정보를 찾을 수 없습니다."),
         }
     )
     def get(self, request: Request, submission_id: int) -> Response:

@@ -45,7 +45,7 @@ class QuestionsNestedSerializer(serializers.ModelSerializer):
 
 
 class UserExamSubmissionGetSerializer(serializers.ModelSerializer[ExamSubmission]):
-    exam = ExamNestedSerializer()
+    exam = ExamNestedSerializer(source="deployment.exam")
     questions = serializers.SerializerMethodField()
     total_score = serializers.SerializerMethodField()
     submitted_at = serializers.DateTimeField(source="created_at")
