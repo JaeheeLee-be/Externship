@@ -2,7 +2,6 @@ from typing import NoReturn
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import exceptions, status
-from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,7 +10,7 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.users.serializers.enrollment_accept_serializer import (
     AdminEnrollmentAcceptSerializer,
 )
-from apps.users.services.enrollment_accept_service import AdminEnrollmentAcceptService
+from apps.users.services.enrollment_accept_service import AdminEnrollmentAcceptService, EnrollmentAcceptError
 
 
 class AdminStudentEnrollmentAcceptView(APIView):
@@ -40,7 +39,13 @@ class AdminStudentEnrollmentAcceptView(APIView):
         if not serializer.is_valid():
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        AdminEnrollmentAcceptService.accept_enrollments(serializer.validated_data["enrollments"])
+        try:
+            AdminEnrollmentAcceptService.accept_enrollments(serializer.validated_data["enrollments"])
+        except EnrollmentAcceptError as exc:
+            return Response(
+                {"error_detail": f"처리할 수 없는 등록 요청 ID가 포함되어 있습니다: {exc.invalid_ids}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return Response(
             {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."},
