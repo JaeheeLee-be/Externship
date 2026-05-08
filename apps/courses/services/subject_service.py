@@ -21,7 +21,7 @@ def create_subject(
     title: str,
     number_of_days: int,
     number_of_hours: int,
-    thumbnail_img_url: str | None,
+    thumbnail_img_url: str | None = None,
     status: bool = True,
 ) -> Subject:
     try:

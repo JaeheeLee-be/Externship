@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.courses.models import Subject
@@ -89,3 +91,4 @@ class SubjectUpdateSerializer(serializers.ModelSerializer[Subject]):
             "thumbnail_img_url": {"required": False},
             "status": {"required": False},
         }
+        validators: list[Any] = []
