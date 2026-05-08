@@ -1,5 +1,7 @@
-from typing import Any
+from datetime import timedelta
+from typing import Any, cast
 
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -122,7 +124,7 @@ class TokenRefreshView(APIView):
                 )
 
             # 토큰 재발급
-            old_refresh = RefreshToken(valid_refresh_token)
+            old_refresh = RefreshToken(valid_refresh_token)  # type: ignore[arg-type]
             user_id = old_refresh.payload.get("user_id")
             user = User.objects.get(id=user_id)
 
@@ -138,9 +140,15 @@ class TokenRefreshView(APIView):
 
         # 200 성공 응답 (access_token 반환)
         response = Response({"access_token": new_access}, status=status.HTTP_200_OK)
-
+        refresh_lifetime = cast(timedelta, settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"])
         # 쿠키 갱신
         response.set_cookie(
-            key="refresh_token", value=new_refresh, httponly=True, secure=True, samesite="Lax", path="/", max_age=int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()),
+            key="refresh_token",
+            value=new_refresh,
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            path="/",
+            max_age=int(refresh_lifetime.total_seconds()),
         )
         return response
