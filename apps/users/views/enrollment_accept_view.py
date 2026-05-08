@@ -10,7 +10,10 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.users.serializers.enrollment_accept_serializer import (
     AdminEnrollmentAcceptSerializer,
 )
-from apps.users.services.enrollment_accept_service import AdminEnrollmentAcceptService, EnrollmentAcceptError
+from apps.users.services.enrollment_accept_service import (
+    AdminEnrollmentAcceptService,
+    EnrollmentAcceptError,
+)
 
 
 class AdminStudentEnrollmentAcceptView(APIView):
