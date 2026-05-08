@@ -1,86 +1,119 @@
 from __future__ import annotations
 
+import itertools
 from typing import ClassVar
 
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
 from apps.users.models import User
 
+# ── 헬퍼 ──────────────────────────────────────────────────────────────────────
 
-def create_user(
-    email: str,
-    nickname: str,
-    phone_number: str,
-    role: str = User.Role.USER,
-    is_active: bool = True,
-) -> User:
-    return User.objects.create_user(
-        email=email,
-        password="Test1234!@",
-        name="홍길동",
-        nickname=nickname,
-        phone_number=phone_number,
-        role=role,
-        is_active=is_active,
-    )
+_counter = itertools.count(1)
 
 
-class AdminAccountPatchTest(APITestCase):
-    """PATCH 회원 정보 수정 API"""
+def make_user(**kwargs: object) -> User:
+    n = next(_counter)
+    defaults: dict[str, object] = {
+        "email": f"testuser{n}@test.com",
+        "name": "홍길동",
+        "nickname": f"유저{n}",
+        "phone_number": f"010{n:08d}",
+        "role": User.Role.USER,
+        "is_active": True,
+    }
+    defaults.update(kwargs)
+    user = User(**defaults)
+    user.set_unusable_password()
+    user.save()
+    return user
+
+
+def _url(account_id: int) -> str:
+    return reverse("admin-account-update", kwargs={"account_id": account_id})
+
+
+# ── 인증 / 권한 ───────────────────────────────────────────────────────────────
+
+
+class AdminAccountUpdateAuthTest(APITestCase):
+    """인증 및 권한 검증 테스트"""
 
     admin: ClassVar[User]
     target: ClassVar[User]
-    other: ClassVar[User]
     normal_user: ClassVar[User]
 
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.admin = create_user("admin@oz.com", "관리자", "01000000000", role=User.Role.ADMIN)
-        cls.target = create_user("user@oz.com", "수정대상", "01011111111")
-        cls.other = create_user("other@oz.com", "다른유저", "01099999999")
-        cls.normal_user = create_user("normal@oz.com", "일반유저", "01088888888")
+        cls.admin = make_user(role=User.Role.ADMIN)
+        cls.target = make_user()
+        cls.normal_user = make_user()
 
-    def _url(self, pk: int) -> str:
-        return reverse("admin-account-update", kwargs={"account_id": pk})
-
-    # ── 인증 / 권한 ──────────────────────────────────────────
     def test_unauthenticated_returns_401(self) -> None:
-        res = self.client.patch(self._url(self.target.pk), {}, format="json")
+        res = self.client.patch(_url(self.target.pk), {}, format="json")
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_unauthenticated_401_error_message(self) -> None:
-        """401 응답 본문에 한국어 에러 메세지가 정상 출력되는지 확인"""
-        res = self.client.patch(self._url(self.target.pk), {}, format="json")
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        """401 응답 본문에 한국어 에러 메시지가 정상 출력되는지 확인"""
+        res = self.client.patch(_url(self.target.pk), {}, format="json")
         self.assertIn("error_detail", res.data)
         self.assertEqual(res.data["error_detail"], "자격 인증 데이터가 제공되지 않았습니다.")
 
     def test_non_admin_returns_403(self) -> None:
         self.client.force_authenticate(user=self.normal_user)
-        res = self.client.patch(self._url(self.target.pk), {}, format="json")
+        res = self.client.patch(_url(self.target.pk), {}, format="json")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    # ── 404 ──────────────────────────────────────────────────
+
+# ── 404 ──────────────────────────────────────────────────────────────────────
+
+
+class AdminAccountUpdateNotFoundTest(APITestCase):
+    """존재하지 않는 account_id 요청 테스트"""
+
+    admin: ClassVar[User]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.admin = make_user(role=User.Role.ADMIN)
+
     def test_not_found_returns_404(self) -> None:
         self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(self._url(99999), {"nickname": "새닉"}, format="json")
+        res = self.client.patch(_url(99999), {"nickname": "새닉"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn("error_detail", res.data)
         self.assertEqual(res.data["error_detail"], "사용자 정보를 찾을 수 없습니다.")
 
-    # ── 정상 수정 (200) ───────────────────────────────────────
-    def test_patch_nickname_returns_200(self) -> None:
+
+# ── 정상 수정 (200 OK) ────────────────────────────────────────────────────────
+
+
+class AdminAccountUpdateSuccessTest(APITestCase):
+    """200 OK 응답의 필드 구조 및 값 검증"""
+
+    admin: ClassVar[User]
+    target: ClassVar[User]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.admin = make_user(role=User.Role.ADMIN)
+        cls.target = make_user()
+
+    def _patch(self, payload: dict[str, object], pk: int | None = None) -> Response:
         self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(self._url(self.target.pk), {"nickname": "새닉네임"}, format="json")
+        return self.client.patch(_url(pk or self.target.pk), payload, format="json")
+
+    def test_patch_nickname_returns_200(self) -> None:
+        res = self._patch({"nickname": "새닉네임"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["nickname"], "새닉네임")
 
     def test_patch_response_exact_fields(self) -> None:
-
-        self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(self._url(self.target.pk), {"name": "김철수"}, format="json")
+        """명세 필드와 정확히 일치 (누락·추가 필드 없음)"""
+        res = self._patch({"name": "김철수"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         expected = {
             "id",
@@ -97,19 +130,31 @@ class AdminAccountPatchTest(APITestCase):
 
     def test_patch_updated_at_in_response(self) -> None:
         """응답에 updated_at 포함 여부"""
-        self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(self._url(self.target.pk), {"name": "이영희"}, format="json")
+        res = self._patch({"name": "이영희"})
         self.assertIn("updated_at", res.data)
 
-    # ── 400 검증 오류 ─────────────────────────────────────────
-    def test_invalid_phone_format_returns_400(self) -> None:
 
+# ── 400 검증 오류 ─────────────────────────────────────────────────────────────
+
+
+class AdminAccountUpdateValidationTest(APITestCase):
+    """잘못된 입력값에 대한 400 Bad Request 검증"""
+
+    admin: ClassVar[User]
+    target: ClassVar[User]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.admin = make_user(role=User.Role.ADMIN)
+        cls.target = make_user()
+
+    def _patch(self, payload: dict[str, object]) -> Response:
         self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(
-            self._url(self.target.pk),
-            {"phone_number": "010-1234-5678"},  # 하이픈 포함 → 오류
-            format="json",
-        )
+        return self.client.patch(_url(self.target.pk), payload, format="json")
+
+    def test_invalid_phone_format_returns_400(self) -> None:
+        """하이픈 포함 전화번호 → 400, phone_number 필드 오류 메시지 확인"""
+        res = self._patch({"phone_number": "010-1234-5678"})
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error_detail", res.data)
         self.assertIn("phone_number", res.data["error_detail"])
@@ -117,34 +162,40 @@ class AdminAccountPatchTest(APITestCase):
 
     def test_phone_10_digits_returns_400(self) -> None:
         """10자리 phone_number → 400, phone_number 필드 오류 메시지 확인"""
-        self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(
-            self._url(self.target.pk),
-            {"phone_number": "0101234567"},
-            format="json",
-        )
+        res = self._patch({"phone_number": "0101234567"})
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error_detail", res.data)
         self.assertIn("phone_number", res.data["error_detail"])
 
     def test_invalid_gender_returns_400(self) -> None:
-
-        self.client.force_authenticate(user=self.admin)
-        res = self.client.patch(
-            self._url(self.target.pk),
-            {"gender": "X"},
-            format="json",
-        )
+        """유효하지 않은 gender 값 → 400, gender 필드 오류 메시지 확인"""
+        res = self._patch({"gender": "X"})
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error_detail", res.data)
         self.assertIn("gender", res.data["error_detail"])
 
-    # ── 409 중복 ──────────────────────────────────────────────
+
+# ── 409 중복 ──────────────────────────────────────────────────────────────────
+
+
+class AdminAccountUpdateConflictTest(APITestCase):
+    """중복 데이터로 인한 409 Conflict 검증"""
+
+    admin: ClassVar[User]
+    target: ClassVar[User]
+    other: ClassVar[User]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.admin = make_user(role=User.Role.ADMIN)
+        cls.target = make_user()
+        cls.other = make_user()
+
     def test_duplicate_phone_returns_409(self) -> None:
         """이미 사용 중인 phone_number → 409 {"error_detail": str}"""
         self.client.force_authenticate(user=self.admin)
         res = self.client.patch(
-            self._url(self.target.pk),
+            _url(self.target.pk),
             {"phone_number": self.other.phone_number},
             format="json",
         )
