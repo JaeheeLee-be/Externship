@@ -66,7 +66,7 @@ class AdminExamDeploymentView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams-deployments"],
+        tags=["exams"],
         summary="쪽지시험 배포 생성",
         request=AdminExamDeploymentCreateSerializer,
         responses={201: OpenApiResponse(description="pk")},
@@ -90,7 +90,7 @@ class AdminExamDeploymentView(APIView):
         return Response({"pk": deployment.id}, status=status.HTTP_201_CREATED)
 
     @extend_schema(
-        tags=["exams-deployments"],
+        tags=["exams"],
         summary="쪽지시험 배포 목록 조회",
         responses={200: AdminExamDeploymentListResponseSerializer},
     )
@@ -126,7 +126,7 @@ class AdminExamDeploymentDetailView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams-deployments"],
+        tags=["exams"],
         summary="쪽지시험 배포 상세 조회",
         responses={200: AdminExamDeploymentDetailSerializer},
     )
@@ -146,7 +146,7 @@ class AdminExamDeploymentDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["exams-deployments"],
+        tags=["exams"],
         summary="쪽지시험 배포 수정",
         request=AdminExamDeploymentUpdateSerializer,
         responses={200: AdminExamDeploymentUpdateResponseSerializer},
@@ -178,7 +178,7 @@ class AdminExamDeploymentDetailView(APIView):
         )
 
     @extend_schema(
-        tags=["exams-deployments"],
+        tags=["exams"],
         summary="쪽지시험 배포 삭제",
         responses={200: OpenApiResponse(description="deployment_id")},
     )
@@ -213,7 +213,7 @@ class AdminExamDeploymentStatusView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams-deployments"],
+        tags=["exams"],
         summary="쪽지시험 배포 상태 수정",
         request=AdminExamDeploymentStatusSerializer,
         responses={200: AdminExamDeploymentStatusResponseSerializer},
