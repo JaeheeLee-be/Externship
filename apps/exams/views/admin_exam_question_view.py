@@ -31,7 +31,7 @@ from apps.exams.services.admin_exam_question_service import (
 )
 
 
-@extend_schema(tags=["exams_question"], summary="쪽지시험 문제 생성", request=ExamQuestionSwaggerSerializer)
+@extend_schema(tags=["admin-exams"], summary="쪽지시험 문제 생성", request=ExamQuestionSwaggerSerializer)
 class AdminQuestionCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
@@ -72,8 +72,9 @@ class AdminQuestionUpdateDeleteView(APIView):
         raise PermissionDenied("권한이 없습니다.")
 
     @extend_schema(
-        tags=["exams_question"],
+        tags=["admin-exams"],
         summary="쪽지시험 문제 수정",
+        request = QuestionUpdateSerializer
     )
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
@@ -89,7 +90,7 @@ class AdminQuestionUpdateDeleteView(APIView):
         return Response(QuestionUpdateResponseSerializer(mod_question).data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["exams_question"],
+        tags=["admin-exams"],
         summary="쪽지시험 문제 삭제",
     )
     def delete(self, request: Request, question_id: int) -> Response:
