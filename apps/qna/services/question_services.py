@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from apps.qna.models.question_models import Question, QuestionCategory, QuestionImage
 from apps.users.models import User
 
@@ -5,6 +7,7 @@ from apps.users.models import User
 class QuestionService:
 
     @staticmethod
+    @transaction.atomic
     def create_question(
         *,
         author: User,

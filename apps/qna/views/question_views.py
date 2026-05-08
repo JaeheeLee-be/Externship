@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
-from apps.qna.models.question_models import QuestionCategory
 from apps.qna.schemas.question_schemas import (
     question_create_schema,
 )
@@ -33,8 +32,6 @@ class QuestionAPIView(APIView):
         serializer = QuestionCreateSerializer(data=request.data)
 
         if not serializer.is_valid():
-            first_error = next(iter(serializer.errors.values()))
-            error_message = first_error[0] if isinstance(first_error, list) else str(first_error)
             return Response(
                 {"error_detail": "유효하지 않은 질문 등록 요청입니다."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -42,18 +39,18 @@ class QuestionAPIView(APIView):
 
         user = cast(User, request.user)
 
-        category = QuestionCategory.objects.get(id=serializer.validated_data["category_id"])
-
         question = QuestionService.create_question(
             author=user,
             title=serializer.validated_data["title"],
             content=serializer.validated_data["content"],
-            category=category,
+            category=serializer.validated_data["category_id"],
             img_urls=serializer.validated_data["img_urls"],
         )
 
-        response_data = QuestionCreateResponseSerializer(
-            {"message": "질문이 성공적으로 등록되었습니다.", "question_id": question.id}
-        ).data
-
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "질문이 성공적으로 등록되었습니다.",
+                "question_id": question.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
