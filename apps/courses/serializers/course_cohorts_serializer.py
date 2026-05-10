@@ -8,6 +8,7 @@ from apps.users.models import User
 
 
 class CohortDateRangeMixin:
+    # POST api/v1/admin/cohorts, PATCH api/v1/admin/cohorts/{cohort_id}
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         raw_instance = getattr(self, "instance", None)
         instance = raw_instance if isinstance(raw_instance, Cohort) else None
@@ -21,12 +22,7 @@ class CohortDateRangeMixin:
         return attrs
 
 
-class CohortCourseSerializer(serializers.ModelSerializer[Course]):
-    class Meta:
-        model = Course
-        fields = ("id", "name", "tag", "description")
-
-
+# POST api/v1/admin/cohorts request
 class CohortCreateSerializer(CohortDateRangeMixin, serializers.ModelSerializer[Cohort]):
     course_id = serializers.PrimaryKeyRelatedField(
         queryset=Course.objects.all(),
@@ -48,11 +44,13 @@ class CohortCreateSerializer(CohortDateRangeMixin, serializers.ModelSerializer[C
         }
 
 
+# POST api/v1/admin/cohorts 201 response
 class CohortCreateResponseSerializer(serializers.Serializer[dict[str, Any]]):
     detail = serializers.CharField(default="기수가 등록되었습니다.")
     id = serializers.IntegerField()
 
 
+# GET api/v1/courses/{course_id}/cohorts response
 class CohortListSerializer(serializers.ModelSerializer[Cohort]):
     class Meta:
         model = Cohort
@@ -60,55 +58,7 @@ class CohortListSerializer(serializers.ModelSerializer[Cohort]):
         read_only_fields = fields
 
 
-class CohortAdminListSerializer(serializers.ModelSerializer[Cohort]):
-    course = CohortCourseSerializer(read_only=True)
-    course_cohort = serializers.SerializerMethodField()
-    student_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Cohort
-        fields = (
-            "id",
-            "course",
-            "course_cohort",
-            "student_count",
-            "status",
-            "start_date",
-            "end_date",
-        )
-        read_only_fields = fields
-
-    def get_course_cohort(self, obj: Cohort) -> str:
-        return f"{obj.course.name} {obj.number}기"
-
-    def get_student_count(self, obj: Cohort) -> int:
-        return get_cohort_student_count(obj)
-
-
-class CohortDetailSerializer(serializers.ModelSerializer[Cohort]):
-    course = CohortCourseSerializer(read_only=True)
-    student_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Cohort
-        fields = (
-            "id",
-            "created_at",
-            "updated_at",
-            "course",
-            "number",
-            "max_student",
-            "student_count",
-            "start_date",
-            "end_date",
-            "status",
-        )
-        read_only_fields = fields
-
-    def get_student_count(self, obj: Cohort) -> int:
-        return get_cohort_student_count(obj)
-
-
+# PATCH api/v1/admin/cohorts/{cohort_id} request
 class CohortUpdateSerializer(CohortDateRangeMixin, serializers.ModelSerializer[Cohort]):
     class Meta:
         model = Cohort
@@ -128,6 +78,7 @@ class CohortUpdateSerializer(CohortDateRangeMixin, serializers.ModelSerializer[C
         }
 
 
+# PATCH api/v1/admin/cohorts/{cohort_id} 200 response
 class CohortUpdateResponseSerializer(serializers.ModelSerializer[Cohort]):
     class Meta:
         model = Cohort
@@ -144,11 +95,13 @@ class CohortUpdateResponseSerializer(serializers.ModelSerializer[Cohort]):
         read_only_fields = fields
 
 
+# GET api/v1/admin/courses/{course_id}/cohorts/avg-scores response
 class CohortAvgScoreSerializer(serializers.Serializer[dict[str, Any]]):
     name = serializers.CharField()
     score = serializers.IntegerField()
 
 
+# GET api/v1/admin/cohorts/{cohort_id}/students response
 class CohortStudentSerializer(serializers.ModelSerializer[User]):
     value = serializers.CharField(source="nickname")
     label = serializers.CharField(source="name")  # type: ignore[assignment]
@@ -156,14 +109,3 @@ class CohortStudentSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = ("value", "label")
-
-
-def get_cohort_student_count(obj: Cohort) -> int:
-    student_count = getattr(obj, "student_count", None)
-    if student_count is not None:
-        return int(student_count)
-
-    cohort_students = getattr(obj, "cohortstudents_set", None)
-    if cohort_students is None:
-        return 0
-    return int(cohort_students.count())
