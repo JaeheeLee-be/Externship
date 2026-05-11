@@ -121,8 +121,8 @@ def update_question(question_id: int, data: Dict[str, Any], method: str) -> Exam
     if total_point + data.get("point", target_question.point) - target_question.point > 100:
         raise ExamQuestionUpdateConflict()
 
-    if 'options' in data:
-        data['options_json'] = json.dumps(data.pop('options'))
+    if "options" in data:
+        data["options_json"] = json.dumps(data.pop("options"))
 
     for key, value in data.items():
         setattr(target_question, key, value)
