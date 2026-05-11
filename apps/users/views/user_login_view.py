@@ -68,9 +68,7 @@ class LoginView(APIView):
         response = Response({"access_token": access_token}, status=status.HTTP_200_OK)
 
         response.set_cookie(
-            key="refresh_token", value=refresh_token, httponly=True, 
-            secure=True,
-            samesite="None", path="/"
+            key="refresh_token", value=refresh_token, httponly=True, secure=True, samesite="None", path="/"
         )
         return response
 
