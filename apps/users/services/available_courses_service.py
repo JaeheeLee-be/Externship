@@ -29,9 +29,7 @@ def get_available_cohorts(user: User) -> QuerySet[Cohort]:
 
     # 모집 중인 기수만 필터링(course join해오기), 위에 추출한 기수 제외
     available_cohorts = (
-        Cohort.objects.filter(
-            status__in=[StatusChoices.PREPARING, StatusChoices.IN_PROGRESS]
-        )
+        Cohort.objects.filter(status__in=[StatusChoices.PREPARING, StatusChoices.IN_PROGRESS])
         .exclude(id__in=excluded_ids)
         .select_related("course")
     )
