@@ -104,8 +104,8 @@ class ExamDeploymentCheckCodeView(APIView):
         # TODO : 명세서상에 400에러메세지가 하나밖에 있지 않아 시리얼라이즈에 타입검증과 서비스에 비교연산검증을 하나의 custum exception으로 처리
         # 상태코드와 에러메세지가 같아 사실상 구분이 어렵습니다. 이 부분 확인 후 피드백 주시면 수정하겠습니다.
         if not body_serializer.is_valid():
-            e = ExamDeploymentCodeMismatchError()
-            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            code_error = ExamDeploymentCodeMismatchError()
+            return Response({"error_detail": str(code_error)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             check_deployment_code(
