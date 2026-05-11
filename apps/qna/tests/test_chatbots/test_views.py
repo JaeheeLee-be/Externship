@@ -108,7 +108,7 @@ class TestQNAChatbotAPIViewGetMethod(IsolatedRedisTestClient):
             value=self.initial.__dict__,
             ttl=60,
         )
-        CacheRepository.set_session(SESSION_KEY.format(self.user.id), self.question.id, ttl=60)
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user.id), self.question.id, ttl=60)
 
     def test_get_unauthenticated(self) -> None:
         response = self.client.get(self.url)
@@ -158,7 +158,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
             value=self.initial.__dict__,
             ttl=60,
         )
-        CacheRepository.set_session(SESSION_KEY.format(self.user.id), self.question.id, ttl=60)
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user.id), self.question.id, ttl=60)
 
     def test_post_unauthenticated(self) -> None:
         response = self.client.post(self.url, {"message": "hello"})
@@ -188,7 +188,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         self.assertEqual(response.status_code, 400)
 
     def test_post_returns_403_when_no_session(self) -> None:
-        CacheRepository.delete(SESSION_KEY.format(self.user.id))
+        CacheRepository.delete(SESSION_KEY.format(user_id=self.user.id))
         self.client.force_authenticate(user=self.user)
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 403)
@@ -203,7 +203,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
     def test_post_returns_429_when_history_full(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         CacheRepository.save_history(
-            key=QNA_KEY.format(self.user.id, self.question.id),
+            key=QNA_KEY.format(user_id=self.user.id, question_id=self.question.id),
             history=[{"role": "user", "content": f"msg{i}"} for i in range(10)],
             ttl=60,
         )

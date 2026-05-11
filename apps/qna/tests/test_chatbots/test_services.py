@@ -143,7 +143,7 @@ class TestChatbotService(IsolatedRedisTestClient):
             created_at="2024-01-01T00:00:00",
         )
         CacheRepository.save_initial(
-            key=INITIAL_KEY.format(self.question_id),
+            key=INITIAL_KEY.format(question_id=self.question_id),
             value=asdict(self.initial),
             ttl=1800,
         )
@@ -161,7 +161,7 @@ class TestChatbotService(IsolatedRedisTestClient):
 
     def test_response_qna_history_activates_session(self) -> None:
         ChatbotService.response_qna_history(self.user_id, self.question_id)
-        session = CacheRepository.get_session(SESSION_KEY.format(self.user_id))
+        session = CacheRepository.get_session(SESSION_KEY.format(user_id=self.user_id))
         self.assertEqual(session, self.question_id)
 
     def test_response_qna_history_returns_existing_history(self) -> None:
@@ -170,7 +170,7 @@ class TestChatbotService(IsolatedRedisTestClient):
             Message(role="assistant", content="답변입니다."),
         ]
         CacheRepository.save_history(
-            key=QNA_KEY.format(self.user_id, self.question_id),
+            key=QNA_KEY.format(user_id=self.user_id, question_id=self.question_id),
             history=[asdict(m) for m in history],
             ttl=1800,
         )
@@ -181,13 +181,13 @@ class TestChatbotService(IsolatedRedisTestClient):
     def test_response_qna_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         CacheRepository.set_session(
-            key=SESSION_KEY.format(self.user_id),
+            key=SESSION_KEY.format(user_id=self.user_id),
             value=self.question_id,
             ttl=1800,
         )
         result = list(ChatbotService.response_qna_chat(self.user_id, self.question_id, "질문입니다."))
         self.assertTrue(len(result) > 0)
-        history = CacheRepository.get_history(QNA_KEY.format(self.user_id, self.question_id))
+        history = CacheRepository.get_history(QNA_KEY.format(user_id=self.user_id, question_id=self.question_id))
         assert history is not None
         self.assertIsNotNone(history)
         self.assertEqual(history[0].role, "user")
@@ -197,7 +197,7 @@ class TestChatbotService(IsolatedRedisTestClient):
     def test_response_qna_chat_raises_timeout(self, mock: MagicMock) -> None:
         mock.side_effect = GroqTimeoutError
         CacheRepository.set_session(
-            key=SESSION_KEY.format(self.user_id),
+            key=SESSION_KEY.format(user_id=self.user_id),
             value=self.question_id,
             ttl=1800,
         )
@@ -208,7 +208,7 @@ class TestChatbotService(IsolatedRedisTestClient):
     def test_response_qna_chat_raises_api_error(self, mock: MagicMock) -> None:
         mock.side_effect = GroqAPIError
         CacheRepository.set_session(
-            key=SESSION_KEY.format(self.user_id),
+            key=SESSION_KEY.format(user_id=self.user_id),
             value=self.question_id,
             ttl=1800,
         )
@@ -220,10 +220,10 @@ class TestChatbotService(IsolatedRedisTestClient):
             ChatbotService.validate_qna_chat(self.user_id, self.question_id)
 
     def test_validate_qna_chat_raises_429_when_history_full(self) -> None:
-        CacheRepository.set_session(SESSION_KEY.format(self.user_id), self.question_id, ttl=1800)
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
         history = [Message(role="user", content=f"{i}") for i in range(10)]
         CacheRepository.save_history(
-            key=QNA_KEY.format(self.user_id, self.question_id),
+            key=QNA_KEY.format(user_id=self.user_id, question_id=self.question_id),
             history=[asdict(m) for m in history],
             ttl=1800,
         )
@@ -231,11 +231,11 @@ class TestChatbotService(IsolatedRedisTestClient):
             ChatbotService.validate_qna_chat(self.user_id, self.question_id)
 
     def test_validate_qna_chat_raises_404_when_initial_not_found(self) -> None:
-        CacheRepository.set_session(SESSION_KEY.format(self.user_id), self.question_id, ttl=1800)
-        CacheRepository.delete(INITIAL_KEY.format(self.question_id))
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
+        CacheRepository.delete(INITIAL_KEY.format(question_id=self.question_id))
         with self.assertRaises(NotFoundException):
             ChatbotService.validate_qna_chat(self.user_id, self.question_id)
 
     def test_validate_qna_chat_passes_when_valid(self) -> None:
-        CacheRepository.set_session(SESSION_KEY.format(self.user_id), self.question_id, ttl=1800)
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
         ChatbotService.validate_qna_chat(self.user_id, self.question_id)

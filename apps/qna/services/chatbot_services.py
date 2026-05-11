@@ -37,12 +37,12 @@ class InitialService:
     @staticmethod
     def get_initial_answer(question_id: int) -> InitialQNA:
 
-        key = INITIAL_KEY.format(question_id)
+        key = INITIAL_KEY.format(question_id=question_id)
         cached = CacheRepository.get_initial(key)
         if cached:
             return cached
 
-        lock_key = LOCK_KEY.format(key)
+        lock_key = LOCK_KEY.format(key=key)
         if not CacheRepository.acquire_lock(lock_key, InitialService.LOCK_TTL):
             timeout = 20
             interval = 2
@@ -67,7 +67,7 @@ class InitialService:
         동시요청 가능성이 없어 락을 구현하지 않았습니다.
         초기응답은 모든 클라이언트에게 동일하게 제공되므로 캐시 키에 user_id를 포함하지 않습니다.
         """
-        if CacheRepository.get_initial(INITIAL_KEY.format(question_id)):
+        if CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id)):
             raise ConflictException("이미 AI가 답변을 생성했습니다.")
 
         question = Question.objects.filter(pk=question_id).select_related("category__parent__parent").first()
@@ -84,7 +84,7 @@ class InitialService:
             using_model=InitialService.MODEL,
         )
 
-        key = INITIAL_KEY.format(question.id)
+        key = INITIAL_KEY.format(question_id=question.id)
         CacheRepository.save_initial(key=key, value=asdict(save_data), ttl=InitialService.INITIAL_TTL)
 
         return save_data
@@ -132,7 +132,7 @@ class ChatbotService:
         유저가 히스토리를 조회함으로써 세션이 처음 활성화됩니다.
         히스토리가 없는 경우 빈 문자열을 반환합니다.
         """
-        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
+        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id))
         if initial is None:
             raise NotFoundException("해당 질문을 찾을 수 없습니다.")
         return ChatbotService._response_history(user_id, question_id)
@@ -146,8 +146,8 @@ class ChatbotService:
         만약 캐시에 저장된 대화의 길이가 5쌍 이상일 경우, 사용자의 다음 채팅에 대해 429를 반환합니다.
         대화 히스토리와 세션의 ttl은 30분이며, 대화가 갱신될때마다 같이 갱신됩니다.
         """
-        history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
-        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id))
+        history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
+        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id))
         assert initial is not None
         payload = GroqPayloadFactory.create_payload(
             prompt=QNA_PROMPT,
@@ -155,7 +155,7 @@ class ChatbotService:
             history=GroqPayloadFactory.build_history_for_qna_payload(initial, history),
             model=ChatbotService.MODEL,
         )
-        key = QNA_KEY.format(user_id, question_id)
+        key = QNA_KEY.format(user_id=user_id, question_id=question_id)
 
         ChatbotService._make_session(user_id, question_id)
         return ChatbotService._stream_and_save_chat(key, history, message, payload)
@@ -163,18 +163,18 @@ class ChatbotService:
     @staticmethod
     def validate_qna_chat(user_id: int, question_id: int) -> None:
         """StreamingHttpResponse를 사용하면 에러 상태코드가 제대로 나가지 않아서 분리함"""
-        if not CacheRepository.get_session(SESSION_KEY.format(user_id)) == question_id:
+        if not CacheRepository.get_session(SESSION_KEY.format(user_id=user_id)) == question_id:
             raise InactiveSessionException()
-        history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
+        history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
         if history is not None and len(history) >= 10:
             raise ConversationOverException()
-        if CacheRepository.get_initial(INITIAL_KEY.format(question_id)) is None:
+        if CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id)) is None:
             raise NotFoundException("해당 질문을 찾을 수 없습니다.")
 
     @staticmethod
     def _response_history(user_id: int, question_id: int) -> list[Message]:
         ChatbotService._make_session(user_id, question_id)
-        history = CacheRepository.get_history(QNA_KEY.format(user_id, question_id))
+        history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
         return history or []
 
     @staticmethod
@@ -197,7 +197,7 @@ class ChatbotService:
 
     @staticmethod
     def _make_session(user_id: int, question_id: int) -> None:
-        CacheRepository.set_session(key=SESSION_KEY.format(user_id), value=question_id, ttl=ChatbotService.QNA_TTL)
+        CacheRepository.set_session(key=SESSION_KEY.format(user_id=user_id), value=question_id, ttl=ChatbotService.QNA_TTL)
 
     @staticmethod
     def _store_history(key: str, history: list[Message] | None, messages: list[Message], ttl: int) -> None:
