@@ -1,9 +1,8 @@
-from django.db.models import Exists, OuterRef, Prefetch
+from django.db.models import Count, QuerySet
 
 from apps.qna.exceptions import NotFoundException
-from apps.qna.models.answer_models import Answer, AnswerComment
 from apps.qna.models.question_models import Question, QuestionCategory
-from apps.users.models import CohortStudents, User
+
 
 def _get_category_path(category: QuestionCategory) -> str:
     """카테고리 대/중/소를 ' > ' 로 연결한 문자열 반환"""
@@ -90,6 +89,8 @@ class AdminQuestionListService:
             "created_at": question.created_at,
             "updated_at": question.updated_at,
         }
+
+
 class AdminQuestionDeleteService:
     """어드민 질문 삭제 서비스"""
 

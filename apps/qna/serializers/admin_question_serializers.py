@@ -31,6 +31,7 @@ class AdminQuestionListItemSerializer(serializers.Serializer[Any]):
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
+
 # ── 어드민 질문 삭제 ──────────────────────────────────────────────────
 
 
