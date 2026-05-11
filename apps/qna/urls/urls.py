@@ -39,4 +39,5 @@ urlpatterns = [
     # 챗봇
     path("questions/<int:question_id>/ai-answer", chatbot_views.InitialAiAnswerAPIView.as_view(), name="ai_answer"),
     path("questions/<int:question_id>/chatbot", chatbot_views.QNAChatbotAPIView.as_view(), name="qna_chatbot"),
+    path("ai-answer/sessions", chatbot_views.QNAChatbotListAPIView.as_view(), name="qna_chatbot_list"),
 ]

@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.redis import CacheRepository
 from apps.qna.schemas.chatbot_schemas import (
     ai_answer_get_schema,
     ai_answer_post_schema,
@@ -19,6 +20,7 @@ from apps.qna.schemas.chatbot_schemas import (
 )
 from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
+    QNAChatbotListResponseSerializer,
     QNAChatbotRequestSerializer,
     QNAHistoryResponseSerializer,
 )
@@ -98,3 +100,17 @@ class QNAChatbotAPIView(APIView):
             )
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
+
+
+class QNAChatbotListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
+        raise PermissionDenied(message)
+
+    def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
+        instance = CacheRepository.get_qna_list(request.user.pk)
+        serializer = QNAChatbotListResponseSerializer(instance, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
