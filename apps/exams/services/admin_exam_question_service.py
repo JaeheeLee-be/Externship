@@ -103,7 +103,7 @@ def create_question(exam_id: int, data: Dict[str, Any]) -> ExamQuestion:
         raise ExamQuestionCreateConflict()
 
     if "options" in data:
-        data["options_json"] = json.dumps(data["options"])
+        data["options_json"] = json.dumps(data.pop("options"))
     if "correct_answer" in data:
         data["answer"] = data.pop("correct_answer")
 
