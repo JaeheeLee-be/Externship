@@ -15,4 +15,5 @@ urlpatterns = [
     path("", include("apps.users.urls.user_login_url")),
     path("", include("apps.users.urls.find_password_url")),
     path("", include("apps.users.urls.change_phone_url")),
+    path("", include("apps.users.urls.find_email_url")),
 ]
