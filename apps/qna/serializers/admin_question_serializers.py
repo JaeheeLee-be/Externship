@@ -30,3 +30,13 @@ class AdminQuestionListItemSerializer(serializers.Serializer[Any]):
     has_answer = serializers.BooleanField()
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+# ── 어드민 질문 삭제 ──────────────────────────────────────────────────
+
+
+class AdminQuestionDeleteResponseSerializer(serializers.Serializer[Any]):
+    """어드민 질문 삭제 응답"""
+
+    question_id = serializers.IntegerField()
+    deleted_answer_count = serializers.IntegerField()
+    deleted_comment_count = serializers.IntegerField()

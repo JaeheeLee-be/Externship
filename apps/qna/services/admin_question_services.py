@@ -1,7 +1,9 @@
-from django.db.models import Count, OuterRef, QuerySet, Subquery
+from django.db.models import Exists, OuterRef, Prefetch
 
-from apps.qna.models.question_models import Question, QuestionCategory, QuestionImage
-
+from apps.qna.exceptions import NotFoundException
+from apps.qna.models.answer_models import Answer, AnswerComment
+from apps.qna.models.question_models import Question, QuestionCategory
+from apps.users.models import CohortStudents, User
 
 def _get_category_path(category: QuestionCategory) -> str:
     """카테고리 대/중/소를 ' > ' 로 연결한 문자열 반환"""
@@ -87,4 +89,32 @@ class AdminQuestionListService:
             "has_answer": question.answer_count > 0,  # type: ignore[attr-defined]
             "created_at": question.created_at,
             "updated_at": question.updated_at,
+        }
+class AdminQuestionDeleteService:
+    """어드민 질문 삭제 서비스"""
+
+    @staticmethod
+    def delete_admin_question(question_id: int) -> dict[str, object]:
+        """어드민 질문 삭제 (답변, 댓글 포함)"""
+        try:
+            question = Question.objects.get(pk=question_id)
+        except Question.DoesNotExist:
+            raise NotFoundException("삭제할 질문을 찾을 수 없습니다.")
+
+        # 삭제 전 카운트 계산
+        deleted_answer_count = 0
+        deleted_comment_count = 0
+
+        # 각 답변의 댓글 수 계산 및 합산
+        for answer in question.answer_set.all():
+            deleted_comment_count += answer.answercomment_set.count()
+            deleted_answer_count += 1
+
+        # 질문 삭제 (cascade로 답변, 댓글, 이미지 모두 삭제됨)
+        question.delete()
+
+        return {
+            "question_id": question_id,
+            "deleted_answer_count": deleted_answer_count,
+            "deleted_comment_count": deleted_comment_count,
         }

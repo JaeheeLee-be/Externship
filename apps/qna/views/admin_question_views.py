@@ -1,5 +1,7 @@
 from typing import NoReturn
 
+from typing import Any
+
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
@@ -8,11 +10,15 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.qna.models.question_models import QuestionCategory
+from apps.qna.exceptions import BaseCustomException
+from apps.qna.schemas.question_admin_schemas import admin_question_delete_schema
 from apps.qna.serializers.admin_question_serializers import (
     AdminQuestionListItemSerializer,
     AdminQuestionListQuerySerializer,
+    AdminQuestionDeleteResponseSerializer,
 )
 from apps.qna.services.admin_question_services import AdminQuestionListService
+from apps.qna.services.admin_question_services import AdminQuestionDeleteService
 
 
 class AdminQuestionListAPIView(APIView):
@@ -60,3 +66,27 @@ class AdminQuestionListAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+class AdminQuestionDetailAPIView(APIView):
+    """어드민 질문 상세 조회/삭제 API"""
+
+    permission_classes = [IsRoleAdminUser]
+
+    @admin_question_delete_schema
+    def delete(self, request: Request, question_id: int, *args: Any, **kwargs: Any) -> Response:
+        """어드민 질문 삭제"""
+        # question_id 유효성 검사
+        if not isinstance(question_id, int) or question_id < 1:
+            return Response(
+                {"error_detail": "유효하지 않은 삭제 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = AdminQuestionDeleteService.delete_admin_question(question_id)
+            serializer = AdminQuestionDeleteResponseSerializer(result)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except BaseCustomException as e:
+            return Response(
+                {"error_detail": e.message},
+                status=e.status_code,
+            )
