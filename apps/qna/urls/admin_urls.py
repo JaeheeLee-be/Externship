@@ -5,6 +5,10 @@ from apps.qna.views.admin_category_views import (
     AdminCategoryDestroyAPIView,
     AdminCategoryListCreateAPIView,
 )
+from apps.qna.views.admin_question_views import (
+    AdminQuestionDetailAPIView,
+    AdminQuestionListAPIView,
+)
 
 urlpatterns = [
     # 어드민 카테고리
@@ -14,5 +18,9 @@ urlpatterns = [
         name="admin-category-list-create",
     ),
     path("categories/<int:category_id>", AdminCategoryDestroyAPIView.as_view(), name="admin-category-delete"),
+    # 어드민 답변
     path("answers/<int:answer_id>", AdminAnswerDeleteView.as_view(), name="admin-answer-delete"),
+    # 어드민 질의응답
+    path("questions", AdminQuestionListAPIView.as_view(), name="admin-question-list"),
+    path("questions/<int:question_id>", AdminQuestionDetailAPIView.as_view(), name="admin-question-detail"),
 ]

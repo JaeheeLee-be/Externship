@@ -68,7 +68,7 @@ class LoginView(APIView):
         response = Response({"access_token": access_token}, status=status.HTTP_200_OK)
 
         response.set_cookie(
-            key="refresh_token", value=refresh_token, httponly=True, secure=True, samesite="Lax", path="/"
+            key="refresh_token", value=refresh_token, httponly=True, secure=True, samesite="None", path="/"
         )
         return response
 
@@ -147,7 +147,7 @@ class TokenRefreshView(APIView):
             value=new_refresh,
             httponly=True,
             secure=True,
-            samesite="Lax",
+            samesite="None",
             path="/",
             max_age=int(refresh_lifetime.total_seconds()),
         )

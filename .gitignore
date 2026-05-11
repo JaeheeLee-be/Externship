@@ -11,3 +11,8 @@ media/
 static/
 staticfiles/
 .claude/
+<<<<<<< feature/exams_deploy
+=======
+docker-compose.override.yml
+
+>>>>>>> develop

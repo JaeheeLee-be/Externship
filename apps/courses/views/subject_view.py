@@ -106,7 +106,7 @@ class SubjectDetailView(APIView):
     )
     def get(self, request: Request, subject_id: int) -> Response:
         subject = subject_service.get_subject_detail(subject_id=subject_id)
-        return Response(SubjectDetailSerializer(subject).data)
+        return Response(SubjectDetailSerializer(subject).data, status=status.HTTP_200_OK)
 
     @extend_schema(
         tags=["Admin - Subject"],
@@ -125,7 +125,7 @@ class SubjectDetailView(APIView):
         serializer = SubjectUpdateSerializer(instance=subject, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response({"error_detail": "유효하지 않은 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
-        subject = subject_service.update_subject(subject_id=subject_id, **serializer.validated_data)
+        subject = subject_service.update_subject(subject, **serializer.validated_data)
         return Response(SubjectUpdateSerializer(subject).data, status=status.HTTP_200_OK)
 
     @extend_schema(

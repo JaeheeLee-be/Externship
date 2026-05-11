@@ -45,14 +45,10 @@ def get_subject_detail(subject_id: int) -> Subject:
     try:
         return Subject.objects.select_related("course").get(id=subject_id)
     except Subject.DoesNotExist:
-        raise SubjectNotFoundError("해당 과목을 찾을 수 없습니다.")
-
-
-def update_subject(subject_id: int, **kwargs: Any) -> Subject:
-    try:
-        subject = Subject.objects.select_related("course").get(id=subject_id)
-    except Subject.DoesNotExist:
         raise SubjectNotFoundError()
+
+
+def update_subject(subject: Subject, **kwargs: Any) -> Subject:
     for attr, value in kwargs.items():
         setattr(subject, attr, value)
     try:

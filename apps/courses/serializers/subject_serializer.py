@@ -14,7 +14,7 @@ class SubjectCourseSerializer(serializers.ModelSerializer[Course]):
 
 
 class SubjectListSerializer(serializers.ModelSerializer[Subject]):
-    course_id = serializers.IntegerField()
+    course_id = serializers.IntegerField(read_only=True)
     status = serializers.SerializerMethodField()
 
     class Meta:
