@@ -2,6 +2,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 
 from apps.qna.serializers.category_serializers import (
     AdminCategoryCreateResponseSerializer,
+    AdminCategoryCreateSerializer,
     AdminCategoryListSerializer,
 )
 
@@ -10,6 +11,7 @@ admin_category_create_schema = extend_schema(
     tags=["Admin-Qna"],
     summary="어드민 카테고리 생성",
     description="어드민이 카테고리를 생성합니다.",
+    request=AdminCategoryCreateSerializer,
     responses={
         201: AdminCategoryCreateResponseSerializer,
         400: OpenApiResponse(description="카테고리 종류와 이름은 필수 입력값입니다."),

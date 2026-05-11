@@ -9,7 +9,7 @@ from apps.users.services.withdrawal_service import get_recovery_token_cache
 from apps.users.utils.withdrawal_exceptions import InvalidRecoveryTokenError
 
 
-class WithdrawalSerializer(serializers.Serializer[Withdrawal]):
+class WithdrawalSerializer(serializers.Serializer[Any]):
     reason = serializers.ChoiceField(choices=Withdrawal.Reason.choices)
     reason_detail = serializers.CharField(required=False, default="", allow_blank=True)
 
