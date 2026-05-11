@@ -42,7 +42,8 @@ class AdminQuestionDeleteResponseSerializer(serializers.Serializer[Any]):
     deleted_answer_count = serializers.IntegerField()
     deleted_comment_count = serializers.IntegerField()
 
- #── 어드민 질문 상세 조회 ────────────────────────────────────────────
+
+# ── 어드민 질문 상세 조회 ────────────────────────────────────────────
 
 
 class AdminQuestionDetailAuthorSerializer(serializers.Serializer[Any]):

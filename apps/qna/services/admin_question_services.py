@@ -1,9 +1,9 @@
-from django.db.models import Count, OuterRef, QuerySet, Subquery, Prefetch
+from django.db.models import Count, Exists, OuterRef, Prefetch, QuerySet, Subquery
 
 from apps.qna.exceptions import NotFoundException
 from apps.qna.models import Answer
 from apps.qna.models.question_models import Question, QuestionCategory
-from apps.users.models import CohortStudents
+from apps.users.models import CohortStudents, User
 
 
 def _get_category_path(category: QuestionCategory) -> str:
@@ -122,6 +122,7 @@ class AdminQuestionDeleteService:
             "deleted_comment_count": deleted_comment_count,
         }
 
+
 class AdminQuestionDetailService:
     """어드민 질문 상세 조회 서비스"""
 
@@ -206,12 +207,17 @@ class AdminQuestionDetailService:
                 cohort_number = answer_cohort_student.cohort.number
                 answer_course_generation = f"{course_name} {cohort_number}기" if course_name and cohort_number else None
 
-                # role_title 결정 (예시 로직 - 실제로는 User 모델의 role 기반)
-                # TODO: role에 따라 role_title 설정 로직 필요
                 if answer_author.role == "ADMIN":
-                    answer_role_title = f"{course_name} {cohort_number}기 관리자"
-                # 추가 role에 따른 title 설정 가능
+                    # ADMIN은 기수 정보와 함께 표시
+                    if answer_course_generation:
+                        answer_role_title = f"{answer_course_generation} 관리자"
+                    else:
+                        answer_role_title = "관리자"
 
+                elif answer_author.role == "STUDENT":
+                    # STUDENT는 기수 정보와 함께 표시
+                    if answer_course_generation:
+                        answer_role_title = f"{answer_course_generation} 수강생"
             answers.append(
                 {
                     "answer_id": answer.id,
