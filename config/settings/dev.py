@@ -4,7 +4,7 @@ import sentry_sdk
 
 from config.settings.base import *
 
-DEBUG = False
+DEBUG = True
 RAW_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "")
 if not RAW_ALLOWED_HOSTS:
     raise ValueError("DJANGO_ALLOWED_HOSTS must be set")
