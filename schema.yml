@@ -1,0 +1,3761 @@
+openapi: 3.0.3
+info:
+  title: 오즈 코딩 스쿨 Backend API
+  version: 1.0.0
+  description: 오즈 코딩 스쿨의 웹 사이트 개발을 위한 API입니다.
+paths:
+  /api/v1/accounts/available-courses:
+    get:
+      operationId: v1_accounts_available_courses_retrieve
+      description: 모집 중인 기수만 소속된 과정 정보와 함께 반환합니다
+      summary: 수강신청 가능한 기수 조회 API
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableCourses'
+          description: ''
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+  /api/v1/accounts/check-nickname:
+    post:
+      operationId: v1_accounts_check_nickname_create
+      description: 로그인 유저는 닉네임 중복 확인 검사 가능
+      summary: 닉네임 중복 확인 API
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckNicknameRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckNicknameRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckNicknameRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckNickname'
+          description: ''
+        '400':
+          description: 이 필드는 필수 항목입니다.
+        '409':
+          description: 중복된 닉네임이 존재합니다.
+  /api/v1/accounts/enroll-student:
+    post:
+      operationId: v1_accounts_enroll_student_create
+      description: 로그인한 유저만 과정과 기수를 선택하여 수강생 등록 신청할 수 있습니다
+      summary: 수강생 등록 신청 API
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EnrollmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnrollmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          description: 수강생 등록 신청완료.
+        '400':
+          description: 이 필드는 필수 항목입니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+  /api/v1/accounts/find_password:
+    post:
+      operationId: v1_accounts_find_password_create
+      description: 이메일 인증 후 발급받은 토큰을 활용하여 유저 비밀번호 재설정
+      summary: 비밀번호 분실시 재설정 api
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FindPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FindPasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 비밀번호 재설정 성공
+        '400':
+          description: 유효성 검사 실패
+  /api/v1/accounts/login:
+    post:
+      operationId: v1_accounts_login_create
+      description: 이메일과 비밀번호로 로그인합니다. Access 토큰은 바디로, Refresh 토큰은 쿠키로 반환됩니다.
+      summary: 이메일 로그인 API
+      tags:
+      - Account(로그인)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 로그인 성공
+        '400':
+          description: 유효성 검사 실패
+        '403':
+          description: 비활성화 계정,탈퇴 계정,로그인 정보 불일치
+  /api/v1/accounts/logout:
+    post:
+      operationId: v1_accounts_logout_create
+      summary: 로그아웃 API
+      tags:
+      - Account(로그인)
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: 로그아웃 성공
+  /api/v1/accounts/me:
+    get:
+      operationId: v1_accounts_me_retrieve
+      description: 로그인한 유저는 회원정보 조회가능, 수강생 등록이 되어있을 경우 수강중 과정, 기수도 조회가능
+      summary: 내 정보 조회 API
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+          description: ''
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+    patch:
+      operationId: v1_accounts_me_partial_update
+      description: 로그인한 유저는 닉네임, 이름, 생년월일, 성별 수정 가능
+      summary: 내 정보 수정 API
+      tags:
+      - Accounts (회원관리)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserInfoUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserInfoUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserInfoUpdateRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoUpdateResponse'
+          description: ''
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '409':
+          description: 중복된 닉네임
+  /api/v1/accounts/me/enrolled-courses:
+    get:
+      operationId: v1_accounts_me_enrolled_courses_list
+      description: 로그인한 유저의 수강목록만 조회
+      summary: 내 수강목록 조회 API
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyCourses'
+          description: ''
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 수강 목록 조회 권한이 없습니다.
+  /api/v1/accounts/me/profile-image:
+    patch:
+      operationId: v1_accounts_me_profile_image_partial_update
+      summary: 프로필 이미지 URL 저장
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+  /api/v1/accounts/me/profile-image/presigned-url:
+    post:
+      operationId: v1_accounts_me_profile_image_presigned_url_create
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: v1_accounts_me_profile_image_presigned_url_update
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+  /api/v1/accounts/me/refresh:
+    post:
+      operationId: v1_accounts_me_refresh_create
+      description: HttpOnly 쿠키의 refresh_token으로 새 access_token 발급. refresh_token도
+        갱신됨.
+      summary: JWT 토큰 재발급 API
+      tags:
+      - Account(로그인)
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 토큰 재발급 성공
+        '400':
+          description: refresh 쿠키 없음
+        '403':
+          description: 유효하지 않은 토큰
+  /api/v1/accounts/restore:
+    post:
+      operationId: v1_accounts_restore_create
+      description: 이메일 인증 후 발급된 email_token으로 계정을 복구합니다. 토큰은 10분간 유효합니다.
+      summary: 계정 복구
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestoreRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestoreRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 계정 복구 완료
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestoreValidationError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestoreNotFound'
+          description: ''
+  /api/v1/accounts/signup:
+    post:
+      operationId: v1_accounts_signup_create
+      description: 새로운 유저를 생성합니다. 이메일 중복 시 409 에러를 반환합니다.
+      summary: 회원가입
+      tags:
+      - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /api/v1/accounts/social-login/{provider}/:
+    get:
+      operationId: v1_accounts_social_login_retrieve
+      description: 지정된 provider의 OAuth 인증 URL로 리다이렉트합니다.
+      summary: 소셜 로그인 리다이렉트
+      parameters:
+      - in: path
+        name: provider
+        schema:
+          type: string
+        required: true
+      tags:
+      - accounts
+      security:
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '302':
+          description: No response body
+  /api/v1/accounts/social-login/{provider}/callback/:
+    get:
+      operationId: v1_accounts_social_login_callback_retrieve
+      description: OAuth 콜백 코드를 처리하고 프론트엔드로 리다이렉트합니다. 성공 시 refresh_token 쿠키를 설정합니다.
+      summary: 소셜 로그인 콜백 처리
+      parameters:
+      - in: path
+        name: provider
+        schema:
+          type: string
+        required: true
+      tags:
+      - accounts
+      security:
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '302':
+          description: No response body
+  /api/v1/accounts/verification/send-email:
+    post:
+      operationId: v1_accounts_verification_send_email_create
+      description: 회원가입, 비밀번호 찾기, 계정 복구 등 용도(purpose)에 맞는 6자리 이메일 인증 코드를 발송합니다.
+      summary: 이메일 인증 코드 발송 API
+      tags:
+      - Accounts (이메일 인증)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 발송 성공
+        '400':
+          description: 잘못된 요청 (유효성 검사 실패 등)
+  /api/v1/accounts/verification/send-sms:
+    post:
+      operationId: v1_accounts_verification_send_sms_create
+      description: 회원가입, 이메일 찾기, 전화번호 변경 등 용도(purpose)에 맞는 6자리 sms 인증 코드를 발송합니다.
+      summary: sms 인증 코드 발송 API
+      tags:
+      - Accounts (sms 인증)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsSendRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SmsSendRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SmsSendRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 발송 성공
+        '400':
+          description: 잘못된 요청 (유효성 검사 실패 등)
+  /api/v1/accounts/verification/verify-email:
+    post:
+      operationId: v1_accounts_verification_verify_email_create
+      description: 사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 email_token을 반환합니다.
+      summary: 이메일 인증 코드 검증 API
+      tags:
+      - Accounts (이메일 인증)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailVerifyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 검증 성공
+        '400':
+          description: 잘못된 요청 (코드 불일치 또는 만료)
+  /api/v1/accounts/verification/verify-sms:
+    post:
+      operationId: v1_accounts_verification_verify_sms_create
+      description: 사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 sms_token을 반환합니다.
+      summary: sms 인증 코드 검증 API
+      tags:
+      - Accounts (sms 인증)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsVerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SmsVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SmsVerifyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          description: 검증 성공
+        '400':
+          description: 잘못된 요청 (코드 불일치 또는 만료)
+  /api/v1/accounts/withdrawal:
+    delete:
+      operationId: v1_accounts_withdrawal_destroy
+      description: 탈퇴 신청 후 2주간 데이터가 보관되며, 2주 내 계정 복구가 가능합니다. 2주 후 완전 삭제됩니다.
+      summary: 회원 탈퇴
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '204':
+          description: 탈퇴 처리 완료
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawalValidationError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WithdrawalUnauthorized'
+          description: ''
+  /api/v1/admin/accounts:
+    get:
+      operationId: v1_admin_accounts_retrieve
+      description: 어드민 전용 회원 목록 조회 API입니다. 검색, 상태/역할 필터, 페이지네이션을 지원합니다.
+      summary: 어드민 회원 목록 조회
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: '페이지 번호 (기본값: 1)'
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: '페이지당 항목 수 (기본값: 10, 최대: 100)'
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - admin
+          - staff
+          - student
+          - user
+        description: 회원 역할 필터
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 이메일 또는 닉네임으로 검색
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - inactive
+          - withdrew
+        description: 회원 상태 필터
+      tags:
+      - admin_accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: 어드민 회원목록 조회를 성공했습니다.
+        '400':
+          description: 유효하지 않은 요청 파라미터입니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 권한이 없습니다.
+  /api/v1/admin/accounts/{account_id}:
+    get:
+      operationId: v1_admin_accounts_retrieve_2
+      description: 어드민 전용 특정 회원의 상세 정보를 조회하는 API입니다.
+      summary: 어드민 회원 상세 조회
+      parameters:
+      - in: path
+        name: account_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin_accounts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: 어드민 회원 정보 상세 조회를 성공했습니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 권한이 없습니다.
+        '404':
+          description: 사용자 정보를 찾을 수 없습니다.
+  /api/v1/admin/accounts/{account_id}/update:
+    patch:
+      operationId: v1_admin_accounts_update_partial_update
+      description: 어드민 전용 특정 회원의 정보를 수정하는 API입니다.
+      summary: 어드민 회원 정보 수정
+      parameters:
+      - in: path
+        name: account_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin_accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminAccountUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminAccountUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminAccountUpdateRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: 어드민 회원 수정을 성공했습니다.
+        '400':
+          description: 11자리 숫자로 구성된 포맷이어야 합니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 권한이 없습니다.
+        '404':
+          description: 사용자 정보를 찾을 수 없습니다.
+        '409':
+          description: 휴대폰 번호 중복으로 인하여 요청 처리에 실패하였습니다.
+  /api/v1/admin/exams/:
+    get:
+      operationId: v1_admin_exams_retrieve
+      description: 쪽지 시험 목록을 출력합니다. filter(subject), search가 포함돼 있습니다.
+      summary: 쪽지 시험 목록
+      parameters:
+      - in: query
+        name: order
+        schema:
+          type: string
+        description: asc, desc 값 중 선택 가능
+      - in: query
+        name: search_keyword
+        schema:
+          type: string
+        description: exam의 title과 subject의 title을 동시에 검색하며 유사, 일치를 찾습니다
+      - in: query
+        name: sort
+        schema:
+          type: string
+        description: id, title, subject__title, question_count, submit_count, created_at,
+          updated_at 값 중 선택 가능
+      - in: query
+        name: subject_id
+        schema:
+          type: integer
+        description: subject의 아이디를 넣어주시면 필터링됩니다.
+      tags:
+      - exams
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamPageResponse'
+          description: ''
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 쪽지시험 목록 조회 권한이 없습니다.
+    post:
+      operationId: v1_admin_exams_create
+      description: title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.
+      summary: 쪽지 시험 생성
+      tags:
+      - exams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamCreatePutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExamCreatePutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExamCreatePutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCreatePut'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamValidationError'
+          description: 유효하지 않은 시험 생성 요청입니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 쪽지시험 생성 권한이 없습니다.
+        '404':
+          description: 해당 과목 정보를 찾을 수 없습니다.
+        '409':
+          description: 동일한 이름의 시험이 이미 존재합니다.
+  /api/v1/admin/exams/{exam_id}/:
+    get:
+      operationId: v1_admin_exams_retrieve_2
+      summary: 쪽지 시험 상세 조회
+      parameters:
+      - in: path
+        name: exam_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - exams
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamDetail'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 쪽지시험 상세 조회 권한이 없습니다.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 해당 쪽지시험 정보를 찾을 수 없습니다.
+    put:
+      operationId: v1_admin_exams_update
+      description: title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.
+      summary: 쪽지 시험 수정
+      parameters:
+      - in: path
+        name: exam_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - exams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamCreatePutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExamCreatePutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExamCreatePutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCreatePut'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamValidationError'
+          description: 유효하지 않은 요청 데이터입니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 쪽지시험 수정 권한이 없습니다.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 해당 쪽지시험 정보를 찾을 수 없습니다. | 해당 과목 정보를 찾을 수 없습니다.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 동일한 이름의 시험이 이미 존재합니다.
+    delete:
+      operationId: v1_admin_exams_destroy
+      summary: 쪽지 시험 삭제
+      parameters:
+      - in: path
+        name: exam_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - exams
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamDeleteResponse'
+          description: ''
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 쪽지시험 삭제 권한이 없습니다.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 삭제하려는 쪽지시험 정보를 찾을 수 없습니다.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamError'
+          description: 쪽지시험 삭제 중 충돌이 발생했습니다.
+  /api/v1/admin/exams/{exam_id}/questions/:
+    post:
+      operationId: v1_admin_exams_questions_create
+      summary: 쪽지시험 문제 생성
+      parameters:
+      - in: path
+        name: exam_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - exams_question
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/exams/deployments/:
+    get:
+      operationId: v1_admin_exams_deployments_retrieve
+      summary: 쪽지시험 배포 목록 조회
+      tags:
+      - exams-deployments
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminExamDeploymentListResponse'
+          description: ''
+    post:
+      operationId: v1_admin_exams_deployments_create
+      summary: 쪽지시험 배포 생성
+      tags:
+      - exams-deployments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminExamDeploymentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminExamDeploymentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminExamDeploymentCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          description: pk
+  /api/v1/admin/exams/deployments/{deployment_id}/:
+    get:
+      operationId: v1_admin_exams_deployments_retrieve_2
+      parameters:
+      - in: path
+        name: deployment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_admin_exams_deployments_partial_update
+      parameters:
+      - in: path
+        name: deployment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_admin_exams_deployments_destroy
+      parameters:
+      - in: path
+        name: deployment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/exams/presigned-url/:
+    post:
+      operationId: v1_admin_exams_presigned_url_create
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: v1_admin_exams_presigned_url_update
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/exams/questions/{question_id}/:
+    put:
+      operationId: v1_admin_exams_questions_update
+      summary: 쪽지시험 문제 수정
+      parameters:
+      - in: path
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - exams_question
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_admin_exams_questions_destroy
+      summary: 쪽지시험 문제 삭제
+      parameters:
+      - in: path
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - exams_question
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/qna/answers/{answer_id}:
+    delete:
+      operationId: v1_admin_qna_answers_destroy
+      description: 어드민 댓글 삭제
+      summary: 어드민 댓글 삭제
+      parameters:
+      - in: path
+        name: answer_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin-Qna
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAnswerDelete'
+          description: ''
+        '400':
+          description: 유효하지 않은 답변 삭제 요청입니다.
+        '401':
+          description: 로그인이 필요합니다.
+        '403':
+          description: 답변 삭제 권한이 없습니다.
+        '404':
+          description: 삭제할 답변을 찾을 수 없습니다.
+  /api/v1/admin/qna/categories:
+    get:
+      operationId: v1_admin_qna_categories_retrieve
+      description: 어드민이 카테고리 목록을 조회합니다.
+      summary: 어드민 카테고리 목록 조회
+      parameters:
+      - in: query
+        name: category_type
+        schema:
+          type: string
+        description: 카테고리 종류 (large, middle, small)
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: 페이지 번호
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: 페이지 크기
+      - in: query
+        name: search_keyword
+        schema:
+          type: string
+        description: 검색 키워드
+      tags:
+      - Admin-Qna
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategoryList'
+          description: ''
+        '400':
+          description: 유효하지 않은 목록 조회 요청입니다.
+        '401':
+          description: 로그인이 필요합니다.
+        '403':
+          description: 카테고리 목록 조회 권한이 없습니다.
+    post:
+      operationId: v1_admin_qna_categories_create
+      description: 어드민이 카테고리를 생성합니다.
+      summary: 어드민 카테고리 생성
+      tags:
+      - Admin-Qna
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategoryCreateResponse'
+          description: ''
+        '400':
+          description: 카테고리 종류와 이름은 필수 입력값입니다.
+        '401':
+          description: 로그인이 필요합니다.
+        '403':
+          description: 카테고리 등록 권한이 없습니다.
+        '404':
+          description: 부모 카테고리를 찾을 수 없습니다.
+        '409':
+          description: 동일한 이름의 카테고리가 이미 존재합니다.
+  /api/v1/admin/qna/categories/{category_id}:
+    delete:
+      operationId: v1_admin_qna_categories_destroy
+      description: 어드민이 카테고리를 삭제합니다. 하위 카테고리도 함께 삭제되며 질문은 기본 카테고리로 이관됩니다.
+      summary: 어드민 카테고리 삭제
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin-Qna
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: 카테고리 삭제 성공
+        '401':
+          description: 로그인이 필요합니다.
+        '403':
+          description: 카테고리 삭제 권한이 없습니다.
+        '404':
+          description: 해당 카테고리를 찾을 수 없습니다.
+        '409':
+          description: 기본 카테고리는 삭제할 수 없습니다.
+  /api/v1/admin/subjects/:
+    post:
+      operationId: v1_admin_subjects_create
+      summary: 어드민 과목 생성
+      tags:
+      - Admin - Subject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubjectCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubjectCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubjectCreate'
+          description: ''
+        '400':
+          description: 유효하지 않은 과목 생성입니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 과목 생성 권한이 없습니다.
+        '404':
+          description: 해당 과정을 찾을 수 없습니다.
+        '409':
+          description: 동일한 이름의 과목이 이미 존재합니다.
+  /api/v1/admin/subjects/{subject_id}/:
+    get:
+      operationId: v1_admin_subjects_retrieve
+      summary: 어드민 과목 상세 조회
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Subject
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubjectDetail'
+          description: ''
+        '401':
+          description: 로그인이 필요합니다.
+        '403':
+          description: 관리자 권한이 필요합니다.
+        '404':
+          description: 해당 과목을 찾을 수 없습니다.
+    patch:
+      operationId: v1_admin_subjects_partial_update
+      summary: 어드민 과목 수정
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Subject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSubjectUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSubjectUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSubjectUpdateRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubjectUpdate'
+          description: ''
+        '400':
+          description: 유효하지 않은 데이터입니다.
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 이 리소스를 수정할 권한이 없습니다.
+        '404':
+          description: 과목을 찾을 수 없습니다.
+    delete:
+      operationId: v1_admin_subjects_destroy
+      summary: 어드민 과목 삭제
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Subject
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 이 리소스를 삭제할 권한이 없습니다.
+        '404':
+          description: 과목을 찾을 수 없습니다.
+  /api/v1/courses/{course_id}/subjects/:
+    get:
+      operationId: v1_courses_subjects_list
+      summary: 어드민 과목 목록 조회
+      parameters:
+      - in: path
+        name: course_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Subject
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubjectList'
+          description: ''
+        '401':
+          description: 자격 인증 데이터가 제공되지 않았습니다.
+        '403':
+          description: 이 리소스를 조회할 권한이 없습니다.
+  /api/v1/posts/:
+    get:
+      operationId: v1_posts_list
+      summary: 글 목록 조회
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostListResponse'
+          description: ''
+    post:
+      operationId: v1_posts_create
+      summary: 글 작성
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/posts/{post_id}:
+    get:
+      operationId: v1_posts_retrieve
+      summary: 글 상세 조회
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetailResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+    put:
+      operationId: v1_posts_update
+      summary: 글 수정
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostUpdateRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostUpdateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+    delete:
+      operationId: v1_posts_destroy
+      summary: 글 삭제
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDeleteResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/posts/{post_id}/comments/:
+    get:
+      operationId: v1_posts_comments_list
+      summary: 댓글 목록 조회
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostComment'
+          description: ''
+        '404':
+          description: No response body
+    post:
+      operationId: v1_posts_comments_create
+      summary: 댓글 작성
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          description: No response body
+        '400':
+          description: No response body
+        '401':
+          description: No response body
+        '404':
+          description: No response body
+  /api/v1/posts/{post_id}/comments/{comment_id}/:
+    delete:
+      operationId: v1_posts_comments_destroy
+      summary: 댓글 삭제
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+        '401':
+          description: No response body
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+  /api/v1/posts/{post_id}/like:
+    post:
+      operationId: v1_posts_like_create
+      description: 게시글 좋아요를 생성하거나 취소된 좋아요를 다시 활성화
+      summary: 게시글 좋아요 생성
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          description: 좋아요 등록 성공
+        '401':
+          description: 인증되지 않은 요청
+        '404':
+          description: 게시글 없음 또는 숨김 처리된 게시글
+        '409':
+          description: 이미 좋아요한 게시글
+  /api/v1/posts/{post_id}/like/cancel:
+    delete:
+      operationId: v1_posts_like_cancel_destroy
+      description: 게시글 좋아요를 취소합니다. 단, row를 삭제하지 않고 is_liked 필드를 False로 변경합니다.
+      summary: 게시글 좋아요 취소
+      parameters:
+      - in: path
+        name: post_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: 좋아요 취소 성공
+        '401':
+          description: 인증되지 않은 요청
+        '404':
+          description: 게시글 없음, 숨김 게시글, 또는 좋아요 기록 없음
+  /api/v1/posts/categories:
+    get:
+      operationId: v1_posts_categories_list
+      summary: 커뮤니티 게시글 카테고리 목록 조회
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostCategoryListResponse'
+          description: ''
+  /api/v1/qna/answers/{answer_id}:
+    put:
+      operationId: v1_qna_answers_update
+      description: 질문에 대한 답변을 수정합니다.
+      summary: 답변 수정
+      parameters:
+      - in: path
+        name: answer_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Qna
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerUpdate'
+          description: ''
+        '401':
+          description: 로그인한 사용자만 답변을 수정할 수 있습니다.
+        '403':
+          description: 본인이 작성한 답변만 수정할 수 있습니다.
+        '404':
+          description: 해당 답변을 찾을 수 없습니다.
+  /api/v1/qna/answers/{answer_id}/accept:
+    post:
+      operationId: v1_qna_answers_accept_create
+      description: 질문 작성자가 답변을 채택합니다
+      summary: 답변 채택
+      parameters:
+      - in: path
+        name: answer_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Qna
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerAcceptResponse'
+          description: ''
+        '401':
+          description: 로그인한 사용자만 채택할 수 있습니다.
+        '403':
+          description: 본인의 질문에 대한 답변만 채택할 수 있습니다.
+        '404':
+          description: 해당 질문 또는 답변을 찾을 수 없습니다.
+        '409':
+          description: 이미 채택된 답변이 존재합니다.
+  /api/v1/qna/answers/{answer_id}/comments:
+    post:
+      operationId: v1_qna_answers_comments_create
+      description: 질문에 대한 댓글 작성
+      summary: 답변 댓글
+      parameters:
+      - in: path
+        name: answer_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Qna
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerCommentRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnswerCommentRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnswerCommentRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerCommentResponse'
+          description: ''
+        '400':
+          description: 댓글 내용은 1~500자 사이로 입력해야 합니다.
+        '401':
+          description: 로그인한 사용자만 댓글을 작성할 수 있습니다.
+        '403':
+          description: 댓글 작성 권한이 없습니다.
+        '404':
+          description: 해당 답변을 찾을 수 없습니다.
+  /api/v1/qna/answers/presigned-url:
+    post:
+      operationId: v1_qna_answers_presigned_url_create
+      description: presignedurl view
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: v1_qna_answers_presigned_url_update
+      description: presignedurl view
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+  /api/v1/qna/categories:
+    get:
+      operationId: v1_qna_categories_retrieve
+      description: 카테고리 목록을 트리 구조로 조회합니다.
+      summary: 유저 카테고리 목록 조회
+      tags:
+      - Qna
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryTree'
+          description: ''
+        '401':
+          description: 로그인이 필요합니다.
+        '403':
+          description: 카테고리 조회 권한이 없습니다.
+  /api/v1/qna/questions:
+    post:
+      operationId: v1_qna_questions_create
+      description: 새로운 질문을 등록합니다. 소분류 카테고리만 선택 가능합니다.
+      summary: 질문 등록
+      tags:
+      - Qna
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuestionCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuestionCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionCreateResponse'
+          description: ''
+        '400':
+          description: 유효하지 않은 질문 등록 요청입니다.
+        '401':
+          description: 로그인한 수강생만 질문을 등록할 수 있습니다.
+        '403':
+          description: 질문 등록 권한이 없습니다.
+  /api/v1/qna/questions/{question_id}/ai-answer:
+    get:
+      operationId: v1_qna_questions_ai_answer_retrieve
+      description: 캐시에 저장된 초기응답을 불러옵니다.
+      summary: AI 초기응답 조회
+      parameters:
+      - in: path
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Chatbot
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitialAIAnswer'
+          description: ''
+        '401':
+          description: 로그인한 사용자만 요청할 수 있습니다.
+        '404':
+          description: 질문 데이터를 찾을 수 없습니다.
+        '408':
+          description: 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.
+        '409':
+          description: 이미 AI가 답변을 생성했습니다.
+        '502':
+          description: 외부 API 호출에 실패했습니다.
+        '504':
+          description: 외부 API 응답 시간이 초과되었습니다.
+    post:
+      operationId: v1_qna_questions_ai_answer_create
+      description: 질문글을 기준으로 AI가 초기응답을 생성합니다.
+      summary: AI 초기응답 생성
+      parameters:
+      - in: path
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Chatbot
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitialAIAnswer'
+          description: ''
+        '401':
+          description: 로그인한 사용자만 요청할 수 있습니다.
+        '404':
+          description: 질문 데이터를 찾을 수 없습니다.
+        '409':
+          description: 이미 AI가 답변을 생성했습니다.
+        '502':
+          description: 외부 API 호출에 실패했습니다.
+        '504':
+          description: 외부 API 응답 시간이 초과되었습니다.
+  /api/v1/qna/questions/{question_id}/answers:
+    post:
+      operationId: v1_qna_questions_answers_create
+      description: 질문에 대한 답변을 등록합니다.
+      summary: 답변 등록
+      parameters:
+      - in: path
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Qna
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+          description: ''
+        '400':
+          description: 잘못된 요청 입니다.
+        '401':
+          description: 로그인한 사용자만 채택할 수 있습니다.
+        '403':
+          description: 답변 작성 권한이 없습니다.
+        '404':
+          description: 해당 질문을 찾을 수 없습니다.
+  /api/v1/subjects/presigned-url/:
+    post:
+      operationId: v1_subjects_presigned_url_create
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: v1_subjects_presigned_url_update
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AdminAnswerDelete:
+      type: object
+      description: |-
+        DELETE api/v1/admin/qna/answers/{answer_id}
+        admin 답변 삭제 API 응답 serializer
+      properties:
+        answer_id:
+          type: integer
+          readOnly: true
+        deleted_comment_count:
+          type: integer
+          readOnly: true
+      required:
+      - answer_id
+      - deleted_comment_count
+    AdminCategoryCreateResponse:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        name:
+          type: string
+          maxLength: 15
+        parent_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        category_type:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category_id
+      - category_type
+      - created_at
+      - name
+      - parent_id
+    AdminCategoryList:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        name:
+          type: string
+          maxLength: 15
+        category_type:
+          type: string
+          nullable: true
+          readOnly: true
+        parent_category:
+          type: string
+          nullable: true
+          readOnly: true
+        child_categories:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category_id
+      - category_type
+      - child_categories
+      - created_at
+      - name
+      - parent_category
+      - updated_at
+    AdminExamDeploymentCreateRequest:
+      type: object
+      properties:
+        exam_id:
+          type: integer
+        cohort_id:
+          type: integer
+        duration_time:
+          type: integer
+          maximum: 99
+          minimum: 1
+          default: 60
+        open_at:
+          type: string
+          format: date-time
+        close_at:
+          type: string
+          format: date-time
+      required:
+      - close_at
+      - cohort_id
+      - exam_id
+      - open_at
+    AdminExamDeploymentList:
+      type: object
+      properties:
+        id:
+          type: integer
+        submit_count:
+          type: integer
+        avg_score:
+          type: number
+          format: double
+          nullable: true
+        exam:
+          $ref: '#/components/schemas/ExamSummary'
+        subject:
+          $ref: '#/components/schemas/SubjectSummary'
+        cohort:
+          $ref: '#/components/schemas/CohortSummary'
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - avg_score
+      - cohort
+      - created_at
+      - exam
+      - id
+      - status
+      - subject
+      - submit_count
+    AdminExamDeploymentListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminExamDeploymentList'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    AnswerAcceptResponse:
+      type: object
+      description: 답변 채택 응답 serializer
+      properties:
+        answer_id:
+          type: integer
+        question_id:
+          type: integer
+          readOnly: true
+        is_adopted:
+          type: boolean
+      required:
+      - answer_id
+      - question_id
+    AnswerCommentRequestRequest:
+      type: object
+      description: 답변 댓글 작성 요청 serializer
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - content
+    AnswerCommentResponse:
+      type: object
+      description: 답변 댓글 작성 응답 serializer
+      properties:
+        comment_id:
+          type: integer
+        answer_id:
+          type: integer
+          readOnly: true
+        author_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - answer_id
+      - author_id
+      - comment_id
+      - created_at
+    AnswerRequestRequest:
+      type: object
+      description: 답변 생성/수정 요청 데이터 serializer
+      properties:
+        content:
+          type: string
+          minLength: 1
+        img_urls:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      required:
+      - content
+    AnswerResponse:
+      type: object
+      description: 테이터 응답에 대한 serializer
+      properties:
+        answer_id:
+          type: integer
+        question_id:
+          type: integer
+          readOnly: true
+        author_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - answer_id
+      - author_id
+      - created_at
+      - question_id
+    AnswerUpdate:
+      type: object
+      description: 답변 수정 했을떄 응답 serializer
+      properties:
+        answer_id:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - answer_id
+      - updated_at
+    Author:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nickname:
+          type: string
+          maxLength: 10
+        profile_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - id
+      - nickname
+    AvailableCourses:
+      type: object
+      properties:
+        cohort:
+          allOf:
+          - $ref: '#/components/schemas/CohortInfo'
+          readOnly: true
+        course:
+          allOf:
+          - $ref: '#/components/schemas/CourseInfo'
+          readOnly: true
+      required:
+      - cohort
+      - course
+    CategoryInPost:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 20
+      required:
+      - id
+      - name
+    CategoryTree:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 15
+        category_type:
+          type: string
+          nullable: true
+          readOnly: true
+        children:
+          readOnly: true
+      required:
+      - category_type
+      - children
+      - id
+      - name
+    CheckNickname:
+      type: object
+      properties:
+        nickname:
+          type: string
+      required:
+      - nickname
+    CheckNicknameRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+      required:
+      - nickname
+    CohortInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+      required:
+      - end_date
+      - id
+      - number
+      - start_date
+      - status
+    CohortSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        display:
+          type: string
+          readOnly: true
+        course:
+          $ref: '#/components/schemas/CourseSummary'
+      required:
+      - course
+      - display
+      - id
+      - number
+    CommentAuthor:
+      type: object
+      properties:
+        id:
+          type: integer
+        nickname:
+          type: string
+        profile_img_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - nickname
+      - profile_img_url
+    CommentCreateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 300
+        tagged_user_ids:
+          type: array
+          items:
+            type: integer
+          writeOnly: true
+      required:
+      - content
+    CourseInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+    CourseSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 30
+        tag:
+          type: string
+          maxLength: 3
+      required:
+      - id
+      - name
+      - tag
+    EmailRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        purpose:
+          $ref: '#/components/schemas/Purpose72eEnum'
+      required:
+      - email
+      - purpose
+    EmailVerifyRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        purpose:
+          $ref: '#/components/schemas/Purpose72eEnum'
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+      required:
+      - code
+      - email
+      - purpose
+    EnrollmentRequest:
+      type: object
+      properties:
+        cohort_id:
+          type: integer
+      required:
+      - cohort_id
+    ErrorResponse:
+      type: object
+      properties:
+        error_detail:
+          type: string
+      required:
+      - error_detail
+    ExamCreatePut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 50
+        subject_id:
+          type: integer
+        thumbnail_img_url:
+          type: string
+          default: default_img_url
+      required:
+      - id
+      - subject_id
+      - title
+    ExamCreatePutRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 50
+        subject_id:
+          type: integer
+        thumbnail_img_url:
+          type: string
+          minLength: 1
+          default: default_img_url
+      required:
+      - subject_id
+      - title
+    ExamDeleteResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+    ExamDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectNested'
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionNested'
+          readOnly: true
+        thumbnail_img_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - questions
+      - subject
+      - thumbnail_img_url
+      - title
+      - updated_at
+    ExamError:
+      type: object
+      properties:
+        error_detail:
+          type: string
+      required:
+      - error_detail
+    ExamList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        subject_name:
+          type: string
+          readOnly: true
+        question_count:
+          type: integer
+          readOnly: true
+        submit_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        detail_url:
+          type: string
+          format: uri
+          readOnly: true
+      required:
+      - created_at
+      - detail_url
+      - id
+      - question_count
+      - subject_name
+      - submit_count
+      - title
+      - updated_at
+    ExamPageResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        total_count:
+          type: integer
+        exams:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamList'
+      required:
+      - exams
+      - page
+      - size
+      - total_count
+    ExamSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 50
+        thumbnail_img_url:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - title
+    ExamValidationError:
+      type: object
+      properties:
+        error_detail:
+          type: object
+          additionalProperties: {}
+      required:
+      - error_detail
+    FindPasswordRequest:
+      type: object
+      properties:
+        email_token:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email_token
+      - new_password
+    GenderEnum:
+      enum:
+      - M
+      - F
+      type: string
+      description: |-
+        * `M` - 남성
+        * `F` - 여성
+    InitialAIAnswer:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        output:
+          type: string
+        using_model:
+          type: string
+        created_at:
+          type: string
+      required:
+      - created_at
+      - output
+      - question_id
+      - using_model
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    MyCohortInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+      required:
+      - end_date
+      - id
+      - number
+      - start_date
+      - status
+    MyCourseInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        tag:
+          type: string
+          readOnly: true
+        thumbnail_img_url:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - id
+      - name
+      - tag
+      - thumbnail_img_url
+    MyCourses:
+      type: object
+      properties:
+        cohort:
+          allOf:
+          - $ref: '#/components/schemas/MyCohortInfo'
+          readOnly: true
+        course:
+          allOf:
+          - $ref: '#/components/schemas/MyCourseInfo'
+          readOnly: true
+      required:
+      - cohort
+      - course
+    NullEnum:
+      enum:
+      - null
+    PatchedAdminAccountUpdateRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 10
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+        phone_number:
+          type: string
+          minLength: 1
+        birthday:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        profile_img_url:
+          type: string
+          format: uri
+          nullable: true
+    PatchedSubjectUpdateRequest:
+      type: object
+      properties:
+        course_id:
+          type: integer
+        title:
+          type: string
+          minLength: 1
+          maxLength: 30
+        number_of_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        number_of_hours:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: boolean
+    PatchedUserInfoUpdateRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 10
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+        birthday:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/NullEnum'
+    PostCategoryListResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 20
+      required:
+      - id
+      - name
+    PostComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author:
+          allOf:
+          - $ref: '#/components/schemas/CommentAuthor'
+          readOnly: true
+        tagged_users:
+          readOnly: true
+        content:
+          type: string
+          maxLength: 300
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - content
+      - created_at
+      - id
+      - tagged_users
+      - updated_at
+    PostCreateRequestRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 50
+        content:
+          type: string
+          minLength: 1
+        category_id:
+          type: integer
+      required:
+      - category_id
+      - content
+      - title
+    PostCreateResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          default: 게시글이 성공적으로 등록되었습니다.
+        pk:
+          type: integer
+      required:
+      - pk
+    PostDeleteResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          default: 게시글이 삭제되었습니다.
+    PostDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 50
+        content:
+          type: string
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          readOnly: true
+        author:
+          allOf:
+          - $ref: '#/components/schemas/Author'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryInPost'
+          readOnly: true
+        view_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        like_count:
+          type: integer
+          readOnly: true
+        comment_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - category
+      - comment_count
+      - content
+      - created_at
+      - id
+      - like_count
+      - thumbnail_img_url
+      - title
+      - updated_at
+    PostListResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author:
+          allOf:
+          - $ref: '#/components/schemas/Author'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 50
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          readOnly: true
+        content:
+          type: string
+        comment_count:
+          type: integer
+          readOnly: true
+        view_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        like_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        category:
+          type: integer
+      required:
+      - author
+      - category
+      - comment_count
+      - content
+      - created_at
+      - id
+      - like_count
+      - thumbnail_img_url
+      - title
+      - updated_at
+    PostUpdateRequestRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 50
+        content:
+          type: string
+          minLength: 1
+        category_id:
+          type: integer
+      required:
+      - category_id
+      - content
+      - title
+    PostUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 50
+        content:
+          type: string
+        category_id:
+          type: integer
+          readOnly: true
+      required:
+      - category_id
+      - content
+      - id
+      - title
+    Purpose5d7Enum:
+      enum:
+      - signup
+      - find_email
+      - phone_change
+      type: string
+      description: |-
+        * `signup` - 회원가입
+        * `find_email` - 이메일 찾기
+        * `phone_change` - 휴대폰 변경
+    Purpose72eEnum:
+      enum:
+      - signup
+      - find_password
+      - recovery
+      type: string
+      description: |-
+        * `signup` - 회원가입
+        * `find_password` - 비밀번호 찾기
+        * `recovery` - 계정복구
+    QuestionCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 50
+        content:
+          type: string
+          minLength: 1
+        category_id:
+          type: integer
+        img_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+            minLength: 1
+      required:
+      - category_id
+      - content
+      - title
+    QuestionCreateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        question_id:
+          type: integer
+      required:
+      - message
+      - question_id
+    QuestionNested:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        question:
+          type: string
+          maxLength: 255
+        prompt:
+          type: string
+          nullable: true
+        point:
+          type: integer
+          maximum: 10
+          minimum: 1
+        options:
+          readOnly: true
+        correct_answer: {}
+        explanation:
+          type: string
+      required:
+      - correct_answer
+      - id
+      - options
+      - question
+      - type
+    RestoreNotFound:
+      type: object
+      properties:
+        error_detail:
+          type: string
+      required:
+      - error_detail
+    RestoreRequest:
+      type: object
+      properties:
+        email_token:
+          type: string
+          minLength: 1
+      required:
+      - email_token
+    RestoreValidationError:
+      type: object
+      properties:
+        error_detail:
+          type: string
+      required:
+      - error_detail
+    RoleEnum:
+      enum:
+      - USER
+      - ADMIN
+      - STUDENT
+      type: string
+      description: |-
+        * `USER` - 일반유저
+        * `ADMIN` - 관리자
+        * `STUDENT` - 수강생
+    SignupRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 10
+        name:
+          type: string
+          minLength: 1
+          maxLength: 30
+        birthday:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email_token:
+          type: string
+          writeOnly: true
+          minLength: 1
+        sms_token:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email_token
+      - gender
+      - name
+      - nickname
+      - password
+      - sms_token
+    SmsSendRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+        purpose:
+          $ref: '#/components/schemas/Purpose5d7Enum'
+      required:
+      - phone_number
+      - purpose
+    SmsVerifyRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 20
+        purpose:
+          $ref: '#/components/schemas/Purpose5d7Enum'
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+      required:
+      - code
+      - phone_number
+      - purpose
+    StatusEnum:
+      enum:
+      - PREPARING
+      - IN_PROGRESS
+      - FINISHED
+      type: string
+      description: |-
+        * `PREPARING` - 준비중
+        * `IN_PROGRESS` - 진행중
+        * `FINISHED` - 종료
+    SubjectCourse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 30
+        tag:
+          type: string
+          maxLength: 3
+      required:
+      - id
+      - name
+      - tag
+    SubjectCreate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course_id:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        number_of_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        number_of_hours:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: boolean
+      required:
+      - course_id
+      - id
+      - number_of_days
+      - number_of_hours
+      - title
+    SubjectCreateRequest:
+      type: object
+      properties:
+        course_id:
+          type: integer
+        title:
+          type: string
+          minLength: 1
+          maxLength: 30
+        number_of_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        number_of_hours:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: boolean
+      required:
+      - course_id
+      - number_of_days
+      - number_of_hours
+      - title
+    SubjectDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course:
+          allOf:
+          - $ref: '#/components/schemas/SubjectCourse'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+        number_of_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        number_of_hours:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - course
+      - created_at
+      - id
+      - number_of_days
+      - number_of_hours
+      - title
+      - updated_at
+    SubjectList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course_id:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: string
+          readOnly: true
+      required:
+      - course_id
+      - id
+      - status
+      - title
+    SubjectNested:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+      required:
+      - id
+      - title
+    SubjectSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 30
+      required:
+      - id
+      - title
+    SubjectUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        course_id:
+          type: integer
+        title:
+          type: string
+          maxLength: 30
+        number_of_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        number_of_hours:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        thumbnail_img_url:
+          type: string
+          nullable: true
+          maxLength: 255
+        status:
+          type: boolean
+      required:
+      - id
+    TypeEnum:
+      enum:
+      - fill_blank
+      - ordering
+      - multiple_choice
+      - single_choice
+      - short_answer
+      - ox
+      type: string
+      description: |-
+        * `fill_blank` - 빈칸채우기
+        * `ordering` - 순서정렬
+        * `multiple_choice` - 다지선다(복수선택)
+        * `single_choice` - 다지선다(단일선택)
+        * `short_answer` - 단답형
+        * `ox` - OX퀴즈
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        nickname:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        birthday:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        gender:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        profile_img_url:
+          type: string
+          readOnly: true
+          nullable: true
+        cohort_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - birthday
+      - cohort_id
+      - created_at
+      - email
+      - gender
+      - id
+      - name
+      - nickname
+      - phone_number
+      - profile_img_url
+      - role
+    UserInfoUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        nickname:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        birthday:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        gender:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        phone_number:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - birthday
+      - email
+      - gender
+      - id
+      - name
+      - nickname
+      - phone_number
+      - updated_at
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error_detail:
+          type: object
+          additionalProperties: {}
+      required:
+      - error_detail
+    WithdrawalUnauthorized:
+      type: object
+      properties:
+        error_detail:
+          type: string
+      required:
+      - error_detail
+    WithdrawalValidationError:
+      type: object
+      properties:
+        error_detail:
+          type: string
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

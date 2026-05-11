@@ -41,7 +41,7 @@ class WithdrawalView(APIView):
         tags=["accounts"],
         summary="회원 탈퇴",
         description="탈퇴 신청 후 2주간 데이터가 보관되며, 2주 내 계정 복구가 가능합니다. 2주 후 완전 삭제됩니다.",
-        request=WithdrawalSerializer,
+        request=WithdrawalSerializer(),
         responses={
             204: OpenApiResponse(description="탈퇴 처리 완료"),
             400: inline_serializer(
