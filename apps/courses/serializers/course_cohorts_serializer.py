@@ -22,6 +22,13 @@ class CohortDateRangeMixin:
         return attrs
 
 
+# GET api/v1/admin/cohorts/{cohort_id} response nested cohort
+class CohortCourseSerializer(serializers.ModelSerializer[Course]):
+    class Meta:
+        model = Course
+        fields = ("id", "name", "tag")
+
+
 # POST api/v1/admin/cohorts request
 class CohortCreateSerializer(CohortDateRangeMixin, serializers.ModelSerializer[Cohort]):
     course_id = serializers.PrimaryKeyRelatedField(
@@ -55,6 +62,26 @@ class CohortListSerializer(serializers.ModelSerializer[Cohort]):
     class Meta:
         model = Cohort
         fields = ("id", "course_id", "number", "status")
+        read_only_fields = fields
+
+
+# GET api/v1/admin/cohorts/{cohort_id} response
+class CohortDetailSerializer(serializers.ModelSerializer[Cohort]):
+    cohort = CohortCourseSerializer(source="course", read_only=True)
+
+    class Meta:
+        model = Cohort
+        fields = (
+            "id",
+            "cohort",
+            "number",
+            "max_student",
+            "start_date",
+            "end_date",
+            "status",
+            "created_at",
+            "updated_at",
+        )
         read_only_fields = fields
 
 
