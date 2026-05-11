@@ -85,7 +85,7 @@ class AdminEnrollmentListAPITestCase(APITestCase):
         for field in ["id", "user", "cohort", "course", "status", "created_at"]:
             self.assertIn(field, result)
 
-        self.assertEqual(result["user"]["name"], "홍길동")
+        self.assertEqual(result["user"]["name"], "테스트")
         self.assertEqual(result["cohort"]["number"], 1)
         self.assertEqual(result["course"]["name"], "초격차 백엔드 부트캠프")
 
