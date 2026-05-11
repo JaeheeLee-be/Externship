@@ -1,7 +1,12 @@
-from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
+from rest_framework.permissions import IsAuthenticated
+
+from apps.core.presigned_url.serializers import (
+    PresignedUrlRequestSerializer,
+    PresignedUrlResponseSerializer,
+)
 from apps.core.utils.s3 import PresignedUrlView
-from apps.core.presigned_url.serializers import PresignedUrlRequestSerializer, PresignedUrlResponseSerializer
+
 
 @extend_schema(
     request=PresignedUrlRequestSerializer,

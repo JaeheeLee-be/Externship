@@ -2,8 +2,8 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 
 from apps.qna.serializers.category_serializers import (
     AdminCategoryCreateResponseSerializer,
+    AdminCategoryCreateSerializer,
     AdminCategoryListSerializer,
-    AdminCategoryCreateSerializer
 )
 
 # 어드민 카테고리 생성
