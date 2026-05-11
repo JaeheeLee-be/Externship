@@ -25,3 +25,10 @@ ROLE = (
 class QNAHistoryResponseSerializer(serializers.Serializer[Any]):
     role = serializers.ChoiceField(choices=ROLE)
     message = serializers.CharField(source="content")
+
+
+class QNAChatbotListResponseSerializer(serializers.Serializer[Any]):
+    question_id = serializers.IntegerField()
+    last_message = serializers.CharField()
+    role = serializers.ChoiceField(choices=ROLE)
+    created_at = serializers.CharField()

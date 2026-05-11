@@ -37,3 +37,11 @@ class InitialQNA:
     question_id: int
     using_model: str
     created_at: str
+
+
+@dataclass
+class LastQNAHistory:
+    question_id: int
+    last_message: str
+    role: str
+    created_at: str

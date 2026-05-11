@@ -1,8 +1,9 @@
 from django.test import TestCase
 
-from apps.qna.dtos import Message
+from apps.qna.dtos import LastQNAHistory, Message
 from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
+    QNAChatbotListResponseSerializer,
     QNAChatbotRequestSerializer,
     QNAHistoryResponseSerializer,
 )
@@ -76,3 +77,30 @@ class TestQNAHistoryResponseSerializer(TestCase):
         serializer = QNAHistoryResponseSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("role", serializer.errors)
+
+
+class TestQNAChatbotListResponseSerializer(TestCase):
+    def setUp(self) -> None:
+        self.instance = LastQNAHistory(
+            question_id=1,
+            last_message="test",
+            role="assistant",
+            created_at="2026-05-07T14:30:05",
+        )
+
+    def test_serializer(self) -> None:
+        serializer = QNAChatbotListResponseSerializer(self.instance)
+        self.assertEqual(serializer.data["question_id"], 1)
+        self.assertEqual(serializer.data["last_message"], "test")
+        self.assertEqual(serializer.data["role"], "assistant")
+        self.assertIn("created_at", serializer.data)
+
+    def test_many_serialized(self) -> None:
+        instances = [
+            self.instance,
+            LastQNAHistory(question_id=2, last_message="test", role="assistant", created_at="2026-04-23T14:30:06"),
+        ]
+        serializer = QNAChatbotListResponseSerializer(instances, many=True)
+        self.assertEqual(len(serializer.data), 2)
+        self.assertEqual(serializer.data[0]["question_id"], 1)
+        self.assertEqual(serializer.data[1]["question_id"], 2)
