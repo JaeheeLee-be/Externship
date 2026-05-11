@@ -1,9 +1,8 @@
 from django.db import transaction
 from django.db.models import Count, F, OuterRef, Prefetch, QuerySet, Subquery
 
-from apps.qna.exceptions import NotFoundException
-from apps.qna.models.answer_models import Answer, AnswerComment
 from apps.qna.exceptions import NotFoundException, PermissionDeniedException
+from apps.qna.models.answer_models import Answer, AnswerComment
 from apps.qna.models.question_models import Question, QuestionCategory, QuestionImage
 from apps.users.models import CohortStudents, User
 
@@ -28,9 +27,7 @@ class QuestionService:
         )
 
         if img_urls:
-            QuestionImage.objects.bulk_create(
-                [QuestionImage(question=question, img_url=url) for url in img_urls]
-            )
+            QuestionImage.objects.bulk_create([QuestionImage(question=question, img_url=url) for url in img_urls])
 
         return question
 
@@ -52,9 +49,7 @@ class QuestionService:
         # 기존 이미지 삭제 후 새로 추가
         question.questionimage_set.all().delete()
         if img_urls:
-            QuestionImage.objects.bulk_create(
-                [QuestionImage(question=question, img_url=url) for url in img_urls]
-            )
+            QuestionImage.objects.bulk_create([QuestionImage(question=question, img_url=url) for url in img_urls])
 
         return question
 
@@ -93,6 +88,7 @@ class QuestionService:
             category=category,
             img_urls=img_urls,
         )
+
 
 def _get_category_info(category: QuestionCategory) -> dict[str, object]:
     """카테고리 대/중/소 name 리스트와 depth 반환"""

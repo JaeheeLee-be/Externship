@@ -1,6 +1,7 @@
 import math
 from typing import Any, NoReturn, cast
 
+from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
@@ -10,7 +11,6 @@ from rest_framework.views import APIView
 from apps.core.utils.permissions import IsStudentUser
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.models import QuestionCategory
-from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.question_schemas import (
     question_create_schema,
     question_detail_schema,
@@ -18,7 +18,6 @@ from apps.qna.schemas.question_schemas import (
     question_update_schema,
 )
 from apps.qna.serializers.question_serializers import (
-    QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
     QuestionDetailSerializer,
     QuestionListItemSerializer,
@@ -186,54 +185,49 @@ class QuestionDetailAPIView(APIView):
                 status=e.status_code,
             )
 
-        # ── PUT /api/v1/qna/questions/{question_id} ───────────────────────
-        @question_update_schema
-        def put(
-            self, request: Request, question_id: int, *args: Any, **kwargs: Any
-        ) -> Response:
-            """질문 수정"""
-            # question_id 유효성 검사
-            if not isinstance(question_id, int) or question_id < 1:
-                return Response(
-                    {"error_detail": "유효하지 않은 질문 수정 요청입니다."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+    # ── PUT /api/v1/qna/questions/{question_id} ───────────────────────
+    @question_update_schema
+    @transaction.atomic
+    def put(self, request: Request, question_id: int, *args: Any, **kwargs: Any) -> Response:
+        """질문 수정"""
+        # question_id 유효성 검사
+        if not isinstance(question_id, int) or question_id < 1:
+            return Response(
+                {"error_detail": "유효하지 않은 질문 수정 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            # 요청 데이터 검증
-            serializer = QuestionUpdateSerializer(data=request.data)
-            if not serializer.is_valid():
-                first_error = next(iter(serializer.errors.values()))
-                error_message = (
-                    first_error[0]
-                    if isinstance(first_error, list)
-                    else str(first_error)
-                )
-                return Response(
-                    {"error_detail": error_message},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        # 요청 데이터 검증
+        serializer = QuestionUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            first_error = next(iter(serializer.errors.values()))
+            error_message = first_error[0] if isinstance(first_error, list) else str(first_error)
+            return Response(
+                {"error_detail": error_message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            try:
-                # Service에 위임 (비즈니스 로직 제거)
-                user = cast(User, request.user)
-                updated_question = QuestionService.update_question_by_user(
-                    user=user,
-                    question_id=question_id,
-                    **serializer.validated_data,
-                )
+        try:
+            # Service에 위임 (비즈니스 로직 제거)
+            user = cast(User, request.user)
+            updated_question = QuestionService.update_question_by_user(
+                user=user,
+                question_id=question_id,
+                **serializer.validated_data,
+            )
 
-                # 응답
-                response_data = QuestionUpdateResponseSerializer(
-                    {
-                        "question_id": updated_question.id,
-                        "updated_at": updated_question.updated_at,
-                    }
-                ).data
+            # 응답
+            response_data = QuestionUpdateResponseSerializer(
+                {
+                    "question_id": updated_question.id,
+                    "updated_at": updated_question.updated_at,
+                }
+            ).data
 
-                return Response(response_data, status=status.HTTP_200_OK)
+            return Response(response_data, status=status.HTTP_200_OK)
 
-            except BaseCustomException as e:
-                return Response(
-                    {"error_detail": e.message},
-                    status=e.status_code,
-                )
+        except BaseCustomException as e:
+            return Response(
+                {"error_detail": e.message},
+                status=e.status_code,
+            )

@@ -9,6 +9,8 @@ from apps.qna.serializers.question_serializers import (
     QuestionCreateSerializer,
     QuestionDetailSerializer,
     QuestionListItemSerializer,
+    QuestionUpdateResponseSerializer,
+    QuestionUpdateSerializer,
 )
 
 # ── 질문 등록 ──────────────────────────────────────────────────────

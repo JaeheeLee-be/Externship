@@ -120,7 +120,7 @@ class QuestionUpdateSerializer(serializers.Serializer[Any]):
     """질문 수정 요청 데이터"""
 
     title = serializers.CharField(max_length=50)
-    content = serializers.CharField()
+    content = serializers.CharField(max_length=300)
     category_id = serializers.IntegerField()
     img_urls = serializers.ListField(
         child=serializers.URLField(),
