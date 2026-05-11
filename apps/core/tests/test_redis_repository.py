@@ -3,9 +3,12 @@ from time import sleep
 
 from django.core.cache import cache
 
-from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
-from apps.core.utils.redis_repository import CacheRepository
+from apps.core.utils.isolated_cache_testcase import (
+    FixedPrefixRedisTestClient,
+    IsolatedRedisTestClient,
+)
 from apps.qna.dtos import InitialQNA, Message
+from apps.core.utils.redis_repository import CacheRepository
 
 
 class TestCacheRepository(IsolatedRedisTestClient):
@@ -85,3 +88,40 @@ class TestCacheRepository(IsolatedRedisTestClient):
         result = CacheRepository.get_session("session_key")
         self.assertEqual(result, 42)
         self.assertIsInstance(result, int)
+
+
+class TestCacheRepositoryGetQnaList(FixedPrefixRedisTestClient):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.user_id = 1
+        self.value = [
+            {"role": "user", "content": "질문입니다.", "created_at": None},
+            {"role": "assistant", "content": "답변입니다.", "created_at": "2026-04-23T14:30:05"},
+        ]
+        cache.set(f"qna_chat:{self.user_id}:42", self.value)
+        cache.set(f"qna_chat:{self.user_id}:55", self.value)
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        cache.clear()
+
+    def test_returns_qna_list(self) -> None:
+        result = CacheRepository.get_qna_list(self.user_id)
+        self.assertEqual(len(result), 2)
+
+    def test_question_id_parsed(self) -> None:
+        result = CacheRepository.get_qna_list(self.user_id)
+        question_ids = {r.question_id for r in result}
+        self.assertIn(42, question_ids)
+        self.assertIn(55, question_ids)
+
+    def test_last_message_is_last_item(self) -> None:
+        result = CacheRepository.get_qna_list(self.user_id)
+        for item in result:
+            self.assertEqual(item.last_message, "답변입니다.")
+            self.assertEqual(item.role, "assistant")
+
+    def test_empty_when_no_keys(self) -> None:
+        result = CacheRepository.get_qna_list(user_id=999)
+        self.assertEqual(result, [])

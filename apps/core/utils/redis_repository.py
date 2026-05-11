@@ -1,9 +1,11 @@
 import json
-from typing import Any
+from typing import Any, cast
 
 from django.core.cache import cache
+from django_redis import get_redis_connection  # type: ignore
 
-from apps.qna.dtos import InitialQNA, Message
+from apps.qna.dtos import InitialQNA, LastQNAHistory, Message
+from apps.qna.redis import CacheFactory
 
 
 class CacheRepository:
@@ -45,3 +47,15 @@ class CacheRepository:
     def get_session(key: str) -> None | int:
         cached = cache.get(key)
         return cached if isinstance(cached, int) else None
+
+    @staticmethod
+    def get_qna_list(user_id: int) -> list[LastQNAHistory]:
+        qna_list = []
+        redis_client = get_redis_connection("default")
+        for key in redis_client.scan_iter(match=f":1:qna_chat:{user_id}:*"):
+            key = key.decode("utf-8").removeprefix(":1:")
+            value = cache.get(key)
+            if value is None:
+                continue
+            qna_list.append(CacheFactory.create_last_qna(key, value))
+        return qna_list

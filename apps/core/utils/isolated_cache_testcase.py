@@ -24,3 +24,17 @@ class IsolatedRedisTestClient(APITestCase):
         cache_settings["default"]["KEY_PREFIX"] = self.CACHE_PREFIX
         self._isolated_cache_settings_override = override_settings(CACHES=cache_settings)
         self._isolated_cache_settings_override.enable()
+
+
+class FixedPrefixRedisTestClient(IsolatedRedisTestClient):
+    """
+    프리픽스가 붙지 않는 테스트 케이스.
+    uuid 때문에 프리픽스로 redis를 조회하는 로직을 테스트하기 어려워 하나 만듦.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        cache_settings = copy.deepcopy(settings.CACHES)
+        cache_settings["default"]["KEY_PREFIX"] = ""
+        self._isolated_cache_settings_override = override_settings(CACHES=cache_settings)
+        self._isolated_cache_settings_override.enable()
