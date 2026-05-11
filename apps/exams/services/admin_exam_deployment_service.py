@@ -3,7 +3,7 @@ import uuid
 from typing import Any
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.db.models import Avg, Count, QuerySet
 
 from apps.core.utils.base62 import Base62
@@ -184,7 +184,7 @@ def update_deployment_status(deployment_id: int, status: str) -> ExamDeployment:
         deployment = ExamDeployment.objects.select_for_update(nowait=True).get(id=deployment_id)
     except ExamDeployment.DoesNotExist:
         raise DeploymentStatusNotFoundError()
-    except Exception:
+    except DatabaseError:
         raise DeploymentStatusConflictError()
 
     deployment.status = status

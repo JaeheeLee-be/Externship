@@ -64,12 +64,9 @@ class ExamDeploymentListView(APIView):
     def get(self, request: Request) -> Response:
         query_serializer = ExamDeploymentListQuerySerializer(data=request.query_params)
 
-        # TODO : API명세서상에 400 에러 없어서 혹시 피드백 후 작성 할 경우 사용
-        # if not query_serializer.is_valid():
-        #     e = 400관련 custum exception 제작 후 사용
-        #     return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        query_serializer.is_valid()
+        if not query_serializer.is_valid():
+            e = ExamDeploymentInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             exam_list = get_deployment_list_for_user(request.user, query_serializer.validated_data["status"])
@@ -99,12 +96,9 @@ class ExamDeploymentCheckCodeView(APIView):
     def post(self, request: Request, deployment_id: str) -> Response:
         path_serializer = ExamDeploymentPathSerializer(data={"deployment_id": deployment_id})
 
-        # TODO : API명세서상에 400 에러 없어서 혹시 피드백 후 작성 할 경우 사용
-        # if not path_serializer.is_valid():
-        #     e = 400관련 custum exception 제작 후 사용
-        #     return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        path_serializer.is_valid()
+        if not path_serializer.is_valid():
+            e = ExamDeploymentInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         body_serializer = ExamDeploymentCheckSerializer(data=request.data)
         # TODO : 명세서상에 400에러메세지가 하나밖에 있지 않아 시리얼라이즈에 타입검증과 서비스에 비교연산검증을 하나의 custum exception으로 처리
@@ -145,12 +139,9 @@ class ExamDeploymentDetailView(APIView):
     def get(self, request: Request, deployment_id: str) -> Response:
         path_serializer = ExamDeploymentPathSerializer(data={"deployment_id": deployment_id})
 
-        # TODO : API명세서상에 400 에러 없어서 혹시 피드백 후 작성 할 경우 사용
-        # if not path_serializer.is_valid():
-        #     e = 400관련 custum exception 제작 후 사용
-        #     return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        path_serializer.is_valid()
+        if not path_serializer.is_valid():
+            e = ExamDeploymentInvalidRequestError()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         validated_deployment_id = path_serializer.validated_data["deployment_id"]
 
