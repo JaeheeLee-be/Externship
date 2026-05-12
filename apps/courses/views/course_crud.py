@@ -2,6 +2,7 @@ from typing import Any, NoReturn
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,9 +29,17 @@ from apps.courses.utils.exceptions import (
 class AdminBaseView(APIView):
     permission_classes = [IsAdminUser]
 
-    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
-        # 전역 핸들러가 이미 있으므로 view에서는 permission_denied만 설정하여 응답 포맷 자동 변환되게 함
-        super().permission_denied(request, message="관리자 권한이 필요합니다.")
+    def permission_denied(
+        self,
+        request: Request,
+        message: Any = None,
+        code: Any = None,
+    ) -> NoReturn:
+        # 401: 미인증
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        # 403: 권한 없음
+        raise PermissionDenied("관리자 권한이 필요합니다.")
 
 
 class CourseListView(AdminBaseView):
