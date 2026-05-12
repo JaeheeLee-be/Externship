@@ -5,12 +5,13 @@ from typing import Iterator
 
 from django.conf import settings
 
+from apps.core.utils.groq_client import call_groq, call_groq_once
+from apps.core.utils.redis_repository import CacheRepository
 from apps.qna.chatbot import (
     GROQ_MODEL,
     QNA_PROMPT,
     GroqPayloadFactory,
 )
-from apps.core.utils.groq_client import call_groq, call_groq_once
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.dtos import GroqPayload, InitialQNA, Message
 from apps.qna.exceptions import (
@@ -23,7 +24,7 @@ from apps.qna.exceptions import (
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
-from apps.qna.redis import CacheFactory, CacheRepository
+from apps.qna.redis import CacheFactory
 from apps.qna.redis.keys import INITIAL_KEY, LOCK_KEY, QNA_KEY, SESSION_KEY
 
 

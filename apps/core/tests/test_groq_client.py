@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import requests
 from django.test import TestCase
 
-from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.groq_client import call_groq, call_groq_once
+from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 
 """실제 groq api 요청을 보내는 테스트입니다."""
