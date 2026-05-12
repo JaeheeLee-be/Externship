@@ -23,7 +23,7 @@ def set_auth_cookies(response: Any, refresh: str) -> None:
         domain=getattr(settings, "COOKIE_DOMAIN", None),
         httponly=True,
         secure=True,
-        samesite="Lax",
+        samesite="None",
         path="/",
     )
 
