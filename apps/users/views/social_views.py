@@ -78,7 +78,11 @@ class SocialCallbackView(APIView):
             )
             return redirect(f"{frontend_url}/social-callback?{params}")
 
-        except Exception:
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"소셜 로그인 에러: {e}", exc_info=True)
             params = urlencode(
                 {
                     "provider": provider,
