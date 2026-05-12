@@ -24,6 +24,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
     fail_point_data: Dict[str, Any]
     update_data: Dict[str, Any]
     update_fail_point_data: Dict[str, Any]
+    create_fail_for_400: Dict[str, Any]
     create_url: str
     fail_create_url: str
     fail_update_delete_url: str
@@ -97,6 +98,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
             point=1,
         )
         cls.fail_point_data = {"question": "test_2", "correct_answer": {"answer": 2}, "type": "ox", "point": 10}
+        cls.create_fail_for_400 = {"question": "tete", "correct_answer": {"answer": 1}, "point": 5}
         cls.update_data = {
             "question": "mod_test",
             "correct_answer": [{"answer": 5}],
@@ -136,6 +138,11 @@ class TestAdminExamQuestionCreateView(APITestCase):
         response = self.client.post(self.create_url, self.data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ExamQuestion.objects.filter(exam=self.exam).count(), 2)
+
+    def test_admin_fail_create_400(self) -> None:
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(self.create_url, self.create_fail_for_400, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_user_create_question(self) -> None:
         self.client.force_authenticate(user=self.user)

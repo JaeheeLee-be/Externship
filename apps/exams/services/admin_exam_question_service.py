@@ -1,8 +1,9 @@
 import json
-from typing import Any, Dict, Literal, Tuple
+from typing import Any, Dict, Tuple
 
 from django.db import transaction
 from django.db.models import Count, Sum
+from rest_framework import serializers
 
 from apps.exams.exceptions.exam_question_exceptions import (
     ExamQuestionCreateConflict,
@@ -14,96 +15,136 @@ from apps.exams.exceptions.exam_question_exceptions import (
 )
 from apps.exams.models.exam_model import Exam
 from apps.exams.models.exam_question_model import ExamQuestion
+from apps.exams.serializers.admin_exam_question_serializer import (
+    BlankRequestSerializer,
+    MulAndSingleRequestSerializer,
+    OrderRequestSerializer,
+    OXAndShortRequestSerializer,
+)
+
+SERIALIZER_MAP = {
+    "fill_blank": BlankRequestSerializer,
+    "ordering": OrderRequestSerializer,
+    "multiple_choice": MulAndSingleRequestSerializer,
+    "single_choice": MulAndSingleRequestSerializer,
+    "short_answer": OXAndShortRequestSerializer,
+    "ox": OXAndShortRequestSerializer,
+}
 
 
-# TODO : 함수형으로 리펙토링 예정
-class AdminQuestionService:
-    exam: Exam
-    target_question: ExamQuestion
-    total_point: int
-    len_of_questions: int
+def get_serializer_class(question_type: str) -> type[serializers.ModelSerializer[Any]]:
+    serializer = SERIALIZER_MAP.get(question_type, BlankRequestSerializer)
+    return serializer
 
-    def __init__(
-        self, method: Literal["create", "update", "delete"], exam_id: int | None = None, question_id: int | None = None
-    ):
-        self.exam_id = exam_id
-        self.question_id = question_id
-        self.method = method
-        self.atomic = transaction.atomic()
 
-    def __enter__(self) -> "AdminQuestionService":
+def _get_exam_lock_with_data(exam_id: int) -> Tuple[int, int, Exam]:
+    exam = Exam.objects.filter(id=exam_id).select_for_update().first()
+    if not exam:
+        raise ExamQuestionCreateNotFound()
 
-        self.atomic.__enter__()
+    result = ExamQuestion.objects.filter(exam_id=exam.id).aggregate(
+        total_point=Sum("point"), len_of_question=Count("id")
+    )
 
-        if self.method == "create":
-            assert self.exam_id is not None
-            exam = Exam.objects.select_for_update().filter(id=self.exam_id).first()
-            result = ExamQuestion.objects.filter(exam=exam).aggregate(
-                total_point=Sum("point"), len_of_questions=Count("id")
-            )
+    total_point = result.get("total_point") or 0
+    len_of_question = result.get("len_of_question") or 0
 
+    return total_point, len_of_question, exam
+
+
+def _get_question(question_id: int, method: str) -> ExamQuestion:
+
+    target_question = ExamQuestion.objects.filter(id=question_id).select_for_update().first()
+    if not target_question:
+        if method == "update":
+            raise ExamQuestionUpdateNotFound()
+        elif method == "delete":
+            raise ExamQuestionDeleteNotFound()
         else:
-            assert self.question_id is not None
-            target_question = ExamQuestion.objects.filter(id=self.question_id).first()
-            if not target_question:
-                self.atomic.__exit__(None, None, None)
-                if self.method == "update":
-                    raise ExamQuestionUpdateNotFound()
-                else:
-                    raise ExamQuestionDeleteNotFound()
+            raise ExamQuestionCreateNotFound("찾을수 없습니다.")
 
-            self.target_question = target_question
+    return target_question
 
-            if self.method == "update":
 
-                exam = Exam.objects.select_for_update().filter(id=target_question.exam_id).first()
-                result = ExamQuestion.objects.filter(exam=exam).aggregate(
-                    total_point=Sum("point"),
-                )
-            else:
-                exam = Exam.objects.select_for_update().filter(id=target_question.exam_id).first()
-                result = ExamQuestion.objects.filter(exam=exam).aggregate(len_of_questions=Count("id"))
+def _get_exam_with_total_point(exam_id: int) -> Tuple[int, Exam]:
 
-        if not exam:
-            self.atomic.__exit__(None, None, None)
-            if self.method == "create":
-                raise ExamQuestionCreateNotFound()
-            elif self.method == "update":
-                raise ExamQuestionUpdateNotFound()
+    exam = Exam.objects.filter(id=exam_id).select_for_update().first()
+    if not exam:
+        raise ExamQuestionUpdateNotFound()
 
-        assert exam is not None
-        self.exam = exam
-        self.len_of_questions = result.get("len_of_questions") or 0
-        self.total_point = result.get("total_point") or 0
-        return self
+    result = ExamQuestion.objects.filter(exam_id=exam.id).aggregate(total_point=Sum("point"))
 
-    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: Any) -> None:
-        self.atomic.__exit__(exc_type, exc_value, traceback)
+    total_point = result.get("total_point") or 0
 
-    def create_question(self, data: Dict[str, Any]) -> ExamQuestion:
-        if "options_json" in data:
-            data["options_json"] = json.dumps(data["options_json"])
-        if self.len_of_questions >= 20:
-            raise ExamQuestionCreateConflict()
-        if self.total_point + data["point"] > 100:
-            raise ExamQuestionCreateConflict()
-        new_question = ExamQuestion.objects.create(exam=self.exam, **data)
-        return new_question
+    return total_point, exam
 
-    def update_question(self, data: Dict[str, Any]) -> ExamQuestion:
-        if "options_json" in data:
-            data["options_json"] = json.dumps(data["options_json"])
-        if self.total_point + data.get("point", self.target_question.point) - self.target_question.point > 100:
-            raise ExamQuestionUpdateConflict()
-        for k, v in data.items():
-            setattr(self.target_question, k, v)
-        self.target_question.save()
-        return self.target_question
 
-    def delete_question(self) -> Tuple[int, int]:
-        if self.len_of_questions == 1:
-            raise ExamQuestionDeleteConflict()
-        self.target_question.delete()
-        question_id = self.target_question.id
-        exam_id = self.exam.id
-        return question_id, exam_id
+def _get_exam_lock_with_len(exam_id: int) -> int:
+
+    exam = Exam.objects.filter(id=exam_id).select_for_update().first()
+    if not exam:
+        raise ExamQuestionDeleteNotFound()
+
+    result = ExamQuestion.objects.filter(exam_id=exam.id).aggregate(len_of_question=Count("id"))
+
+    len_of_question = result.get("len_of_question") or 0
+
+    return len_of_question
+
+
+@transaction.atomic
+def create_question(exam_id: int, data: Dict[str, Any]) -> ExamQuestion:
+
+    total_point, len_of_question, exam = _get_exam_lock_with_data(exam_id)
+
+    if total_point + data.get("point", 1) > 100:
+        raise ExamQuestionCreateConflict()
+    if len_of_question >= 20:
+        raise ExamQuestionCreateConflict()
+
+    if "options" in data:
+        data["options_json"] = json.dumps(data.pop("options"))
+    if "correct_answer" in data:
+        data["answer"] = data.pop("correct_answer")
+
+    new_question = ExamQuestion.objects.create(exam=exam, **data)
+
+    return new_question
+
+
+@transaction.atomic
+def update_question(question_id: int, data: Dict[str, Any], method: str) -> ExamQuestion:
+
+    target_question = _get_question(question_id, method)
+    total_point, exam = _get_exam_with_total_point(target_question.exam_id)
+
+    if total_point + data.get("point", target_question.point) - target_question.point > 100:
+        raise ExamQuestionUpdateConflict()
+
+    if "options" in data:
+        data["options_json"] = json.dumps(data.pop("options"))
+
+    for key, value in data.items():
+        setattr(target_question, key, value)
+    target_question.save()
+
+    return target_question
+
+
+@transaction.atomic
+def delete_question(question_id: int, method: str) -> Dict[str, int]:
+
+    target_question = _get_question(question_id, method)
+    len_of_question = _get_exam_lock_with_len(target_question.exam_id)
+
+    if len_of_question == 1:
+        raise ExamQuestionDeleteConflict()
+
+    target_question.delete()
+
+    data = {
+        "exam_id": target_question.exam_id,
+        "question_id": target_question.id,
+    }
+
+    return data
