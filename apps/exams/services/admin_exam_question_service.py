@@ -31,7 +31,7 @@ SERIALIZER_MAP = {
     "ox": OXAndShortRequestSerializer,
 }
 
-ALLOWED_UPDATE_FIELD = ["type","answer","question","prompt","blank_count","options_json","point","explanation"]
+ALLOWED_UPDATE_FIELD = ["type", "answer", "question", "prompt", "blank_count", "options_json", "point", "explanation"]
 
 
 def get_serializer_class(question_type: str) -> type[serializers.ModelSerializer[Any]]:
@@ -132,7 +132,7 @@ def update_question(question_id: int, data: Dict[str, Any], method: str) -> Exam
         if field in data:
             setattr(target_question, field, data[field])
         else:
-            setattr(target_question,field,None)
+            setattr(target_question, field, None)
     target_question.save()
 
     return target_question

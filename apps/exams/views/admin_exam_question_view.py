@@ -9,10 +9,12 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.exams.exceptions.exam_question_exceptions import (
+    ExamQuestionCreateBadRequest,
     ExamQuestionCreateConflict,
     ExamQuestionCreateNotFound,
     ExamQuestionDeleteConflict,
     ExamQuestionDeleteNotFound,
+    ExamQuestionUpdateBadRequest,
     ExamQuestionUpdateConflict,
     ExamQuestionUpdateNotFound,
 )
@@ -58,7 +60,8 @@ class AdminQuestionCreateView(APIView):
         type_serializer = get_serializer_class(request.data.get("type", "FILL_BLANK"))
         serializer = type_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            e = ExamQuestionCreateBadRequest()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             data = serializer.validated_data
             new_question = create_question(exam_id, data)
@@ -100,7 +103,8 @@ class AdminQuestionUpdateDeleteView(APIView):
         type_serializer = get_serializer_class(request.data.get("type", "FILL_BLANK"))
         serializer = type_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            e = ExamQuestionUpdateBadRequest()
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             mod_data = serializer.validated_data
             mod_question = update_question(question_id, mod_data, "update")

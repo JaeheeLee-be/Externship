@@ -26,3 +26,13 @@ class ExamQuestionDeleteNotFound(Exception):
 class ExamQuestionDeleteConflict(Exception):
     def __init__(self, message: str = "쪽지시험 문제 삭제 처리 중 충돌이 발생했습니다."):
         super().__init__(message)
+
+
+class ExamQuestionCreateBadRequest(Exception):
+    def __init__(self, message: str = "유효하지 않은 문제 등록 데이터입니다."):
+        super().__init__(message)
+
+
+class ExamQuestionUpdateBadRequest(Exception):
+    def __init__(self, message: str = "유효하지 않은 문제 수정 데이터입니다."):
+        super().__init__(message)
