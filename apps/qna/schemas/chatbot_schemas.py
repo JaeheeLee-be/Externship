@@ -5,6 +5,7 @@ from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
     QNAChatbotListResponseSerializer,
 )
+
 ai_answer_post_schema = extend_schema(
     tags=["Chatbot"],
     summary="AI 초기응답 생성",

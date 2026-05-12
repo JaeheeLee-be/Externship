@@ -82,7 +82,7 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 409)
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_post_internal_server_error(self, mock: MagicMock) -> None:
         mock.side_effect = Exception("서버 오류")
         self.client.force_authenticate(user=self.user)
@@ -221,7 +221,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 429)
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_post_streaming_body(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -335,7 +335,7 @@ class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 401)
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_post_returns_streaming_response(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -343,7 +343,7 @@ class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get("Content-Type"), "text/event-stream")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_post_streaming_body(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)

@@ -7,6 +7,7 @@ from apps.core.utils.isolated_cache_testcase import (
     FixedPrefixRedisTestClient,
     IsolatedRedisTestClient,
 )
+from apps.core.utils.redis_repository import CacheRepository
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
@@ -23,7 +24,6 @@ from apps.qna.exceptions import (
 from apps.qna.models import Question, QuestionCategory
 from apps.qna.redis.keys import CS_KEY, INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_services import ChatbotService, InitialService
-from apps.core.utils.redis_repository import CacheRepository
 
 
 class TestInitialService(IsolatedRedisTestClient):
@@ -258,7 +258,7 @@ class TestChatbotService(FixedPrefixRedisTestClient):
         result = ChatbotService.response_cs_history(self.user_id)
         self.assertEqual(len(result), 2)
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_response_cs_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         result = list(ChatbotService.response_cs_chat(self.user_id, None, "질문입니다."))
