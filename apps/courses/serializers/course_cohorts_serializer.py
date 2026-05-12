@@ -59,9 +59,11 @@ class CohortCreateResponseSerializer(serializers.Serializer[dict[str, Any]]):
 
 # GET api/v1/courses/{course_id}/cohorts response
 class CohortListSerializer(serializers.ModelSerializer[Cohort]):
+    cohort_id = serializers.IntegerField(source="course_id", read_only=True)
+
     class Meta:
         model = Cohort
-        fields = ("id", "course_id", "number", "status")
+        fields = ("id", "cohort_id", "number", "status")
         read_only_fields = fields
 
 
@@ -107,11 +109,13 @@ class CohortUpdateSerializer(CohortDateRangeMixin, serializers.ModelSerializer[C
 
 # PATCH api/v1/admin/cohorts/{cohort_id} 200 response
 class CohortUpdateResponseSerializer(serializers.ModelSerializer[Cohort]):
+    cohort_id = serializers.IntegerField(source="course_id", read_only=True)
+
     class Meta:
         model = Cohort
         fields = (
             "id",
-            "course_id",
+            "cohort_id",
             "number",
             "max_student",
             "start_date",
