@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import SocialUsers, User
 from apps.users.services.kakao import KakaoOAuthService, KakaoUserInfo
 from apps.users.services.naver import NaverOAuthService, NaverUserInfo
+from apps.users.services.user_login_service import UserLoginService
 from apps.users.utils.social_exceptions import (
     EmailAlreadyRegisteredError,
     EmailNotProvidedError,
@@ -104,9 +105,9 @@ class SocialAuthService:
 
     @classmethod
     def _generate_token_result(cls, user: User, is_new_user: bool) -> dict[str, Any]:
-        refresh = RefreshToken.for_user(user)
+        access, refresh = UserLoginService.generate_token_pair(user)
         return {
             "is_new_user": is_new_user,
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
+            "access": access,
+            "refresh": refresh,
         }
