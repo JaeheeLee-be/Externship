@@ -2,8 +2,7 @@ from typing import Any, NoReturn
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -29,25 +28,12 @@ from apps.courses.utils.exceptions import (
 class AdminBaseView(APIView):
     permission_classes = [IsAdminUser]
 
-    def handle_exception(self, exc: Exception) -> Response:
-        # 401 - 미인증
-        if isinstance(exc, NotAuthenticated):
-            return Response(
-                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        # 403 - 권한 없음
-        if isinstance(exc, PermissionDenied):
-            return Response(
-                {"error_detail": "관리자 권한이 필요합니다."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        return super().handle_exception(exc)
+    def permission_denied(self, request: Request, message: Any = None, code: Any = None) -> NoReturn:
+        # 전역 핸들러가 이미 있으므로 view에서는 permission_denied만 설정하여 응답 포맷 자동 변환되게 함
+        super().permission_denied(request, message="관리자 권한이 필요합니다.")
 
 
-class CourseListView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class CourseListView(AdminBaseView):
     @extend_schema(
         tags=["courses"],
         summary="과정 리스트 조회",
@@ -75,6 +61,7 @@ class AdminCourseCreateView(AdminBaseView):
             400: ValidationErrorResponseSerializer,
             401: ErrorResponseSerializer,
             403: ErrorResponseSerializer,
+            409: ErrorResponseSerializer,
         },
     )
     def post(self, request: Request) -> Response:
@@ -90,7 +77,7 @@ class AdminCourseCreateView(AdminBaseView):
         except CourseAlreadyExistsError as e:
             return Response(
                 {"error_detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_409_CONFLICT,
             )
 
         return Response(
@@ -182,21 +169,4 @@ class AdminCourseDetailView(AdminBaseView):
         return Response(
             CourseDeleteResponseSerializer({"detail": "과정이 삭제되었습니다."}).data,
             status=status.HTTP_200_OK,
-        )
-
-
-class CourseCreateView(AdminBaseView):
-    def post(self, request: Request) -> Response:
-        serializer = CourseCreateRequestSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            # 에러 응답 명세 (ValidationErrorResponseSerializer)
-            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-        course = coursecrud_service.create_course(serializer.validated_data)
-
-        # 성공 응답 명세 (CourseCreateResponseSerializer)
-        # 메시지를 주어야 하므로 detail 포함
-        return Response(
-            {"detail": "코스가 성공적으로 생성되었습니다.", "id": course.id}, status=status.HTTP_201_CREATED
         )
