@@ -27,7 +27,8 @@ from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
     QNAChatbotListResponseSerializer,
 )
-from apps.qna.services.chatbot_services import ChatbotService
+from apps.qna.services.chatbot_cs import CSChatbotService
+from apps.qna.services.chatbot_qna import QNAChatbotService
 from apps.qna.services.chatbot_initial_qna import InitialService
 
 StreamFn = Callable[[int, int | None, str], Iterator[str]]
@@ -81,7 +82,7 @@ class QNAChatbotAPIView(APIView):
     @qna_chatbot_get_schema
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
         try:
-            history = ChatbotService.response_qna_history(request.user.id, kwargs["question_id"])
+            history = QNAChatbotService.response_qna_history(request.user.id, kwargs["question_id"])
             serializer = HistoryResponseSerializer(history, many=True)
             return Response({"results": serializer.data}, status=status.HTTP_200_OK)
         except BaseCustomException as e:
@@ -92,13 +93,13 @@ class QNAChatbotAPIView(APIView):
         serializer = ChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            ChatbotService.validate_qna_chat(request.user.id, kwargs["question_id"])
+            QNAChatbotService.validate_qna_chat(request.user.id, kwargs["question_id"])
             return StreamingHttpResponse(
                 build_event_stream(
                     user_id=request.user.id,
                     question_id=kwargs["question_id"],
                     message=serializer.validated_data["message"],
-                    func=ChatbotService.response_qna_chat,
+                    func=QNAChatbotService.response_qna_chat,
                 ),
                 content_type="text/event-stream",
             )
@@ -131,7 +132,7 @@ class CSChatbotAPIView(APIView):
 
     @cs_chatbot_get_schema
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
-        history = ChatbotService.response_cs_history(request.user.id)
+        history = CSChatbotService.response_cs_history(request.user.id)
         serializer = HistoryResponseSerializer(history, many=True)
         return Response({"results": serializer.data}, status=status.HTTP_200_OK)
 
@@ -145,7 +146,7 @@ class CSChatbotAPIView(APIView):
                     user_id=request.user.id,
                     question_id=None,
                     message=serializer.validated_data["message"],
-                    func=ChatbotService.response_cs_chat,
+                    func=CSChatbotService.response_cs_chat,
                 ),
                 content_type="text/event-stream",
             )
