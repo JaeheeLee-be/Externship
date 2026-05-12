@@ -97,7 +97,8 @@ class AdminQuestionUpdateDeleteView(APIView):
         },
     )
     def put(self, request: Request, question_id: int) -> Response:
-        serializer = QuestionUpdateSerializer(data=request.data)
+        type_serializer = get_serializer_class(request.data.get("type", "FILL_BLANK"))
+        serializer = type_serializer(data=request.data)
         if not serializer.is_valid():
             return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
