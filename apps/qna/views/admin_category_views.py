@@ -8,6 +8,11 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.schemas.category_admin_schemas import (
+    admin_category_create_schema,
+    admin_category_delete_schema,
+    admin_category_list_schema,
+)
 from apps.qna.serializers.category_serializers import (
     AdminCategoryCreateResponseSerializer,
     AdminCategoryCreateSerializer,
@@ -30,6 +35,7 @@ class AdminCategoryListCreateAPIView(APIView):
         )
 
     # 생성
+    @admin_category_create_schema
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         try:
             serializer = AdminCategoryCreateSerializer(data=request.data)
@@ -53,6 +59,7 @@ class AdminCategoryListCreateAPIView(APIView):
             )
 
     # 조회
+    @admin_category_list_schema
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = AdminCategoryListQuerySerializer(data=request.query_params)
 
@@ -90,6 +97,7 @@ class AdminCategoryDestroyAPIView(APIView):
         raise PermissionDenied(detail="카테고리 삭제 권한이 없습니다.")
 
     # 삭제
+    @admin_category_delete_schema
     def delete(self, request: Request, category_id: int, *args: Any, **kwargs: Any) -> Response:
         try:
             result = CategoryService.delete_category(category_id=category_id)

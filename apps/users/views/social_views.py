@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,6 +33,12 @@ class SocialLoginView(APIView):
     authentication_classes: list[Any] = []
     permission_classes: list[Any] = []
 
+    @extend_schema(
+        tags=["accounts"],
+        summary="소셜 로그인 리다이렉트",
+        description="지정된 provider의 OAuth 인증 URL로 리다이렉트합니다.",
+        responses={302: None},
+    )
     def get(self, request: HttpRequest, provider: str) -> HttpResponse:
         try:
             auth_url = SocialAuthService.get_auth_url(provider)
@@ -46,6 +53,12 @@ class SocialCallbackView(APIView):
     authentication_classes: list[Any] = []
     permission_classes: list[Any] = []
 
+    @extend_schema(
+        tags=["accounts"],
+        summary="소셜 로그인 콜백 처리",
+        description="OAuth 콜백 코드를 처리하고 프론트엔드로 리다이렉트합니다. 성공 시 refresh_token 쿠키를 설정합니다.",
+        responses={302: None},
+    )
     def get(self, request: HttpRequest, provider: str) -> HttpResponse:
         frontend_url: str = getattr(settings, "FRONTEND_REDIRECT_URI", "")
 

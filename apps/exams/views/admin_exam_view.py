@@ -1,5 +1,6 @@
 from typing import Any, NoReturn
 
+from django.core.paginator import Paginator
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -38,10 +39,28 @@ from apps.exams.services.admin_exam_service import (
 
 
 class CustomExamPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+    def get_page_number(self, request: Request, paginator: "Paginator[Any]") -> int:
+        try:
+            page_number = int(super().get_page_number(request, paginator))
+        except (ValueError, TypeError):
+            page_number = 1
+        if page_number < 1:
+            page_number = 1
+        return page_number
+
     def get_paginated_response(self, data: ReturnList[Any] | ReturnDict[str, Any]) -> Response:
         assert self.page is not None
         return Response(
-            {"page": self.page.number, "size": self.page_size, "total_count": self.page.paginator.count, "exams": data}
+            {
+                "page": self.page.number,
+                "size": self.page.paginator.per_page,
+                "total_count": self.page.paginator.count,
+                "exams": data,
+            }
         )
 
 
@@ -56,10 +75,20 @@ class ExamListCreateView(APIView):
         raise PermissionDenied("쪽지시험 목록 조회 권한이 없습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 목록",
         description="쪽지 시험 목록을 출력합니다. filter(subject), search가 포함돼 있습니다.",
         parameters=[
+            OpenApiParameter(
+                name="page",
+                type=int,
+                description="페이지 번호",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                description="목록 출력 개수",
+            ),
             OpenApiParameter(
                 name="subject_id",
                 type=int,
@@ -105,7 +134,7 @@ class ExamListCreateView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 생성",
         description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.",
         request=ExamCreatePutSerializer,
@@ -151,7 +180,7 @@ class ExamDetailView(APIView):
         raise PermissionDenied("쪽지시험 삭제 권한이 없습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 상세 조회",
         responses={
             200: ExamDetailSerializer,
@@ -169,7 +198,7 @@ class ExamDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 수정",
         description="title은 중복 불가, 이미지 확장자는 jpg, jpeg, png, webp, gif만 가능합니다.",
         request=ExamCreatePutSerializer,
@@ -206,7 +235,7 @@ class ExamDetailView(APIView):
         return Response(ExamCreatePutSerializer(exam, context={"request": request}).data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        tags=["exams"],
+        tags=["admin-exams"],
         summary="쪽지 시험 삭제",
         responses={
             200: ExamDeleteResponseSerializer,

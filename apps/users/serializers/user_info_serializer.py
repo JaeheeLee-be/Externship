@@ -25,6 +25,7 @@ class UserInfoSerializer(serializers.ModelSerializer[User]):
             "gender",
             "profile_img_url",
             "cohort_id",
+            "role",
             "created_at",
         ]
         read_only_fields = fields

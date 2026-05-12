@@ -11,3 +11,5 @@ media/
 static/
 staticfiles/
 .claude/
+docker-compose.override.yml
+

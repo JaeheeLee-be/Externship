@@ -1,11 +1,13 @@
 from typing import Any
 
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.courses.models.cohort import Cohort
 from apps.courses.models.course import Course
 from apps.courses.models.subject import Subject
+from apps.exams.models.exam_deployment_model import ExamDeployment
 from apps.exams.models.exam_model import Exam
 
 
@@ -54,11 +56,11 @@ class AdminExamDeploymentCreateSerializer(serializers.Serializer[Any]):
         now = timezone.now()
 
         if data["open_at"] < now:
-            raise serializers.ValidationError({"open_at": ["시작 시간은 현재 시간 이후여야 합니다."]})
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 생성 요청입니다."})
         if data["close_at"] < now:
-            raise serializers.ValidationError({"close_at": ["종료 시간은 현재 시간 이후여야 합니다."]})
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 생성 요청입니다."})
         if data["open_at"] >= data["close_at"]:
-            raise serializers.ValidationError({"open_at": ["시작 시간은 종료 시간보다 빨라야 합니다."]})
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 생성 요청입니다."})
         return data
 
 
@@ -98,3 +100,57 @@ class AdminExamDeploymentListQuerySerializer(serializers.Serializer[Any]):
         required=False,
         default="desc",
     )
+
+
+class AdminExamDeploymentDetailPathSerializer(serializers.Serializer[Any]):
+    deployment_id = serializers.IntegerField(min_value=1)
+
+
+class AdminExamDeploymentDetailSerializer(serializers.Serializer[Any]):
+    id = serializers.IntegerField()
+    exam_access_url = serializers.SerializerMethodField()
+    access_code = serializers.CharField()
+    cohort = CohortSummarySerializer()
+    submit_count = serializers.IntegerField()
+    not_submitted_count = serializers.IntegerField()
+    duration_time = serializers.IntegerField()
+    open_at = serializers.DateTimeField()
+    close_at = serializers.DateTimeField()
+    created_at = serializers.DateTimeField()
+    exam = ExamSummarySerializer()
+    subject = SubjectSummarySerializer(source="exam.subject")
+
+    def get_exam_access_url(self, obj: Any) -> str:
+        return reverse("exam-deployment-detail", kwargs={"deployment_id": obj.id})
+
+
+class AdminExamDeploymentUpdateSerializer(serializers.Serializer[Any]):
+    open_at = serializers.DateTimeField()
+    close_at = serializers.DateTimeField()
+    duration_time = serializers.IntegerField(
+        min_value=1,
+        max_value=99,
+    )
+
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        now = timezone.now()
+
+        if data["open_at"] < now:
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 수정 요청입니다."})
+        if data["close_at"] < now:
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 수정 요청입니다."})
+        if data["open_at"] >= data["close_at"]:
+            raise serializers.ValidationError({"error_detail": "유효하지 않은 배포 수정 요청입니다."})
+        return data
+
+
+class AdminExamDeploymentUpdateResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
+    deployment_id = serializers.IntegerField(source="id")
+
+    class Meta:
+        model = ExamDeployment
+        fields = ["deployment_id", "duration_time", "open_at", "close_at", "updated_at"]
+
+
+class AdminExamDeploymentDeleteResponseSerializer(serializers.Serializer[Any]):
+    deployment_id = serializers.IntegerField(source="id")

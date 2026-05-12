@@ -104,9 +104,9 @@ class AuthAPITestCase(IsolatedRedisTestClient):
         """유효한 리프레시 토큰으로 재발급을 요청할 때 성공하는지 테스트"""
         _, refresh_token = UserLoginService.generate_token_pair(self.user)
 
-        # 요청 바디에 refresh token 담아서 넘김
-        data: dict[str, str] = {"refresh_token": refresh_token}
-        response = self.client.post(self.refresh_url, data)
+        # 쿠키에 refresh token 담아서 요청
+        self.client.cookies["refresh_token"] = refresh_token
+        response = self.client.post(self.refresh_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # 응답 확인 access token 확인
@@ -121,9 +121,9 @@ class AuthAPITestCase(IsolatedRedisTestClient):
         # 토큰을 블랙리스트에 추가
         UserLoginService.add_to_blacklist(refresh_token)
 
-        # 차단된 토큰으로 재발급을 시도
-        data: dict[str, str] = {"refresh_token": refresh_token}
-        response = self.client.post(self.refresh_url, data)
+        # 차단된 토큰으로 재발급을 시도 (쿠키에 담아서 요청)
+        self.client.cookies["refresh_token"] = refresh_token
+        response = self.client.post(self.refresh_url)
 
         # 403 상태 코드 반환 확인
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -132,10 +132,8 @@ class AuthAPITestCase(IsolatedRedisTestClient):
 
     def test_malformed_token_rejected(self) -> None:
         """변조된 토큰으로 재발급 시도 시 403과 에러 메시지 반환."""
-        response = self.client.post(
-            self.refresh_url,
-            {"refresh_token": "this.is.not.a.valid.jwt"},
-        )
+        self.client.cookies["refresh_token"] = "this.is.not.a.valid.jwt"
+        response = self.client.post(self.refresh_url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(

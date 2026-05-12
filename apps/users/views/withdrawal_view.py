@@ -23,7 +23,7 @@ from apps.users.utils.withdrawal_exceptions import (
 from apps.users.views.user_info_view import UserInfoView
 
 
-class WithdrawalView(UserInfoView):
+class WithdrawalView(APIView):
     """
     GET/PATCH: UserInfoView 상속 (회원정보 조회/수정)
     DELETE: 회원 탈퇴 - enrollment_url의 UserInfoView와 동일한 'me' 경로를 공유하므로
@@ -41,7 +41,7 @@ class WithdrawalView(UserInfoView):
         tags=["accounts"],
         summary="회원 탈퇴",
         description="탈퇴 신청 후 2주간 데이터가 보관되며, 2주 내 계정 복구가 가능합니다. 2주 후 완전 삭제됩니다.",
-        request=WithdrawalSerializer,
+        request=WithdrawalSerializer(),
         responses={
             204: OpenApiResponse(description="탈퇴 처리 완료"),
             400: inline_serializer(
