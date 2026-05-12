@@ -107,7 +107,7 @@ class SocialCallbackViewTest(TestCase):
         response = self.client.get(self.kakao_url, {"code": "valid_code"})
         self.assertIn("refresh_token", response.cookies)
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
-        self.assertFalse(response.cookies["refresh_token"]["secure"])  # secure 주석처리됨
+        self.assertTrue(response.cookies["refresh_token"]["secure"])  # secure 주석처리됨
 
     @patch("apps.users.views.social_views.SocialAuthService.process_user")
     def test_naver_callback_passes_state_param(self, mock: MagicMock) -> None:
