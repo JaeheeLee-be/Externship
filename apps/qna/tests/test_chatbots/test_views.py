@@ -9,7 +9,6 @@ from apps.core.utils.isolated_cache_testcase import (
     FixedPrefixRedisTestClient,
     IsolatedRedisTestClient,
 )
-from apps.qna.redis import CacheRepository
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import (
     create_test_category_and_question,
@@ -17,6 +16,7 @@ from apps.core.utils.test_factories import (
 )
 from apps.qna.dtos import InitialQNA
 from apps.qna.models import Question
+from apps.qna.redis import CacheRepository
 from apps.qna.redis.keys import CS_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_services import InitialService
 from apps.users.models import User
@@ -41,7 +41,7 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         super().tearDown()
         cache.clear()
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_get_initial_answer_success(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         InitialService.save_initial_answer(self.question.id)
@@ -61,7 +61,7 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_initial_answer_success(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -74,7 +74,7 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 401)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_initial_answer_conflict(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -82,7 +82,7 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 409)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_internal_server_error(self, mock: MagicMock) -> None:
         mock.side_effect = Exception("서버 오류")
         self.client.force_authenticate(user=self.user)
@@ -174,7 +174,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 401)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_returns_streaming_response(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -209,7 +209,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 404)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_returns_429_when_history_full(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         CacheRepository.save_history(
@@ -221,7 +221,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 429)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_streaming_body(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -335,7 +335,7 @@ class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 401)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_returns_streaming_response(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)
@@ -343,7 +343,7 @@ class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get("Content-Type"), "text/event-stream")
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_post_streaming_body(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.client.force_authenticate(user=self.user)

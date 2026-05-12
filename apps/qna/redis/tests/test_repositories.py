@@ -7,8 +7,8 @@ from apps.core.utils.isolated_cache_testcase import (
     FixedPrefixRedisTestClient,
     IsolatedRedisTestClient,
 )
-from apps.qna.redis import CacheRepository
 from apps.qna.dtos import InitialQNA, Message
+from apps.qna.redis import CacheRepository
 
 
 class TestCacheRepository(IsolatedRedisTestClient):

@@ -7,7 +7,6 @@ from apps.core.utils.isolated_cache_testcase import (
     FixedPrefixRedisTestClient,
     IsolatedRedisTestClient,
 )
-from apps.qna.redis import CacheRepository
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
@@ -22,6 +21,7 @@ from apps.qna.exceptions import (
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
+from apps.qna.redis import CacheRepository
 from apps.qna.redis.keys import CS_KEY, INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_services import ChatbotService, InitialService
 
@@ -46,25 +46,25 @@ class TestInitialService(IsolatedRedisTestClient):
     def test_returns_full_category_path(self) -> None:
         self.assertEqual(self.category, "top > middle > bottom")
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_create_initial_answer_success(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         result = InitialService._create_initial_answer(self.question, self.category)
         self.assertEqual(result, "i am gumba")
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_create_initial_answer_timeout(self, mock: MagicMock) -> None:
         mock.side_effect = GroqTimeoutError
         with self.assertRaises(ExternalAPITimeoutException):
             InitialService._create_initial_answer(self.question, self.category)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_create_initial_answer_api_error(self, mock: MagicMock) -> None:
         mock.side_effect = GroqAPIError
         with self.assertRaises(ExternalAPIException):
             InitialService._create_initial_answer(self.question, self.category)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_save_initial_answer_success(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         result = InitialService.save_initial_answer(self.question.id)
@@ -76,7 +76,7 @@ class TestInitialService(IsolatedRedisTestClient):
         self.assertEqual(result.using_model, InitialService.MODEL)
         self.assertIsNotNone(result.created_at)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_save_initial_answer_raise_409(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         InitialService.save_initial_answer(self.question.id)
@@ -85,7 +85,7 @@ class TestInitialService(IsolatedRedisTestClient):
         self.assertEqual(e.exception.status_code, 409)
         self.assertEqual(str(e.exception), "이미 AI가 답변을 생성했습니다.")
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_save_initial_answer_raise_404(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         with self.assertRaises(NotFoundException) as e:
@@ -93,14 +93,14 @@ class TestInitialService(IsolatedRedisTestClient):
         self.assertEqual(e.exception.status_code, 404)
         self.assertEqual(str(e.exception), "질문 데이터를 찾을 수 없습니다.")
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_save_initial_answer_save_data_equal_cached_data(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         save_data = InitialService.save_initial_answer(self.question.id)
         cached_data = CacheRepository.get_initial(f"qna_initial:{self.question.id}")
         self.assertEqual(save_data, cached_data)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_get_initial_answer_returns_cached(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         InitialService.save_initial_answer(self.question.id)
@@ -109,7 +109,7 @@ class TestInitialService(IsolatedRedisTestClient):
 
     @patch("apps.qna.services.chatbot_services.sleep")
     @patch("apps.qna.services.chatbot_services.CacheRepository.acquire_lock")
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_get_initial_answer_raises_timeout(
         self, mock_post: MagicMock, mock_lock: MagicMock, mock_sleep: MagicMock
     ) -> None:
@@ -118,7 +118,7 @@ class TestInitialService(IsolatedRedisTestClient):
         with self.assertRaises(GetInitialTimeoutException):
             InitialService.get_initial_answer(self.question.id)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_get_initial_answer_saves_and_returns(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         result = InitialService.get_initial_answer(self.question.id)
@@ -182,7 +182,7 @@ class TestChatbotService(FixedPrefixRedisTestClient):
         result = ChatbotService.response_qna_history(self.user_id, self.question_id)
         self.assertEqual(len(result), 2)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_response_qna_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         CacheRepository.set_session(
@@ -198,7 +198,7 @@ class TestChatbotService(FixedPrefixRedisTestClient):
         self.assertEqual(history[0].role, "user")
         self.assertEqual(history[0].content, "질문입니다.")
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_response_qna_chat_raises_timeout(self, mock: MagicMock) -> None:
         mock.side_effect = GroqTimeoutError
         CacheRepository.set_session(
@@ -209,7 +209,7 @@ class TestChatbotService(FixedPrefixRedisTestClient):
         with self.assertRaises(ExternalAPITimeoutException):
             list(ChatbotService.response_qna_chat(self.user_id, self.question_id, "질문입니다."))
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_response_qna_chat_raises_api_error(self, mock: MagicMock) -> None:
         mock.side_effect = GroqAPIError
         CacheRepository.set_session(
@@ -258,7 +258,7 @@ class TestChatbotService(FixedPrefixRedisTestClient):
         result = ChatbotService.response_cs_history(self.user_id)
         self.assertEqual(len(result), 2)
 
-    @patch("apps.core.utils.groq_client.requests.post")
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
     def test_response_cs_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         result = list(ChatbotService.response_cs_chat(self.user_id, None, "질문입니다."))

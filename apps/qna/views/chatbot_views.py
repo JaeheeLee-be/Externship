@@ -9,9 +9,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.qna.redis import CacheRepository
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.redis import CacheRepository
 from apps.qna.schemas.chatbot_schemas import (
     ai_answer_get_schema,
     ai_answer_post_schema,
