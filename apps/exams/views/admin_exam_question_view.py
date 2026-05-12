@@ -1,6 +1,6 @@
 from typing import NoReturn, Optional
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
@@ -31,7 +31,19 @@ from apps.exams.services.admin_exam_question_service import (
 )
 
 
-@extend_schema(tags=["admin-exams"], summary="쪽지시험 문제 생성", request=ExamQuestionSwaggerSerializer)
+@extend_schema(
+    tags=["admin-exams"],
+    summary="쪽지시험 문제 생성",
+    request=ExamQuestionSwaggerSerializer,
+    responses = {
+        201 :  QuestionCreateResponseSerializer,
+        400 : OpenApiResponse(description="유효하지 않은 문제 등록 데이터입니다."),
+        401 : OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+        403 : OpenApiResponse(description="쪽지시험 문제 등록 권한이 없습니다."),
+        404 : OpenApiResponse(description="해당 쪽지시험 정보를 찾을 수 없습니다."),
+        409 : OpenApiResponse(description="해당 쪽지시험에 등록 가능한 문제 수 또는 총 배점을 초과했습니다.")
+    }
+)
 class AdminQuestionCreateView(APIView):
     permission_classes = [IsRoleAdminUser]
 
@@ -71,7 +83,19 @@ class AdminQuestionUpdateDeleteView(APIView):
             raise PermissionDenied("쪽지시험 문제 삭제 권한이 없습니다.")
         raise PermissionDenied("권한이 없습니다.")
 
-    @extend_schema(tags=["admin-exams"], summary="쪽지시험 문제 수정", request=QuestionUpdateSerializer)
+    @extend_schema(
+        tags=["admin-exams"],
+        summary="쪽지시험 문제 수정",
+        request=QuestionUpdateSerializer,
+        responses={
+            200 : QuestionUpdateResponseSerializer,
+            400 : OpenApiResponse(description="유효하지 않은 문제 수정 데이터 입니다."),
+            401 : OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403 : OpenApiResponse(description="쪽지시험 문제 수정 권한이 없습니다."),
+            404 : OpenApiResponse(description="수정할려는 문제 정보를 찾을 수 없습니다."),
+            409 : OpenApiResponse(description="시험 문제 수 제한 또는 총 배점을 초과하여 문제를 수정할 수 없습니다.")
+        }
+    )
     def put(self, request: Request, question_id: int) -> Response:
         serializer = QuestionUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -88,6 +112,14 @@ class AdminQuestionUpdateDeleteView(APIView):
     @extend_schema(
         tags=["admin-exams"],
         summary="쪽지시험 문제 삭제",
+        responses = {
+            200 : QuestionDeleteResponseSerializer,
+            400 : OpenApiResponse(description="유효하지 않은 요청입니다."),
+            401 : OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403 : OpenApiResponse(description="쪽지시험 삭제 권한이 없습니다."),
+            404 : OpenApiResponse(description="삭제하려는 쪽지시험 정보를 찾을 수 없습니다."),
+            409 : OpenApiResponse(description="쪽지시험 삭제 중 충돌이 발생했습니다.")
+        }
     )
     def delete(self, request: Request, question_id: int) -> Response:
         try:
