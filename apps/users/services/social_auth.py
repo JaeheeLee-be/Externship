@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+import uuid
 from typing import Any, Union
 
 from django.conf import settings
@@ -108,7 +109,7 @@ class SocialAuthService:
             email=user_info.email or "",
             name=user_info.name or "",
             nickname=user_info.nickname or "",
-            phone_number=user_info.phone_number or "",
+            phone_number=user_info.phone_number or f"social_{uuid.uuid4().hex[:12]}",
             profile_img_url=user_info.profile_img_url,
             gender=user_info.gender,
             birthday=user_info.birthday,
