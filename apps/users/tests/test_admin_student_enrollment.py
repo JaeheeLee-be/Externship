@@ -95,8 +95,8 @@ class AdminEnrollmentListAPITestCase(APITestCase):
     # 필터링 및 정렬
 
     def test_enrollment_list_filter_by_status(self) -> None:
-        """대문자 상태값(PENDING) 쿼리 파라미터 필터링 확인"""
-        response = self.client.get(self.url, {"status": "PENDING"})
+        """상태값 쿼리 파라미터 필터링 확인 응답에 대문자 변환"""
+        response = self.client.get(self.url, {"status": "pending"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 1)
