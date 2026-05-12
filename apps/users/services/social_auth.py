@@ -37,9 +37,13 @@ class SocialAuthService:
         service = _OAUTH_SERVICES.get(provider)
         if service is None:
             raise UnsupportedProviderError()
-        state = secrets.token_urlsafe(16)
-        cache.set(f"oauth_state:{state}", provider, timeout=cls.STATE_TTL)
-        return str(service.get_auth_url(state))
+
+        if provider == "naver":
+            state = secrets.token_urlsafe(16)
+            cache.set(f"oauth_state:{state}", provider, timeout=cls.STATE_TTL)
+            return str(service.get_auth_url(state))
+
+        return str(service.get_auth_url())
 
     @classmethod
     def process_user(
@@ -53,9 +57,10 @@ class SocialAuthService:
             raise OAuthCallbackError(error)
         if not code:
             raise MissingAuthCodeError()
-        if not state or not cache.get(f"oauth_state:{state}"):
-            raise OAuthCallbackError("유효하지 않은 state입니다.")
-        cache.delete(f"oauth_state:{state}")
+        if provider == "naver":
+            if not state or not cache.get(f"oauth_state:{state}"):
+                raise OAuthCallbackError("유효하지 않은 state입니다.")
+            cache.delete(f"oauth_state:{state}")
         user_info = cls._get_user_info(provider, code, state)
         return cls._login_and_register(provider, user_info)
 

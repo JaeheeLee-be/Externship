@@ -135,8 +135,10 @@ class SocialAuthServiceTest(TestCase):
         with self.assertRaises(UnsupportedProviderError):
             SocialAuthService._get_user_info("google", "code")
 
+    @patch("apps.users.services.social_auth.cache")
     @patch("apps.users.services.social_auth.NaverOAuthService.get_user_info_by_code")
-    def test_naver_calls_naver_service(self, mock: MagicMock) -> None:
+    def test_naver_calls_naver_service(self, mock: MagicMock, mock_cache: MagicMock) -> None:
+        mock_cache.get.return_value = "naver"
         mock.return_value = NaverUserInfo(
             provider_id="naver_1",
             email="naver@example.com",
@@ -267,7 +269,7 @@ class KakaoOAuthServiceTest(TestCase):
 
     @override_settings(KAKAO_CLIENT_ID="test_id", KAKAO_REDIRECT_URI="http://localhost/cb")
     def test_get_auth_url(self) -> None:
-        url = KakaoOAuthService.get_auth_url()
+        url = KakaoOAuthService.get_auth_url("dummy_state")
         self.assertIn("test_id", url)
         self.assertIn("kauth.kakao.com", url)
 

@@ -28,7 +28,7 @@ class KakaoOAuthService:
     _GENDER_MAP = {"male": "M", "female": "F"}
 
     @classmethod
-    def get_auth_url(cls, state: str) -> str:
+    def get_auth_url(cls, state: str = "") -> str:
 
         return (
             f"{cls.AUTH_URL}"
