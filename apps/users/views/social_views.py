@@ -70,6 +70,10 @@ class SocialCallbackView(APIView):
                 error=request.GET.get("error"),
             )
         except SocialAuthError as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"소셜 로그인 SocialAuthError: {e}")
             params = urlencode(
                 {
                     "provider": provider,
