@@ -4,8 +4,8 @@ from time import sleep
 from django.core.cache import cache
 
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
+from apps.core.utils.redis_repository import CacheRepository
 from apps.qna.dtos import InitialQNA, Message
-from apps.qna.redis import CacheRepository
 
 
 class TestCacheRepository(IsolatedRedisTestClient):

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 from django.core.cache import cache
 
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
+from apps.core.utils.redis_repository import CacheRepository
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
@@ -18,7 +19,6 @@ from apps.qna.exceptions import (
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
-from apps.qna.redis import CacheRepository
 from apps.qna.redis.keys import INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_services import ChatbotService, InitialService
 
