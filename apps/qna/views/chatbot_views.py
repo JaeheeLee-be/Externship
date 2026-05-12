@@ -15,21 +15,24 @@ from apps.qna.redis import CacheRepository
 from apps.qna.schemas.chatbot_schemas import (
     ai_answer_get_schema,
     ai_answer_post_schema,
+    cs_chatbot_get_schema,
+    cs_chatbot_post_schema,
     qna_chatbot_get_schema,
+    qna_chatbot_list_schema,
     qna_chatbot_post_schema,
 )
 from apps.qna.serializers.chatbot_serializers import (
+    ChatbotRequestSerializer,
+    HistoryResponseSerializer,
     InitialAIAnswerSerializer,
     QNAChatbotListResponseSerializer,
-    QNAChatbotRequestSerializer,
-    QNAHistoryResponseSerializer,
 )
 from apps.qna.services.chatbot_services import ChatbotService, InitialService
 
-StreamFn = Callable[[int, int, str], Iterator[str]]
+StreamFn = Callable[[int, int | None, str], Iterator[str]]
 
 
-def build_event_stream(user_id: int, question_id: int, message: str, func: StreamFn) -> Iterator[str]:
+def build_event_stream(*, user_id: int, question_id: int | None, message: str, func: StreamFn) -> Iterator[str]:
     for chunk in func(user_id, question_id, message):
         yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
     yield "data: [DONE]\n\n"
@@ -78,23 +81,23 @@ class QNAChatbotAPIView(APIView):
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
         try:
             history = ChatbotService.response_qna_history(request.user.id, kwargs["question_id"])
-            serializer = QNAHistoryResponseSerializer(history, many=True)
+            serializer = HistoryResponseSerializer(history, many=True)
             return Response({"results": serializer.data}, status=status.HTTP_200_OK)
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
 
     @qna_chatbot_post_schema
     def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
-        serializer = QNAChatbotRequestSerializer(data=request.data)
+        serializer = ChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             ChatbotService.validate_qna_chat(request.user.id, kwargs["question_id"])
             return StreamingHttpResponse(
                 build_event_stream(
-                    request.user.id,
-                    kwargs["question_id"],
-                    serializer.validated_data["message"],
-                    ChatbotService.response_qna_chat,
+                    user_id=request.user.id,
+                    question_id=kwargs["question_id"],
+                    message=serializer.validated_data["message"],
+                    func=ChatbotService.response_qna_chat,
                 ),
                 content_type="text/event-stream",
             )
@@ -110,7 +113,40 @@ class QNAChatbotListAPIView(APIView):
             raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
         raise PermissionDenied(message)
 
+    @qna_chatbot_list_schema
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
         instance = CacheRepository.get_qna_list(request.user.pk)
         serializer = QNAChatbotListResponseSerializer(instance, many=True)
         return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+
+class CSChatbotAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
+        raise PermissionDenied(message)
+
+    @cs_chatbot_get_schema
+    def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
+        history = ChatbotService.response_cs_history(request.user.id)
+        serializer = HistoryResponseSerializer(history, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+    @cs_chatbot_post_schema
+    def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
+        serializer = ChatbotRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            return StreamingHttpResponse(
+                build_event_stream(
+                    user_id=request.user.id,
+                    question_id=None,
+                    message=serializer.validated_data["message"],
+                    func=ChatbotService.response_cs_chat,
+                ),
+                content_type="text/event-stream",
+            )
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)

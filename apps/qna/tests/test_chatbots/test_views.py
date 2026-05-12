@@ -1,6 +1,8 @@
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
+from django.http import StreamingHttpResponse
 from django.urls import reverse
 
 from apps.core.utils.isolated_cache_testcase import (
@@ -15,7 +17,7 @@ from apps.core.utils.test_factories import (
 )
 from apps.qna.dtos import InitialQNA
 from apps.qna.models import Question
-from apps.qna.redis.keys import QNA_KEY, SESSION_KEY
+from apps.qna.redis.keys import CS_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_services import InitialService
 from apps.users.models import User
 
@@ -54,8 +56,9 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         self.assertEqual(response.status_code, 401)
 
     def test_get_initial_answer_not_found(self) -> None:
+        url = reverse("ai_answer", kwargs={"question_id": 9999})
         self.client.force_authenticate(user=self.user)
-        response = self.client.get("/api/questions/9999/ai-answer")
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     @patch("apps.core.utils.groq_client.requests.post")
@@ -78,6 +81,13 @@ class TestInitialAiAnswerAPIView(IsolatedRedisTestClient):
         self.client.post(self.url)
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 409)
+
+    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    def test_post_internal_server_error(self, mock: MagicMock) -> None:
+        mock.side_effect = Exception("서버 오류")
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 500)
 
 
 class TestQNAChatbotAPIViewGetMethod(IsolatedRedisTestClient):
@@ -211,6 +221,17 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         response = self.client.post(self.url, {"message": "hello"})
         self.assertEqual(response.status_code, 429)
 
+    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    def test_post_streaming_body(self, mock: MagicMock) -> None:
+        mock.return_value = self.res
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"message": "hello"})
+        assert isinstance(response, StreamingHttpResponse)
+        assert isinstance(response.streaming_content, Iterator)
+        content = b"".join(response.streaming_content).decode()
+        self.assertIn("data:", content)
+        self.assertIn("[DONE]", content)
+
 
 class TestQNAChatbotListAPIView(FixedPrefixRedisTestClient):
     user: User
@@ -260,3 +281,90 @@ class TestQNAChatbotListAPIView(FixedPrefixRedisTestClient):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["results"], [])
+
+
+class TestCSChatbotAPIViewGetMethod(FixedPrefixRedisTestClient):
+    user: User
+    url: str
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.user = create_test_user("gumba")
+        cls.url = reverse("cs_chatbot")
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.res = Res.make_res("i am gumba")
+
+    def test_get_returns_empty_list_when_no_history(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["results"], [])
+
+    def test_get_returns_history(self) -> None:
+        CacheRepository.save_history(
+            key=CS_KEY.format(user_id=self.user.id),
+            history=[{"role": "user", "content": "안녕하세요"}],
+            ttl=60,
+        )
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["role"], "user")
+        self.assertEqual(response.data["results"][0]["message"], "안녕하세요")
+
+
+class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
+    user: User
+    url: str
+    lines: list[str]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.user = create_test_user("gumba")
+        cls.url = reverse("cs_chatbot")
+        cls.lines = Res.make_lines()
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.res = Res.make_iter_res(self.lines)
+
+    def test_post_unauthenticated(self) -> None:
+        response = self.client.post(self.url, {"message": "hello"})
+        self.assertEqual(response.status_code, 401)
+
+    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    def test_post_returns_streaming_response(self, mock: MagicMock) -> None:
+        mock.return_value = self.res
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"message": "hello"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get("Content-Type"), "text/event-stream")
+
+    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    def test_post_streaming_body(self, mock: MagicMock) -> None:
+        mock.return_value = self.res
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"message": "hello"})
+        assert isinstance(response, StreamingHttpResponse)
+        assert isinstance(response.streaming_content, Iterator)
+        content = b"".join(response.streaming_content).decode()
+        self.assertIn("data:", content)
+        self.assertIn("[DONE]", content)
+
+    def test_post_returns_400_when_message_empty(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"message": ""})
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_returns_400_when_message_missing(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_returns_400_when_message_too_long(self) -> None:
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"message": "a" * 1001})
+        self.assertEqual(response.status_code, 400)
