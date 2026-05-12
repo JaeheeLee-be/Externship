@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import SocialUsers, User
 from apps.users.services.kakao import KakaoOAuthService, KakaoUserInfo
 from apps.users.services.naver import NaverOAuthService, NaverUserInfo
+from apps.users.services.user_login_service import UserLoginService
 from apps.users.utils.social_exceptions import (
     EmailAlreadyRegisteredError,
     EmailNotProvidedError,
@@ -16,7 +17,7 @@ from apps.users.utils.social_exceptions import (
     OAuthCallbackError,
     UnsupportedProviderError,
 )
-from apps.users.services.user_login_service import UserLoginService
+
 _UserInfo = Union[KakaoUserInfo, NaverUserInfo]
 
 _OAUTH_SERVICES: dict[str, Any] = {
