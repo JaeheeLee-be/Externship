@@ -48,7 +48,7 @@ class BlankRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
 
 
 class OrderRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(source="options_json")
+    options = serializers.JSONField()
     correct_answer = serializers.JSONField(source="answer")
 
     class Meta:
@@ -77,7 +77,7 @@ class OXAndShortRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
 
 
 class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(source="options_json", required=False)
+    options = serializers.JSONField(required=False)
     correct_answer = serializers.JSONField(source="answer", required=False)
 
     class Meta:
