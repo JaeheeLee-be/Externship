@@ -18,7 +18,7 @@ from apps.qna.dtos import InitialQNA
 from apps.qna.models import Question
 from apps.qna.redis import CacheRepository
 from apps.qna.redis.keys import CS_KEY, QNA_KEY, SESSION_KEY
-from apps.qna.services.chatbot_services import InitialService
+from apps.qna.services.chatbot_initial_qna import InitialService
 from apps.users.models import User
 
 

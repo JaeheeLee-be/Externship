@@ -27,7 +27,8 @@ from apps.qna.serializers.chatbot_serializers import (
     InitialAIAnswerSerializer,
     QNAChatbotListResponseSerializer,
 )
-from apps.qna.services.chatbot_services import ChatbotService, InitialService
+from apps.qna.services.chatbot_services import ChatbotService
+from apps.qna.services.chatbot_initial_qna import InitialService
 
 StreamFn = Callable[[int, int | None, str], Iterator[str]]
 
