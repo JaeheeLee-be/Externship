@@ -39,7 +39,7 @@ class AdminBaseView(APIView):
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         # 403: 권한 없음
-        raise PermissionDenied("관리자 권한이 필요합니다.")
+        raise PermissionDenied("권한이 없습니다.")
 
 
 class CourseListView(AdminBaseView):
@@ -96,6 +96,16 @@ class AdminCourseCreateView(AdminBaseView):
 
 
 class AdminCourseDetailView(AdminBaseView):
+    def permission_denied(
+        self,
+        request: Request,
+        message: Any = None,
+        code: Any = None,
+    ) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+        raise PermissionDenied("관리자 권한이 필요합니다.")
+
     @extend_schema(
         tags=["admin-courses"],
         summary="어드민 페이지 과정 상세 조회",
