@@ -9,9 +9,8 @@ from apps.qna.chatbot import (
     GROQ_MODEL,
     QNA_PROMPT,
     GroqPayloadFactory,
-    call_groq,
-    call_groq_once,
 )
+from apps.core.utils.groq_client import call_groq, call_groq_once
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.dtos import GroqPayload, InitialQNA, Message
 from apps.qna.exceptions import (
