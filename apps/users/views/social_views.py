@@ -22,8 +22,8 @@ def set_auth_cookies(response: Any, refresh: str) -> None:
         max_age=60 * 60 * 24 * 4,  # 4일
         domain=getattr(settings, "COOKIE_DOMAIN", None),
         httponly=True,
-        # secure=getattr(settings, "COOKIE_SECURE", True),
-        samesite=getattr(settings, "COOKIE_SAMESITE", "Lax"),
+        secure=True,
+        samesite="None",
         path="/",
     )
 
