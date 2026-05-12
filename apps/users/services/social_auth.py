@@ -16,7 +16,7 @@ from apps.users.utils.social_exceptions import (
     OAuthCallbackError,
     UnsupportedProviderError,
 )
-
+from apps.users.services.user_login_service import UserLoginService
 _UserInfo = Union[KakaoUserInfo, NaverUserInfo]
 
 _OAUTH_SERVICES: dict[str, Any] = {
@@ -104,9 +104,9 @@ class SocialAuthService:
 
     @classmethod
     def _generate_token_result(cls, user: User, is_new_user: bool) -> dict[str, Any]:
-        refresh = RefreshToken.for_user(user)
+        access, refresh = UserLoginService.generate_token_pair(user)
         return {
             "is_new_user": is_new_user,
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
+            "access": access,
+            "refresh": refresh,
         }
