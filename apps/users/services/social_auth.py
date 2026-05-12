@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import secrets
 from typing import Any, Union
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -28,11 +30,19 @@ _OAUTH_SERVICES: dict[str, Any] = {
 
 class SocialAuthService:
 
+    STATE_TTL = 300
+
     @classmethod
     def get_auth_url(cls, provider: str) -> str:
         service = _OAUTH_SERVICES.get(provider)
         if service is None:
             raise UnsupportedProviderError()
+
+        if provider == "naver":
+            state = secrets.token_urlsafe(16)
+            cache.set(f"oauth_state:{state}", provider, timeout=cls.STATE_TTL)
+            return str(service.get_auth_url(state))
+
         return str(service.get_auth_url())
 
     @classmethod
@@ -47,6 +57,10 @@ class SocialAuthService:
             raise OAuthCallbackError(error)
         if not code:
             raise MissingAuthCodeError()
+        if provider == "naver":
+            if not state or not cache.get(f"oauth_state:{state}"):
+                raise OAuthCallbackError("유효하지 않은 state입니다.")
+            cache.delete(f"oauth_state:{state}")
         user_info = cls._get_user_info(provider, code, state)
         return cls._login_and_register(provider, user_info)
 
