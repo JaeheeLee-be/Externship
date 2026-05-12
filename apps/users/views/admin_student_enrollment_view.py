@@ -7,14 +7,11 @@ from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.users.models import StudentEnrollmentRequests
-
-from apps.users.utils.pagination import RequestPagination
 from apps.users.serializers.admin_student_enrollment_serializer import (
     StudentEnrollmentListSerializer,
 )
 from apps.users.services.admin_student_enrollment_service import get_enrollment_requests
-
-
+from apps.users.utils.pagination import RequestPagination
 
 
 class AdminEnrollmentRequestListView(APIView):
