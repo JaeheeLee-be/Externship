@@ -157,6 +157,8 @@ def update_deployment(deployment_id: int, validated_data: dict[str, Any]) -> Exa
         deployment = ExamDeployment.objects.select_for_update(nowait=True).get(id=deployment_id)
     except ExamDeployment.DoesNotExist:
         raise DeploymentUpdateNotFoundError()
+    except DatabaseError:
+        raise DeploymentConflictError()
 
     for field, value in validated_data.items():
         setattr(deployment, field, value)
