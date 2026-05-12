@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from apps.qna.redis.dtos import InitialQNA
+from apps.qna.dtos import InitialQNA
 
 
 class CacheFactory:
@@ -14,7 +14,7 @@ class CacheFactory:
         using_model: str,
     ) -> InitialQNA:
 
-        created_at = str(datetime.now())
+        created_at = datetime.now().isoformat()
         return InitialQNA(
             category=category,
             title=title,

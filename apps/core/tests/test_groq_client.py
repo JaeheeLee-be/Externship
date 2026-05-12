@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import requests
 from django.test import TestCase
 
+from apps.core.utils.groq_client import call_groq, call_groq_once
 from apps.core.utils.test_factories import MockedAIResponse as Res
-from apps.qna.chatbot.clients.groq import call_groq, call_groq_once
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 
 """실제 groq api 요청을 보내는 테스트입니다."""
@@ -14,29 +14,50 @@ from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 #     @classmethod
 #     def setUpTestData(cls):
 #         from django.conf import settings
-#         cls.key = settings.GROQ_API_KEY
-#         from apps.qna.chatbot import GroqFactory
+#         from apps.qna.chatbot import GroqPayloadFactory
 #         from apps.qna.chatbot import QNA_PROMPT
-#         cls.first_payload = GroqFactory.create_first_payload(
-#             prompt=QNA_PROMPT,
-#             category="python",
-#             title="파이썬이 뭐야",
-#             message="파이썬에 대해 알려줘",
-#         )
-#         cls.payload = GroqFactory.create_payload(
-#             prompt=QNA_PROMPT,
-#             message="파이썬이 뭐야",
-#         )
+#         from apps.qna.chatbot import GROQ_MODEL
+#         from apps.qna.chatbot.questions.questions import questions
+#         cls.key = settings.GROQ_API_KEY
+#         cls.payloads = [
+#             GroqPayloadFactory.create_payload(
+#                 prompt=QNA_PROMPT,
+#                 message=question,
+#                 model=GROQ_MODEL["gpt_120"]
+#             ) for question in questions["off_topic1"]
+#         ]
 #
 #     def test_call_groq(self):
-#         from dataclasses import asdict
-#         for chunk in call_groq(asdict(self.payload), self.key):
-#             print(chunk, flush=True, end="")
+#         for i, payload in enumerate(self.payloads):
+#                 print(i+1, "==" * 20)
+#                 for chunk in call_groq(payload.api(), self.key):
+#                     print(chunk, flush=True, end="")
+#                 print()
+
+# class TestRealCallOnce(TestCase):
+#     @classmethod
+#     def setUpTestData(cls):
+#         from django.conf import settings
+#         from apps.qna.chatbot import GroqPayloadFactory
+#         from apps.qna.chatbot import QNA_PROMPT
+#         from apps.qna.chatbot import GROQ_MODEL
+#         from apps.qna.chatbot.questions.questions import questions
+#         cls.key = settings.GROQ_API_KEY
+#         cls.payloads = [
+#             GroqPayloadFactory.create_initial_payload(
+#                 prompt=QNA_PROMPT,
+#                 category="python",
+#                 title="파이썬이 뭐야",
+#                 message=question,
+#                 model=GROQ_MODEL["gpt_120"]
+#             ) for question in questions["off_topic1"]
+#         ]
 #
 #     def test_call_groq_once(self):
-#         from dataclasses import asdict
-#         text = call_groq_once(asdict(self.first_payload), self.key)
-#         print(text)
+#         for i, payload in enumerate(self.payloads):
+#             print(i+1, "=="*20)
+#             print(call_groq_once(payload.api(), self.key), flush=True)
+#             print()
 
 
 class TestCallGroq(TestCase):
@@ -53,7 +74,7 @@ class TestCallGroq(TestCase):
     def setUp(self) -> None:
         self.res = Res.make_iter_res(self.lines)
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_correct(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         text = ""
@@ -61,7 +82,7 @@ class TestCallGroq(TestCase):
             text += chunk
         self.assertEqual(text, "I am gumba")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_skips_empty_line(self, mock: MagicMock) -> None:
         lines = ["", Res.make_line("hello"), "data: [DONE]"]
         mock.return_value = Res.make_iter_res(lines)
@@ -70,7 +91,7 @@ class TestCallGroq(TestCase):
             text += chunk
         self.assertEqual(text, "hello")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_stop_at_done(self, mock: MagicMock) -> None:
         lines = [Res.make_line("hello"), "data: [DONE]", Res.make_line("world")]
         mock.return_value = Res.make_iter_res(lines)
@@ -79,7 +100,7 @@ class TestCallGroq(TestCase):
             text += chunk
         self.assertEqual(text, "hello")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_skips_invalid_json(self, mock: MagicMock) -> None:
         lines = ["data: not-json", Res.make_line("valid")]
         mock.return_value = Res.make_iter_res(lines)
@@ -88,7 +109,7 @@ class TestCallGroq(TestCase):
             text += chunk
         self.assertEqual(text, "valid")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_skips_with_invalid_key(self, mock: MagicMock) -> None:
         invalid_key = json.dumps({"invalid_key": "invalid"})
         lines = [f"data: {invalid_key}", Res.make_line("test")]
@@ -98,7 +119,7 @@ class TestCallGroq(TestCase):
             text += chunk
         self.assertEqual(text, "test")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_skips_with_invalid_index(self, mock: MagicMock) -> None:
         invalid_index = json.dumps({"choices": []})
         lines = [f"data: {invalid_index}", Res.make_line("test")]
@@ -108,20 +129,20 @@ class TestCallGroq(TestCase):
             text += chunk
         self.assertEqual(text, "test")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_http_error_raise_groq_api_error(self, mock: MagicMock) -> None:
         mock.side_effect = requests.HTTPError()
         with self.assertRaises(GroqAPIError):
             list(call_groq(self.payload, self.key))
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_connection_error_raise_groq_api_error(self, mock: MagicMock) -> None:
         self.res.raise_for_status.side_effect = requests.HTTPError()
         mock.return_value = self.res
         with self.assertRaises(GroqAPIError):
             list(call_groq(self.payload, self.key))
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_timeout_error_raise_groq_timeout_error(self, mock: MagicMock) -> None:
         mock.side_effect = requests.Timeout()
         with self.assertRaises(GroqTimeoutError):
@@ -135,7 +156,7 @@ class TestCallGroqOnce(TestCase):
         self.payload = {"payload": "payload"}
         self.res = Res.make_res("i am gumba")
 
-    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    @patch("apps.core.utils.groq_client.requests.post")
     def test_correct(self, mock: MagicMock) -> None:
         mock.return_value = self.res
         self.assertEqual("i am gumba", call_groq_once(self.payload, self.key))
