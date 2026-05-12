@@ -18,5 +18,5 @@ class PostPresignedUrlView(PresignedUrlView):
     permission_classes = [IsAuthenticated]
     path = "uploads/images/posts/"
 
-    # def post(self, request, *args, **kwargs):
-    #     return super().post(request, *args, **kwargs)
+# def post(self, request, *args, **kwargs):
+#     return super().post(request, *args, **kwargs)
