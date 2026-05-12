@@ -1,8 +1,12 @@
 from dataclasses import asdict
 from unittest.mock import MagicMock, patch
 
-from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
-from apps.core.utils.redis_repository import CacheRepository
+from django.core.cache import cache
+
+from apps.core.utils.isolated_cache_testcase import (
+    FixedPrefixRedisTestClient,
+    IsolatedRedisTestClient,
+)
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
@@ -17,8 +21,9 @@ from apps.qna.exceptions import (
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
-from apps.qna.redis.keys import INITIAL_KEY, QNA_KEY, SESSION_KEY
+from apps.qna.redis.keys import CS_KEY, INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_services import ChatbotService, InitialService
+from apps.core.utils.redis_repository import CacheRepository
 
 
 class TestInitialService(IsolatedRedisTestClient):
@@ -121,7 +126,7 @@ class TestInitialService(IsolatedRedisTestClient):
         self.assertEqual(result, cached)
 
 
-class TestChatbotService(IsolatedRedisTestClient):
+class TestChatbotService(FixedPrefixRedisTestClient):
     user_id: int = 1
     question_id: int = 100
     lines: list[str]
@@ -239,3 +244,27 @@ class TestChatbotService(IsolatedRedisTestClient):
     def test_validate_qna_chat_passes_when_valid(self) -> None:
         CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
         ChatbotService.validate_qna_chat(self.user_id, self.question_id)
+
+    def test_response_cs_history_returns_existing_history(self) -> None:
+        history = [
+            Message(role="user", content="질문입니다."),
+            Message(role="assistant", content="답변입니다."),
+        ]
+        CacheRepository.save_history(
+            key=CS_KEY.format(user_id=self.user_id),
+            history=[asdict(m) for m in history],
+            ttl=1800,
+        )
+        result = ChatbotService.response_cs_history(self.user_id)
+        self.assertEqual(len(result), 2)
+
+    @patch("apps.qna.chatbot.clients.groq.requests.post")
+    def test_response_cs_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
+        mock.return_value = self.res
+        result = list(ChatbotService.response_cs_chat(self.user_id, None, "질문입니다."))
+        self.assertTrue(len(result) > 0)
+        history = CacheRepository.get_history(CS_KEY.format(user_id=self.user_id))
+        assert history is not None
+        self.assertIsNotNone(history)
+        self.assertEqual(history[0].role, "user")
+        self.assertEqual(history[0].content, "질문입니다.")

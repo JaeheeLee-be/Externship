@@ -8,6 +8,7 @@ from django.conf import settings
 from apps.core.utils.groq_client import call_groq, call_groq_once
 from apps.core.utils.redis_repository import CacheRepository
 from apps.qna.chatbot import (
+    CS_PROMPT,
     GROQ_MODEL,
     QNA_PROMPT,
     GroqPayloadFactory,
@@ -25,7 +26,7 @@ from apps.qna.exceptions import (
 )
 from apps.qna.models import Question, QuestionCategory
 from apps.qna.redis import CacheFactory
-from apps.qna.redis.keys import INITIAL_KEY, LOCK_KEY, QNA_KEY, SESSION_KEY
+from apps.qna.redis.keys import CS_KEY, INITIAL_KEY, LOCK_KEY, QNA_KEY, SESSION_KEY
 
 
 class InitialService:
@@ -123,6 +124,7 @@ class InitialService:
 class ChatbotService:
     MODEL = GROQ_MODEL["gpt_120"]
     QNA_TTL = 60 * 30
+    CS_TTL = 60 * 30
     GROQ_TIMEOUT = (5, 60)
 
     @staticmethod
@@ -135,10 +137,15 @@ class ChatbotService:
         initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id))
         if initial is None:
             raise NotFoundException("해당 질문을 찾을 수 없습니다.")
-        return ChatbotService._response_history(user_id, question_id)
+        return ChatbotService._return_qna_history(user_id, question_id)
 
     @staticmethod
-    def response_qna_chat(user_id: int, question_id: int, message: str) -> Iterator[str]:
+    def response_cs_history(user_id: int) -> list[Message]:
+        history = CacheRepository.get_history(CS_KEY.format(user_id=user_id))
+        return history or []
+
+    @staticmethod
+    def response_qna_chat(user_id: int, question_id: int | None, message: str) -> Iterator[str]:
         """
         qna 채팅 대화용 함수입니다.
         세션 활성화는 히스토리 조회에서 이뤄지고, 이곳에서는 해당 세션을 검증합니다.
@@ -156,9 +163,21 @@ class ChatbotService:
             model=ChatbotService.MODEL,
         )
         key = QNA_KEY.format(user_id=user_id, question_id=question_id)
-
+        assert question_id is not None
         ChatbotService._make_session(user_id, question_id)
-        return ChatbotService._stream_and_save_chat(key, history, message, payload)
+        return ChatbotService._stream_and_save_chat(key, history, message, payload, ttl=ChatbotService.QNA_TTL)
+
+    @staticmethod
+    def response_cs_chat(user_id: int, _: int | None, message: str) -> Iterator[str]:
+        history = CacheRepository.get_history(CS_KEY.format(user_id=user_id))
+        payload = GroqPayloadFactory.create_payload(
+            prompt=CS_PROMPT,
+            message=message,
+            history=history,
+            model=ChatbotService.MODEL,
+        )
+        key = CS_KEY.format(user_id=user_id)
+        return ChatbotService._stream_and_save_chat(key, history, message, payload, ttl=ChatbotService.CS_TTL)
 
     @staticmethod
     def validate_qna_chat(user_id: int, question_id: int) -> None:
@@ -172,14 +191,14 @@ class ChatbotService:
             raise NotFoundException("해당 질문을 찾을 수 없습니다.")
 
     @staticmethod
-    def _response_history(user_id: int, question_id: int) -> list[Message]:
+    def _return_qna_history(user_id: int, question_id: int) -> list[Message]:
         ChatbotService._make_session(user_id, question_id)
         history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
         return history or []
 
     @staticmethod
     def _stream_and_save_chat(
-        key: str, history: list[Message] | None, message: str, payload: GroqPayload
+        key: str, history: list[Message] | None, message: str, payload: GroqPayload, ttl: int
     ) -> Iterator[str]:
         try:
             answer = ""
@@ -191,13 +210,13 @@ class ChatbotService:
         except GroqAPIError:
             raise ExternalAPIException()
 
-        ChatbotService._store_history(
-            key, history, ChatbotService._build_messages(message, answer), ChatbotService.QNA_TTL
-        )
+        ChatbotService._store_history(key, history, ChatbotService._build_messages(message, answer), ttl)
 
     @staticmethod
     def _make_session(user_id: int, question_id: int) -> None:
-        CacheRepository.set_session(key=SESSION_KEY.format(user_id=user_id), value=question_id, ttl=ChatbotService.QNA_TTL)
+        CacheRepository.set_session(
+            key=SESSION_KEY.format(user_id=user_id), value=question_id, ttl=ChatbotService.QNA_TTL
+        )
 
     @staticmethod
     def _store_history(key: str, history: list[Message] | None, messages: list[Message], ttl: int) -> None:
