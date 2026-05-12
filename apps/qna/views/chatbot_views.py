@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.utils.redis_repository import CacheRepository
+from apps.qna.redis import CacheRepository
 from apps.core.utils.types import AuthenticatedRequest
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.schemas.chatbot_schemas import (

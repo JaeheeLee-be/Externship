@@ -1,5 +1,5 @@
 import json
-from typing import Any, cast
+from typing import Any
 
 from django.core.cache import cache
 from django_redis import get_redis_connection  # type: ignore

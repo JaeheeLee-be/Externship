@@ -7,7 +7,7 @@ from apps.core.utils.isolated_cache_testcase import (
     FixedPrefixRedisTestClient,
     IsolatedRedisTestClient,
 )
-from apps.core.utils.redis_repository import CacheRepository
+from apps.qna.redis import CacheRepository
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError

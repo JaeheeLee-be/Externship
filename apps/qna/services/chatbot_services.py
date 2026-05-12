@@ -6,7 +6,6 @@ from typing import Iterator
 from django.conf import settings
 
 from apps.core.utils.groq_client import call_groq, call_groq_once
-from apps.core.utils.redis_repository import CacheRepository
 from apps.qna.chatbot import (
     CS_PROMPT,
     GROQ_MODEL,
@@ -25,7 +24,7 @@ from apps.qna.exceptions import (
     NotFoundException,
 )
 from apps.qna.models import Question, QuestionCategory
-from apps.qna.redis import CacheFactory
+from apps.qna.redis import CacheFactory, CacheRepository
 from apps.qna.redis.keys import CS_KEY, INITIAL_KEY, LOCK_KEY, QNA_KEY, SESSION_KEY
 
 
