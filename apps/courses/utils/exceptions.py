@@ -11,6 +11,10 @@ class CourseNotFoundError(NotFound):
     default_detail = "해당 과정을 찾을 수 없습니다."
 
 
+class CohortNotFoundError(NotFound):
+    default_detail = "기수를 찾을 수 없습니다."
+
+
 class SubjectNotFoundError(NotFound):
     default_detail = "해당 과목을 찾을 수 없습니다."
 
