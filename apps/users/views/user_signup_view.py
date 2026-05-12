@@ -35,7 +35,7 @@ class SignupView(APIView):
                 response_only=True,
             ),
         },
-        tags=["Users"],
+        tags=["accounts"],
     )
     def post(self, request: Request) -> Response:
         serializer = SignupSerializer(data=request.data)

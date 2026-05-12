@@ -18,7 +18,7 @@ class EmailSendView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts (이메일 인증)"],
+        tags=["accounts"],
         summary="이메일 인증 코드 발송 API",
         description="회원가입, 비밀번호 찾기, 계정 복구 등 용도(purpose)에 맞는 6자리 이메일 인증 코드를 발송합니다.",
         request=EmailRequestSerializer,

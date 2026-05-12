@@ -28,7 +28,7 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Account(로그인)"],
+        tags=["accounts"],
         summary="이메일 로그인 API",
         description="이메일과 비밀번호로 로그인합니다. Access 토큰은 바디로, Refresh 토큰은 쿠키로 반환됩니다.",
         request=LoginSerializer,
