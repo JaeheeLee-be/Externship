@@ -3,13 +3,18 @@ from time import sleep
 
 from django.conf import settings
 
-from apps.qna.chatbot import GROQ_MODEL, GroqPayloadFactory, QNA_PROMPT, call_groq_once
-from apps.qna.chatbot.exceptions import GroqTimeoutError, GroqAPIError
+from apps.qna.chatbot import GROQ_MODEL, QNA_PROMPT, GroqPayloadFactory, call_groq_once
+from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.dtos import InitialQNA
-from apps.qna.exceptions import GetInitialTimeoutException, ConflictException, NotFoundException, \
-    ExternalAPITimeoutException, ExternalAPIException
+from apps.qna.exceptions import (
+    ConflictException,
+    ExternalAPIException,
+    ExternalAPITimeoutException,
+    GetInitialTimeoutException,
+    NotFoundException,
+)
 from apps.qna.models import Question, QuestionCategory
-from apps.qna.redis import CacheRepository, CacheFactory
+from apps.qna.redis import CacheFactory, CacheRepository
 from apps.qna.redis.keys import INITIAL_KEY, LOCK_KEY
 
 

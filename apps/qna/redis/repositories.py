@@ -49,13 +49,10 @@ class CacheRepository:
         return cached if isinstance(cached, int) else None
 
     @staticmethod
-    def get_qna_list(user_id: int) -> list[LastQNAHistory]:
-        qna_list = []
+    def get_qna_keys(user_id: int) -> list[bytes]:
         redis_client = get_redis_connection("default")
-        for key in redis_client.scan_iter(match=f":1:qna_chat:{user_id}:*"):
-            key = key.decode("utf-8").removeprefix(":1:")
-            value = cache.get(key)
-            if value is None:
-                continue
-            qna_list.append(CacheFactory.create_last_qna(key, value))
-        return qna_list
+        return list(redis_client.scan_iter(match=f":1:qna_chat:{user_id}:*"))
+
+    @staticmethod
+    def get_many(keys: list[str]) -> dict[str, Any]:
+        return cache.get_many(keys)

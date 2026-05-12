@@ -3,14 +3,19 @@ from unittest.mock import MagicMock, patch
 from django.core.cache import cache
 
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
+from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import create_test_category_and_question
-from apps.qna.chatbot.exceptions import GroqTimeoutError, GroqAPIError
-from apps.qna.exceptions import ExternalAPITimeoutException, ExternalAPIException, ConflictException, NotFoundException, \
-    GetInitialTimeoutException
-from apps.qna.models import QuestionCategory, Question
+from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
+from apps.qna.exceptions import (
+    ConflictException,
+    ExternalAPIException,
+    ExternalAPITimeoutException,
+    GetInitialTimeoutException,
+    NotFoundException,
+)
+from apps.qna.models import Question, QuestionCategory
 from apps.qna.redis import CacheRepository
 from apps.qna.services.chatbot_initial_qna import InitialService
-from apps.core.utils.test_factories import MockedAIResponse as Res
 
 
 class TestInitialService(IsolatedRedisTestClient):

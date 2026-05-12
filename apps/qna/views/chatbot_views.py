@@ -28,8 +28,8 @@ from apps.qna.serializers.chatbot_serializers import (
     QNAChatbotListResponseSerializer,
 )
 from apps.qna.services.chatbot_cs import CSChatbotService
-from apps.qna.services.chatbot_qna import QNAChatbotService
 from apps.qna.services.chatbot_initial_qna import InitialService
+from apps.qna.services.chatbot_qna import QNAChatbotService
 
 StreamFn = Callable[[int, int | None, str], Iterator[str]]
 
@@ -117,7 +117,7 @@ class QNAChatbotListAPIView(APIView):
 
     @qna_chatbot_list_schema
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
-        instance = CacheRepository.get_qna_list(request.user.pk)
+        instance = QNAChatbotService.response_qna_list(request.user.pk)
         serializer = QNAChatbotListResponseSerializer(instance, many=True)
         return Response({"results": serializer.data}, status=status.HTTP_200_OK)
 

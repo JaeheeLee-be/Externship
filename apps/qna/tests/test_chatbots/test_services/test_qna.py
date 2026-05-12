@@ -5,12 +5,17 @@ from django.core.cache import cache
 
 from apps.core.utils.isolated_cache_testcase import FixedPrefixRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
-from apps.qna.chatbot.exceptions import GroqTimeoutError, GroqAPIError
+from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.dtos import InitialQNA, Message
-from apps.qna.exceptions import NotFoundException, ExternalAPITimeoutException, ExternalAPIException, \
-    InactiveSessionException, ConversationOverException
+from apps.qna.exceptions import (
+    ConversationOverException,
+    ExternalAPIException,
+    ExternalAPITimeoutException,
+    InactiveSessionException,
+    NotFoundException,
+)
 from apps.qna.redis import CacheRepository
-from apps.qna.redis.keys import INITIAL_KEY, SESSION_KEY, QNA_KEY
+from apps.qna.redis.keys import INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_qna import QNAChatbotService
 
 
@@ -133,3 +138,32 @@ class TestQNAChatbotService(FixedPrefixRedisTestClient):
     def test_validate_qna_chat_passes_when_valid(self) -> None:
         CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
         QNAChatbotService.validate_qna_chat(self.user_id, self.question_id)
+
+
+class TestGetQnaList(FixedPrefixRedisTestClient):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.user_id = 1
+        self.value = [
+            {"role": "user", "content": "질문입니다.", "created_at": None},
+            {"role": "assistant", "content": "답변입니다.", "created_at": "2026-04-23T14:30:05"},
+        ]
+        cache.set(f"qna_chat:{self.user_id}:42", self.value)
+        cache.set(f"qna_chat:{self.user_id}:55", self.value)
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        cache.clear()
+
+    def test_response_qna_list_question_id_parsed(self) -> None:
+        result = QNAChatbotService.response_qna_list(self.user_id)
+        question_ids = {r.question_id for r in result}
+        self.assertIn(42, question_ids)
+        self.assertIn(55, question_ids)
+
+    def test_response_qna_list_last_message_is_last_item(self) -> None:
+        result = QNAChatbotService.response_qna_list(self.user_id)
+        for item in result:
+            self.assertEqual(item.last_message, "답변입니다.")
+            self.assertEqual(item.role, "assistant")

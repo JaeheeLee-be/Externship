@@ -9,6 +9,7 @@ from apps.core.utils.isolated_cache_testcase import (
 )
 from apps.qna.dtos import InitialQNA, Message
 from apps.qna.redis import CacheRepository
+from apps.qna.redis.keys import QNA_KEY
 
 
 class TestCacheRepository(IsolatedRedisTestClient):
@@ -90,7 +91,7 @@ class TestCacheRepository(IsolatedRedisTestClient):
         self.assertIsInstance(result, int)
 
 
-class TestCacheRepositoryGetQnaList(FixedPrefixRedisTestClient):
+class TestCacheRepositoryQnaList(FixedPrefixRedisTestClient):
 
     def setUp(self) -> None:
         super().setUp()
@@ -106,22 +107,26 @@ class TestCacheRepositoryGetQnaList(FixedPrefixRedisTestClient):
         super().tearDown()
         cache.clear()
 
-    def test_returns_qna_list(self) -> None:
-        result = CacheRepository.get_qna_list(self.user_id)
+    def test_get_qna_keys_returns_keys(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
         self.assertEqual(len(result), 2)
 
-    def test_question_id_parsed(self) -> None:
-        result = CacheRepository.get_qna_list(self.user_id)
-        question_ids = {r.question_id for r in result}
-        self.assertIn(42, question_ids)
-        self.assertIn(55, question_ids)
+    def test_get_qna_keys_returns_bytes(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        self.assertIsInstance(result[0], bytes)
 
-    def test_last_message_is_last_item(self) -> None:
-        result = CacheRepository.get_qna_list(self.user_id)
-        for item in result:
-            self.assertEqual(item.last_message, "답변입니다.")
-            self.assertEqual(item.role, "assistant")
-
-    def test_empty_when_no_keys(self) -> None:
-        result = CacheRepository.get_qna_list(user_id=999)
+    def test_get_qna_keys_empty_when_no_keys(self) -> None:
+        result = CacheRepository.get_qna_keys(user_id=999)
         self.assertEqual(result, [])
+
+    def test_get_many_returns_values(self) -> None:
+        keys = [
+            QNA_KEY.format(user_id=self.user_id, question_id=42),
+            QNA_KEY.format(user_id=self.user_id, question_id=55),
+        ]
+        result = CacheRepository.get_many(keys)
+        self.assertEqual(len(result), 2)
+
+    def test_get_many_excludes_missing_keys(self) -> None:
+        result = CacheRepository.get_many(["nonexistent_key"])
+        self.assertEqual(result, {})

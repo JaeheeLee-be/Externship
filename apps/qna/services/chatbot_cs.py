@@ -1,6 +1,6 @@
 from typing import Iterator
 
-from apps.qna.chatbot import GROQ_MODEL, GroqPayloadFactory, CS_PROMPT
+from apps.qna.chatbot import CS_PROMPT, GROQ_MODEL, GroqPayloadFactory
 from apps.qna.dtos import Message
 from apps.qna.redis import CacheRepository
 from apps.qna.redis.keys import CS_KEY

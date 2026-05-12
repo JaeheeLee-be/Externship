@@ -1,9 +1,13 @@
 from typing import Iterator
 
-from apps.qna.chatbot import GroqPayloadFactory, QNA_PROMPT, GROQ_MODEL
-from apps.qna.dtos import Message
-from apps.qna.exceptions import NotFoundException, InactiveSessionException, ConversationOverException
-from apps.qna.redis import CacheRepository
+from apps.qna.chatbot import GROQ_MODEL, QNA_PROMPT, GroqPayloadFactory
+from apps.qna.dtos import LastQNAHistory, Message
+from apps.qna.exceptions import (
+    ConversationOverException,
+    InactiveSessionException,
+    NotFoundException,
+)
+from apps.qna.redis import CacheFactory, CacheRepository
 from apps.qna.redis.keys import INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_base import ChatbotBaseService
 
@@ -11,6 +15,7 @@ from apps.qna.services.chatbot_base import ChatbotBaseService
 class QNAChatbotService(ChatbotBaseService):
     QNA_TTL = 60 * 30
     MODEL = GROQ_MODEL["gpt_120"]
+
     @staticmethod
     def response_qna_history(user_id: int, question_id: int) -> list[Message]:
         """
@@ -45,6 +50,16 @@ class QNAChatbotService(ChatbotBaseService):
         assert question_id is not None
         QNAChatbotService._make_session(user_id, question_id)
         return QNAChatbotService._stream_and_save_chat(key, history, message, payload, ttl=QNAChatbotService.QNA_TTL)
+
+    @staticmethod
+    def response_qna_list(user_id: int) -> list[LastQNAHistory]:
+        raw_keys = CacheRepository.get_qna_keys(user_id)
+        keys = [key.decode("utf-8").removeprefix(":1:") for key in raw_keys]
+        qna_list = []
+        for key, value in CacheRepository.get_many(keys).items():
+            qna_list.append(CacheFactory.create_last_qna(key, value))
+
+        return qna_list
 
     @staticmethod
     def validate_qna_chat(user_id: int, question_id: int) -> None:

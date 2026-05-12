@@ -5,9 +5,9 @@ from typing import Iterator
 from django.conf import settings
 
 from apps.qna.chatbot import call_groq
-from apps.qna.chatbot.exceptions import GroqTimeoutError, GroqAPIError
-from apps.qna.dtos import Message, GroqPayload
-from apps.qna.exceptions import ExternalAPITimeoutException, ExternalAPIException
+from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
+from apps.qna.dtos import GroqPayload, Message
+from apps.qna.exceptions import ExternalAPIException, ExternalAPITimeoutException
 from apps.qna.redis import CacheRepository
 
 
