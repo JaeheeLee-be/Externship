@@ -9,6 +9,9 @@ from apps.users.views.admin_withdrawal_view import (
     AdminWithdrawalListView,
 )
 from apps.users.views.admin_update_view import AdminAccountUpdateView
+from apps.users.views.admin_student_enrollment_view import (
+    AdminEnrollmentRequestListView,
+)
 from apps.users.views.enrollment_accept_view import AdminStudentEnrollmentAcceptView
 
 urlpatterns = [
