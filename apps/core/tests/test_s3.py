@@ -1,11 +1,11 @@
 from typing import Any
 
-import apps.core.presigned_url.s3_handler as s3_module
 from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.test import APIRequestFactory
 
+import apps.core.presigned_url.s3_handler as s3_module
 from apps.core.utils.s3 import PresignedUrlView
 
 FAKE_S3 = dict(
