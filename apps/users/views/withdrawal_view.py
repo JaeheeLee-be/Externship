@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Never, cast
+from typing import Any, Never, cast
 
+from drf_spectacular.openapi import AutoSchema as SpectacularAutoSchema
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotAuthenticated
@@ -23,6 +24,16 @@ from apps.users.utils.withdrawal_exceptions import (
 from apps.users.views.user_info_view import UserInfoView
 
 
+class WithdrawalAutoSchema(SpectacularAutoSchema):
+    def _get_request_body(self, direction: Any = "request") -> Any:
+        if self.method == "DELETE":
+            self.method = "POST"
+            body = super()._get_request_body()  # type: ignore[no-untyped-call]
+            self.method = "DELETE"
+            return body
+        return super()._get_request_body()  # type: ignore[no-untyped-call]
+
+
 class WithdrawalView(APIView):
     """
     GET/PATCH: UserInfoView 상속 (회원정보 조회/수정)
@@ -30,6 +41,7 @@ class WithdrawalView(APIView):
             __init__.py에서 withdrawal_urls를 먼저 include해 이 View가 우선 매칭됨
     """
 
+    schema = WithdrawalAutoSchema()
     permission_classes = [IsAuthenticated]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
@@ -41,7 +53,7 @@ class WithdrawalView(APIView):
         tags=["accounts"],
         summary="회원 탈퇴",
         description="탈퇴 신청 후 2주간 데이터가 보관되며, 2주 내 계정 복구가 가능합니다. 2주 후 완전 삭제됩니다.",
-        request=WithdrawalSerializer(),
+        request=WithdrawalSerializer,
         responses={
             204: OpenApiResponse(description="탈퇴 처리 완료"),
             400: inline_serializer(
