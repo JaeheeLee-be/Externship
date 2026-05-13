@@ -34,6 +34,9 @@ class DeploymentBaseTestCase(APITestCase):
     detail2_url: str
     invalid_url: str
     not_found_url: str
+    status_url: str
+    status_invalid_url: str
+    status_not_found_url: str
     create_data: dict[str, Any]
     update_data: dict[str, Any]
 
@@ -119,6 +122,9 @@ class DeploymentBaseTestCase(APITestCase):
         cls.detail2_url = reverse("exam-deployment-detail", kwargs={"deployment_id": str(cls.deployment2.id)})
         cls.invalid_url = reverse("exam-deployment-detail", kwargs={"deployment_id": "abc"})
         cls.not_found_url = reverse("exam-deployment-detail", kwargs={"deployment_id": "99999"})
+        cls.status_url = reverse("exam-deployment-status", kwargs={"deployment_id": str(cls.deployment.id)})
+        cls.status_invalid_url = reverse("exam-deployment-status", kwargs={"deployment_id": "abc"})
+        cls.status_not_found_url = reverse("exam-deployment-status", kwargs={"deployment_id": "99999"})
 
         cls.create_data = {
             "exam_id": cls.exam.id,
@@ -625,3 +631,93 @@ class TestDeploymentListInvalidRequest(DeploymentBaseTestCase):
         response = self.client.get(self.list_url, {"sort": "invalid_sort"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get("error_detail"), "유효하지 않은 조회 요청입니다.")
+
+
+class TestDeploymentStatus(DeploymentBaseTestCase):
+    """배포 상태 수정 테스트"""
+
+    # 권한 테스트
+    def test_admin_status_success(self) -> None:
+        """어드민 상태 변경 성공"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_status_forbidden(self) -> None:
+        """일반 유저 403"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data.get("error_detail"), "쪽지시험 배포 상태 변경 권한이 없습니다.")
+
+    def test_student_status_forbidden(self) -> None:
+        """학생 403"""
+        self.client.force_authenticate(user=self.student)
+        response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data.get("error_detail"), "쪽지시험 배포 상태 변경 권한이 없습니다.")
+
+    def test_unauth_status_unauthorized(self) -> None:
+        """비로그인 401"""
+        response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data.get("error_detail"), "자격 인증 데이터가 제공되지 않았습니다.")
+
+    # 기능 실패 테스트
+    def test_status_invalid_path(self) -> None:
+        """숫자가 아닌 deployment_id → 400"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_invalid_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("error_detail"), "유효하지 않은 배포 상태 요청입니다.")
+
+    def test_status_invalid_value(self) -> None:
+        """잘못된 status 값 → 400"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_url, {"status": "invalid_status"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("error_detail"), "유효하지 않은 배포 상태 요청입니다.")
+
+    def test_status_not_found(self) -> None:
+        """존재하지 않는 deployment_id → 404"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_not_found_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data.get("error_detail"), "해당 배포 정보를 찾을 수 없습니다.")
+
+    def test_status_conflict(self) -> None:
+        """락 충돌 발생 시 409 반환 확인 (mock)"""
+        from apps.exams.exceptions.admin_exam_deployment_exception import (
+            DeploymentStatusConflictError,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        with patch("apps.exams.views.admin_exam_deployment_view.update_deployment_status") as mock_update:
+            mock_update.side_effect = DeploymentStatusConflictError()
+            response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data.get("error_detail"), "배포 상태 변경 중 충돌이 발생했습니다.")
+
+    # 기능 성공 테스트
+    def test_status_response_fields(self) -> None:
+        """응답 필드 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("deployment_id", response.data)
+        self.assertIn("status", response.data)
+
+    def test_status_db_reflects_changes(self) -> None:
+        """상태 변경 후 DB 반영 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_url, {"status": "Deactivated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.deployment.refresh_from_db()
+        self.assertEqual(self.deployment.status, "Deactivated")
+
+    def test_status_activated(self) -> None:
+        """Activated로 변경 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.patch(self.status_url, {"status": "Activated"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "Activated")

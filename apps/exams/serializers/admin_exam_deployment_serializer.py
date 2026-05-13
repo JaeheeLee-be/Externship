@@ -145,12 +145,22 @@ class AdminExamDeploymentUpdateSerializer(serializers.Serializer[Any]):
 
 
 class AdminExamDeploymentUpdateResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
-    deployment_id = serializers.IntegerField(source="id")
+    deployment_id = serializers.IntegerField(source="id", read_only=True)
 
     class Meta:
         model = ExamDeployment
         fields = ["deployment_id", "duration_time", "open_at", "close_at", "updated_at"]
+        read_only_fields = ["duration_time", "open_at", "close_at", "updated_at"]
 
 
-class AdminExamDeploymentDeleteResponseSerializer(serializers.Serializer[Any]):
-    deployment_id = serializers.IntegerField(source="id")
+class AdminExamDeploymentStatusSerializer(serializers.Serializer[Any]):
+    status = serializers.ChoiceField(choices=ExamDeployment.ExamStatus.choices)
+
+
+class AdminExamDeploymentStatusResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
+    deployment_id = serializers.IntegerField(source="id", read_only=True)
+
+    class Meta:
+        model = ExamDeployment
+        fields = ["deployment_id", "status"]
+        read_only_fields = ["status"]

@@ -3,7 +3,7 @@ import uuid
 from typing import Any
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.db.models import Avg, Count, QuerySet
 
 from apps.core.utils.base62 import Base62
@@ -14,6 +14,8 @@ from apps.exams.exceptions.admin_exam_deployment_exception import (
     DeploymentDetailNotFoundError,
     DeploymentNoQuestionsError,
     DeploymentNotFoundError,
+    DeploymentStatusConflictError,
+    DeploymentStatusNotFoundError,
     DeploymentUpdateNotFoundError,
 )
 from apps.exams.models.exam_deployment_model import ExamDeployment
@@ -152,9 +154,11 @@ def get_deployment_detail(deployment_id: int) -> ExamDeployment:
 @transaction.atomic
 def update_deployment(deployment_id: int, validated_data: dict[str, Any]) -> ExamDeployment:
     try:
-        deployment = ExamDeployment.objects.get(id=deployment_id)
+        deployment = ExamDeployment.objects.select_for_update(nowait=True).get(id=deployment_id)
     except ExamDeployment.DoesNotExist:
         raise DeploymentUpdateNotFoundError()
+    except DatabaseError:
+        raise DeploymentConflictError()
 
     for field, value in validated_data.items():
         setattr(deployment, field, value)
@@ -173,4 +177,18 @@ def delete_deployment(deployment_id: int) -> ExamDeployment:
         raise DeploymentDeleteConflictError()
 
     deployment.delete()
+    return deployment
+
+
+@transaction.atomic
+def update_deployment_status(deployment_id: int, status: str) -> ExamDeployment:
+    try:
+        deployment = ExamDeployment.objects.select_for_update(nowait=True).get(id=deployment_id)
+    except ExamDeployment.DoesNotExist:
+        raise DeploymentStatusNotFoundError()
+    except DatabaseError:
+        raise DeploymentStatusConflictError()
+
+    deployment.status = status
+    deployment.save(update_fields=["status"])
     return deployment
