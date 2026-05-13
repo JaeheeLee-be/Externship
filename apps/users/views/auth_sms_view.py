@@ -18,7 +18,7 @@ class SmsSendView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts (sms 인증)"],
+        tags=["accounts"],
         summary="sms 인증 코드 발송 API",
         description="회원가입, 이메일 찾기, 전화번호 변경 등 용도(purpose)에 맞는 6자리 sms 인증 코드를 발송합니다.",
         request=SmsSendSerializer,
@@ -67,7 +67,7 @@ class SmsVerificationView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts (sms 인증)"],
+        tags=["accounts"],
         summary="sms 인증 코드 검증 API",
         description="사용자가 입력한 6자리 인증 코드를 검증하고, 성공 시 다음 단계(회원가입 등)를 위한 sms_token을 반환합니다.",
         request=SmsVerifySerializer,

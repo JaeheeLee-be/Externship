@@ -28,7 +28,7 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Account(로그인)"],
+        tags=["accounts"],
         summary="이메일 로그인 API",
         description="이메일과 비밀번호로 로그인합니다. Access 토큰은 바디로, Refresh 토큰은 쿠키로 반환됩니다.",
         request=LoginSerializer,
@@ -77,7 +77,7 @@ class LogoutView(APIView):
     permission_classes: list[Any] = []
 
     @extend_schema(
-        tags=["Account(로그인)"],
+        tags=["accounts"],
         summary="로그아웃 API",
         request=None,
         responses={200: OpenApiResponse(description="로그아웃 성공")},
@@ -98,10 +98,10 @@ class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Account(로그인)"],
+        tags=["accounts"],
         summary="JWT 토큰 재발급 API",
         description="HttpOnly 쿠키의 refresh_token으로 새 access_token 발급. refresh_token도 갱신됨.",
-        request=None,
+        request=TokenRefreshSerializer,
         responses={
             200: OpenApiResponse(description="토큰 재발급 성공"),
             400: OpenApiResponse(description="refresh 쿠키 없음"),
