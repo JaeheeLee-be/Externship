@@ -1,14 +1,23 @@
 from unittest.mock import patch
 
+import apps.core.presigned_url.s3_handler as s3_module
 from botocore.exceptions import HTTPClientError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from freezegun import freeze_time
 from moto import mock_aws
 
 from apps.core.presigned_url.s3_handler import get_s3_handler
 from apps.core.presigned_url.services import PresignedUrlService
 
+FAKE_S3 = dict(
+    AWS_S3_REGION="ap-northeast-2",
+    AWS_S3_ACCESS_KEY_ID="test-key",
+    AWS_S3_SECRET_ACCESS_KEY="test-secret",
+    AWS_S3_BUCKET_NAME="test-bucket",
+)
 
+
+@override_settings(**FAKE_S3)
 class TestPresignedUrlNetwork(TestCase):
     """
     테스트 요약:
@@ -18,7 +27,11 @@ class TestPresignedUrlNetwork(TestCase):
     """
 
     def setUp(self) -> None:
+        s3_module.s3_handler = None
         self.s3_handler = get_s3_handler()
+
+    def tearDown(self) -> None:
+        s3_module.s3_handler = None
 
     @mock_aws
     def test_mock(self) -> None:
