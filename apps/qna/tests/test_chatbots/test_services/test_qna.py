@@ -55,16 +55,18 @@ class TestQNAChatbotService(FixedPrefixRedisTestClient):
         with self.assertRaises(NotFoundException):
             QNAChatbotService.response_qna_history(self.user_id, 9999)
 
-    def test_response_qna_history_returns_empty_list_when_no_history(self) -> None:
+    def test_response_qna_history_returns_initial_answer_when_no_history(self) -> None:
         result = QNAChatbotService.response_qna_history(self.user_id, self.question_id)
-        self.assertEqual(result, [])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].role, "assistant")
+        self.assertEqual(result[0].content, self.initial.answer)
 
     def test_response_qna_history_activates_session(self) -> None:
         QNAChatbotService.response_qna_history(self.user_id, self.question_id)
         session = CacheRepository.get_session(SESSION_KEY.format(user_id=self.user_id))
         self.assertEqual(session, self.question_id)
 
-    def test_response_qna_history_returns_existing_history(self) -> None:
+    def test_response_qna_history_prepends_initial_to_existing_history(self) -> None:
         history = [
             Message(role="user", content="질문입니다."),
             Message(role="assistant", content="답변입니다."),
@@ -75,7 +77,9 @@ class TestQNAChatbotService(FixedPrefixRedisTestClient):
             ttl=1800,
         )
         result = QNAChatbotService.response_qna_history(self.user_id, self.question_id)
-        self.assertEqual(len(result), 2)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0].content, self.initial.answer)  # initial이 맨 앞
+        self.assertEqual(result[1].content, "질문입니다.")
 
     def test_make_qna_context_raises_403_when_session_invalid(self) -> None:
         # 세션 없음

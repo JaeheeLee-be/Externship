@@ -54,10 +54,7 @@ class CacheRepository:
         redis_client = get_redis_connection("default")
         prefix = CacheRepository._key_prefix()
         pattern = f"{prefix}qna_chat:{user_id}:*"
-        return [
-            k.decode("utf-8").removeprefix(prefix)
-            for k in redis_client.scan_iter(match=pattern)
-        ]
+        return [k.decode("utf-8").removeprefix(prefix) for k in redis_client.scan_iter(match=pattern)]
 
     @staticmethod
     def _key_prefix() -> str:

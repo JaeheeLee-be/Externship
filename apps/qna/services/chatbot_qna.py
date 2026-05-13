@@ -26,7 +26,7 @@ class QNAChatbotService(ChatbotBaseService):
         initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id))
         if initial is None:
             raise NotFoundException("해당 질문을 찾을 수 없습니다.")
-        return QNAChatbotService._return_qna_history(user_id, question_id)
+        return QNAChatbotService._return_qna_history(user_id, question_id, initial)
 
     @staticmethod
     def response_qna_chat(initial: InitialQNA, history: list[Message] | None, key: str, message: str) -> Iterator[str]:
@@ -72,10 +72,10 @@ class QNAChatbotService(ChatbotBaseService):
         return QNAChatbotContext(initial, history, key)
 
     @staticmethod
-    def _return_qna_history(user_id: int, question_id: int) -> list[Message]:
+    def _return_qna_history(user_id: int, question_id: int, initial: InitialQNA) -> list[Message]:
         QNAChatbotService._make_session(user_id, question_id)
         history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
-        return history or []
+        return [Message(role="assistant", content=initial.answer), *(history or [])]
 
     @staticmethod
     def _make_session(user_id: int, question_id: int) -> None:
