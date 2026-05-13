@@ -8,17 +8,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.permissions import IsStudentUser
+from apps.qna.exceptions import BaseCustomException
 from apps.qna.models import QuestionCategory
 from apps.qna.schemas.question_schemas import (
     question_create_schema,
+    question_detail_schema,
     question_list_schema,
 )
 from apps.qna.serializers.question_serializers import (
     QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
+    QuestionDetailSerializer,
     QuestionListItemSerializer,
 )
-from apps.qna.services.question_services import QuestionListService, QuestionService
+from apps.qna.services.question_services import (
+    QuestionDetailService,
+    QuestionListService,
+    QuestionService,
+)
 from apps.users.models import User
 
 
@@ -135,3 +142,30 @@ class QuestionAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class QuestionDetailAPIView(APIView):
+    """질문 상세 조회/수정 API"""
+
+    permission_classes = [IsStudentUser]
+
+    # ── GET /api/v1/qna/questions/{question_id} ──────────────────────
+    @question_detail_schema
+    def get(self, request: Request, question_id: int) -> Response:
+        """질문 상세 조회"""
+        # question_id 유효성 검사
+        if not isinstance(question_id, int) or question_id < 1:
+            return Response(
+                {"error_detail": "유효하지 않은 질문 상세 조회 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = QuestionDetailService.get_question_detail(question_id)
+            serializer = QuestionDetailSerializer(result)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except BaseCustomException as e:
+            return Response(
+                {"error_detail": e.message},
+                status=e.status_code,
+            )

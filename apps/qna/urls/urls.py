@@ -2,7 +2,7 @@ from django.urls import path
 
 from apps.qna.views import answer_views, chatbot_views
 from apps.qna.views.category_views import CategoryListAPIView
-from apps.qna.views.question_views import QuestionAPIView
+from apps.qna.views.question_views import QuestionAPIView, QuestionDetailAPIView
 
 urlpatterns = [
     # 답변
@@ -35,6 +35,7 @@ urlpatterns = [
     path("categories", CategoryListAPIView.as_view(), name="category-list"),
     # 질문
     path("questions", QuestionAPIView.as_view(), name="questions"),
+    path("questions/<int:question_id>", QuestionDetailAPIView.as_view(), name="question_detail"),
     # 챗봇
     path("questions/<int:question_id>/ai-answer", chatbot_views.InitialAiAnswerAPIView.as_view(), name="ai_answer"),
     path("questions/<int:question_id>/chatbot", chatbot_views.QNAChatbotAPIView.as_view(), name="qna_chatbot"),
