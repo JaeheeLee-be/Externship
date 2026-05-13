@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.types import AuthenticatedRequest
+from apps.qna.dtos import InitialQNA, Message
 from apps.qna.exceptions import BaseCustomException
 from apps.qna.redis import CacheRepository
 from apps.qna.schemas.chatbot_schemas import (
@@ -30,14 +31,6 @@ from apps.qna.serializers.chatbot_serializers import (
 from apps.qna.services.chatbot_cs import CSChatbotService
 from apps.qna.services.chatbot_initial_qna import InitialService
 from apps.qna.services.chatbot_qna import QNAChatbotService
-
-StreamFn = Callable[[int, int | None, str], Iterator[str]]
-
-
-def build_event_stream(*, user_id: int, question_id: int | None, message: str, func: StreamFn) -> Iterator[str]:
-    for chunk in func(user_id, question_id, message):
-        yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
-    yield "data: [DONE]\n\n"
 
 
 class InitialAiAnswerAPIView(APIView):
@@ -93,18 +86,21 @@ class QNAChatbotAPIView(APIView):
         serializer = ChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            QNAChatbotService.validate_qna_chat(request.user.id, kwargs["question_id"])
+            ctx = QNAChatbotService.make_qna_context(request.user.id, kwargs["question_id"])
             return StreamingHttpResponse(
-                build_event_stream(
-                    user_id=request.user.id,
-                    question_id=kwargs["question_id"],
-                    message=serializer.validated_data["message"],
-                    func=QNAChatbotService.response_qna_chat,
+                self._build_qna_stream(
+                    initial=ctx.initial, history=ctx.history, key=ctx.key, message=serializer.validated_data["message"]
                 ),
                 content_type="text/event-stream",
             )
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
+
+    @staticmethod
+    def _build_qna_stream(initial: InitialQNA, history: list[Message] | None, key: str, message: str) -> Iterator[str]:
+        for chunk in QNAChatbotService.response_qna_chat(initial, history, key, message):
+            yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
+        yield "data: [DONE]\n\n"
 
 
 class QNAChatbotListAPIView(APIView):
@@ -140,15 +136,25 @@ class CSChatbotAPIView(APIView):
     def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
         serializer = ChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        generator = CSChatbotService.response_cs_chat(
+            user_id=request.user.id, message=serializer.validated_data["message"]
+        )
         try:
-            return StreamingHttpResponse(
-                build_event_stream(
-                    user_id=request.user.id,
-                    question_id=None,
-                    message=serializer.validated_data["message"],
-                    func=CSChatbotService.response_cs_chat,
-                ),
-                content_type="text/event-stream",
-            )
+            first = next(generator)
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
+
+        return StreamingHttpResponse(
+            self._build_cs_stream(
+                generator=generator,
+                first=first,
+            ),
+            content_type="text/event-stream",
+        )
+
+    @staticmethod
+    def _build_cs_stream(generator: Iterator[str], first: str) -> Iterator[str]:
+        yield f'data: {json.dumps({"message": first}, ensure_ascii=False)}\n\n'
+        for chunk in generator:
+            yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
+        yield "data: [DONE]\n\n"

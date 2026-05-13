@@ -6,7 +6,7 @@ from django.core.cache import cache
 from apps.core.utils.isolated_cache_testcase import FixedPrefixRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
-from apps.qna.dtos import InitialQNA, Message
+from apps.qna.dtos import InitialQNA, Message, QNAChatbotContext
 from apps.qna.exceptions import (
     ConversationOverException,
     ExternalAPIException,
@@ -45,6 +45,7 @@ class TestQNAChatbotService(FixedPrefixRedisTestClient):
             value=asdict(self.initial),
             ttl=1800,
         )
+        self.key = QNA_KEY.format(user_id=self.user_id, question_id=self.question_id)
 
     def tearDown(self) -> None:
         super().tearDown()
@@ -69,75 +70,142 @@ class TestQNAChatbotService(FixedPrefixRedisTestClient):
             Message(role="assistant", content="답변입니다."),
         ]
         CacheRepository.save_history(
-            key=QNA_KEY.format(user_id=self.user_id, question_id=self.question_id),
+            key=self.key,
             history=[asdict(m) for m in history],
             ttl=1800,
         )
         result = QNAChatbotService.response_qna_history(self.user_id, self.question_id)
         self.assertEqual(len(result), 2)
 
-    @patch("apps.qna.chatbot.groq_clients.requests.post")
-    def test_response_qna_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
-        mock.return_value = self.res
-        CacheRepository.set_session(
-            key=SESSION_KEY.format(user_id=self.user_id),
-            value=self.question_id,
-            ttl=1800,
-        )
-        result = list(QNAChatbotService.response_qna_chat(self.user_id, self.question_id, "질문입니다."))
-        self.assertTrue(len(result) > 0)
-        history = CacheRepository.get_history(QNA_KEY.format(user_id=self.user_id, question_id=self.question_id))
-        assert history is not None
-        self.assertIsNotNone(history)
-        self.assertEqual(history[0].role, "user")
-        self.assertEqual(history[0].content, "질문입니다.")
-
-    @patch("apps.qna.chatbot.groq_clients.requests.post")
-    def test_response_qna_chat_raises_timeout(self, mock: MagicMock) -> None:
-        mock.side_effect = GroqTimeoutError
-        CacheRepository.set_session(
-            key=SESSION_KEY.format(user_id=self.user_id),
-            value=self.question_id,
-            ttl=1800,
-        )
-        with self.assertRaises(ExternalAPITimeoutException):
-            list(QNAChatbotService.response_qna_chat(self.user_id, self.question_id, "질문입니다."))
-
-    @patch("apps.qna.chatbot.groq_clients.requests.post")
-    def test_response_qna_chat_raises_api_error(self, mock: MagicMock) -> None:
-        mock.side_effect = GroqAPIError
-        CacheRepository.set_session(
-            key=SESSION_KEY.format(user_id=self.user_id),
-            value=self.question_id,
-            ttl=1800,
-        )
-        with self.assertRaises(ExternalAPIException):
-            list(QNAChatbotService.response_qna_chat(self.user_id, self.question_id, "질문입니다."))
-
-    def test_validate_qna_chat_raises_403_when_session_invalid(self) -> None:
+    def test_make_qna_context_raises_403_when_session_invalid(self) -> None:
+        # 세션 없음
         with self.assertRaises(InactiveSessionException):
-            QNAChatbotService.validate_qna_chat(self.user_id, self.question_id)
+            QNAChatbotService.make_qna_context(self.user_id, self.question_id)
 
-    def test_validate_qna_chat_raises_429_when_history_full(self) -> None:
+    def test_make_qna_context_raises_403_when_session_mismatch(self) -> None:
+        # 세션은 있으나 question_id가 다름
+        CacheRepository.set_session(
+            key=SESSION_KEY.format(user_id=self.user_id),
+            value=9999,
+            ttl=1800,
+        )
+        with self.assertRaises(InactiveSessionException):
+            QNAChatbotService.make_qna_context(self.user_id, self.question_id)
+
+    def test_make_qna_context_raises_404_when_initial_not_found(self) -> None:
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
+        CacheRepository.delete(INITIAL_KEY.format(question_id=self.question_id))
+        with self.assertRaises(NotFoundException):
+            QNAChatbotService.make_qna_context(self.user_id, self.question_id)
+
+    def test_make_qna_context_raises_429_when_history_full(self) -> None:
         CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
         history = [Message(role="user", content=f"{i}") for i in range(10)]
         CacheRepository.save_history(
-            key=QNA_KEY.format(user_id=self.user_id, question_id=self.question_id),
+            key=self.key,
             history=[asdict(m) for m in history],
             ttl=1800,
         )
         with self.assertRaises(ConversationOverException):
-            QNAChatbotService.validate_qna_chat(self.user_id, self.question_id)
+            QNAChatbotService.make_qna_context(self.user_id, self.question_id)
 
-    def test_validate_qna_chat_raises_404_when_initial_not_found(self) -> None:
+    def test_make_qna_context_returns_context_when_valid(self) -> None:
         CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
-        CacheRepository.delete(INITIAL_KEY.format(question_id=self.question_id))
-        with self.assertRaises(NotFoundException):
-            QNAChatbotService.validate_qna_chat(self.user_id, self.question_id)
+        ctx = QNAChatbotService.make_qna_context(self.user_id, self.question_id)
+        self.assertIsInstance(ctx, QNAChatbotContext)
+        self.assertEqual(ctx.initial.question_id, self.question_id)
+        self.assertEqual(ctx.key, self.key)
+        # history는 비어있을 때 None
+        self.assertIsNone(ctx.history)
 
-    def test_validate_qna_chat_passes_when_valid(self) -> None:
+    def test_make_qna_context_returns_existing_history(self) -> None:
         CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
-        QNAChatbotService.validate_qna_chat(self.user_id, self.question_id)
+        history = [
+            Message(role="user", content="이전 질문"),
+            Message(role="assistant", content="이전 답변"),
+        ]
+        CacheRepository.save_history(
+            key=self.key,
+            history=[asdict(m) for m in history],
+            ttl=1800,
+        )
+        ctx = QNAChatbotService.make_qna_context(self.user_id, self.question_id)
+        assert ctx.history is not None
+        self.assertEqual(len(ctx.history), 2)
+        self.assertEqual(ctx.history[0].content, "이전 질문")
+
+    def test_make_qna_context_refreshes_session(self) -> None:
+        """컨텍스트 생성 시 세션이 갱신되어야 함."""
+        CacheRepository.set_session(SESSION_KEY.format(user_id=self.user_id), self.question_id, ttl=1800)
+        QNAChatbotService.make_qna_context(self.user_id, self.question_id)
+        session = CacheRepository.get_session(SESSION_KEY.format(user_id=self.user_id))
+        self.assertEqual(session, self.question_id)
+
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
+    def test_response_qna_chat_streams_and_saves_history(self, mock: MagicMock) -> None:
+        mock.return_value = self.res
+        result = list(
+            QNAChatbotService.response_qna_chat(
+                initial=self.initial,
+                history=None,
+                key=self.key,
+                message="질문입니다.",
+            )
+        )
+        self.assertTrue(len(result) > 0)
+
+        history = CacheRepository.get_history(self.key)
+        assert history is not None
+        self.assertEqual(len(history), 2)
+        self.assertEqual(history[0].role, "user")
+        self.assertEqual(history[0].content, "질문입니다.")
+        self.assertEqual(history[1].role, "assistant")
+
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
+    def test_response_qna_chat_appends_to_existing_history(self, mock: MagicMock) -> None:
+        mock.return_value = self.res
+        existing = [
+            Message(role="user", content="이전 질문"),
+            Message(role="assistant", content="이전 답변"),
+        ]
+        list(
+            QNAChatbotService.response_qna_chat(
+                initial=self.initial,
+                history=existing,
+                key=self.key,
+                message="새 질문",
+            )
+        )
+        history = CacheRepository.get_history(self.key)
+        assert history is not None
+        self.assertEqual(len(history), 4)
+        self.assertEqual(history[2].content, "새 질문")
+
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
+    def test_response_qna_chat_raises_timeout(self, mock: MagicMock) -> None:
+        mock.side_effect = GroqTimeoutError
+        with self.assertRaises(ExternalAPITimeoutException):
+            list(
+                QNAChatbotService.response_qna_chat(
+                    initial=self.initial,
+                    history=None,
+                    key=self.key,
+                    message="질문입니다.",
+                )
+            )
+
+    @patch("apps.qna.chatbot.groq_clients.requests.post")
+    def test_response_qna_chat_raises_api_error(self, mock: MagicMock) -> None:
+        mock.side_effect = GroqAPIError
+        with self.assertRaises(ExternalAPIException):
+            list(
+                QNAChatbotService.response_qna_chat(
+                    initial=self.initial,
+                    history=None,
+                    key=self.key,
+                    message="질문입니다.",
+                )
+            )
 
 
 class TestGetQnaList(FixedPrefixRedisTestClient):

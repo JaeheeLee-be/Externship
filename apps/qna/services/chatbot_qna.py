@@ -1,7 +1,7 @@
 from typing import Iterator
 
 from apps.qna.chatbot import GROQ_MODEL, QNA_PROMPT, GroqPayloadFactory
-from apps.qna.dtos import LastQNAHistory, Message
+from apps.qna.dtos import InitialQNA, LastQNAHistory, Message, QNAChatbotContext
 from apps.qna.exceptions import (
     ConversationOverException,
     InactiveSessionException,
@@ -29,7 +29,7 @@ class QNAChatbotService(ChatbotBaseService):
         return QNAChatbotService._return_qna_history(user_id, question_id)
 
     @staticmethod
-    def response_qna_chat(user_id: int, question_id: int | None, message: str) -> Iterator[str]:
+    def response_qna_chat(initial: InitialQNA, history: list[Message] | None, key: str, message: str) -> Iterator[str]:
         """
         qna 채팅 대화용 함수입니다.
         세션 활성화는 히스토리 조회에서 이뤄지고, 이곳에서는 해당 세션을 검증합니다.
@@ -37,18 +37,12 @@ class QNAChatbotService(ChatbotBaseService):
         만약 캐시에 저장된 대화의 길이가 5쌍 이상일 경우, 사용자의 다음 채팅에 대해 429를 반환합니다.
         대화 히스토리와 세션의 ttl은 30분이며, 대화가 갱신될때마다 같이 갱신됩니다.
         """
-        history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
-        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id))
-        assert initial is not None
         payload = GroqPayloadFactory.create_payload(
             prompt=QNA_PROMPT,
             message=message,
             history=GroqPayloadFactory.build_history_for_qna_payload(initial, history),
             model=QNAChatbotService.MODEL,
         )
-        key = QNA_KEY.format(user_id=user_id, question_id=question_id)
-        assert question_id is not None
-        QNAChatbotService._make_session(user_id, question_id)
         return QNAChatbotService._stream_and_save_chat(key, history, message, payload, ttl=QNAChatbotService.QNA_TTL)
 
     @staticmethod
@@ -62,15 +56,21 @@ class QNAChatbotService(ChatbotBaseService):
         return qna_list
 
     @staticmethod
-    def validate_qna_chat(user_id: int, question_id: int) -> None:
-        """StreamingHttpResponse를 사용하면 에러 상태코드가 제대로 나가지 않아서 분리함"""
+    def make_qna_context(user_id: int, question_id: int) -> QNAChatbotContext:
         if not CacheRepository.get_session(SESSION_KEY.format(user_id=user_id)) == question_id:
             raise InactiveSessionException()
+        initial = CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id))
+        if initial is None:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
         history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
         if history is not None and len(history) >= 10:
             raise ConversationOverException()
-        if CacheRepository.get_initial(INITIAL_KEY.format(question_id=question_id)) is None:
-            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+
+        key = QNA_KEY.format(user_id=user_id, question_id=question_id)
+
+        QNAChatbotService._make_session(user_id, question_id)
+
+        return QNAChatbotContext(initial, history, key)
 
     @staticmethod
     def _return_qna_history(user_id: int, question_id: int) -> list[Message]:

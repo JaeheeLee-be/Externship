@@ -17,7 +17,7 @@ class CSChatbotService(ChatbotBaseService):
         return history or []
 
     @staticmethod
-    def response_cs_chat(user_id: int, _: int | None, message: str) -> Iterator[str]:
+    def response_cs_chat(user_id: int, message: str) -> Iterator[str]:
         history = CacheRepository.get_history(CS_KEY.format(user_id=user_id))
         payload = GroqPayloadFactory.create_payload(
             prompt=CS_PROMPT,

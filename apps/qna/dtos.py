@@ -45,3 +45,10 @@ class LastQNAHistory:
     last_message: str
     role: str
     created_at: str
+
+
+@dataclass
+class QNAChatbotContext:
+    initial: InitialQNA
+    history: list[Message] | None
+    key: str
