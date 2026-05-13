@@ -224,7 +224,7 @@ class AdminWithdrawalDetailViewTest(APITestCase):
         self.assertEqual(assigned_course["course"]["tag"], self.cohort.course.tag)
         self.assertEqual(assigned_course["cohort"]["id"], self.cohort.id)
         self.assertEqual(assigned_course["cohort"]["number"], self.cohort.number)
-        self.assertEqual(assigned_course["cohort"]["status"], "PENDING")
+        self.assertEqual(assigned_course["cohort"]["status"], self.cohort.status)
         self.assertEqual(assigned_course["cohort"]["start_date"], str(self.cohort.start_date))
         self.assertEqual(assigned_course["cohort"]["end_date"], str(self.cohort.end_date))
 
