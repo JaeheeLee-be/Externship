@@ -40,6 +40,3 @@ class AdminEnrollmentAcceptService:
         StudentEnrollmentRequests.objects.bulk_update(enrollments, ["status", "accepted_at"])
         CohortStudents.objects.bulk_create(cohort_students)
         User.objects.filter(id__in=user_ids).update(role=User.Role.STUDENT)
-
-
-

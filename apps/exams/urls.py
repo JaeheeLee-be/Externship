@@ -10,8 +10,8 @@ from apps.exams.views.user_exam_submission_view import UserExamSubmissionGetView
 
 urlpatterns = [
     path("submissions/<int:submission_id>", UserExamSubmissionGetView.as_view(), name="user-exam-submission-get"),
-    path("deployments/", ExamDeploymentListView.as_view(), name="deployment"),
-    path("deployments/<int:deployment_id>/check-code/", ExamDeploymentCheckCodeView.as_view(), name="deployment-code"),
-    path("deployments/<int:deployment_id>/", ExamDeploymentDetailView.as_view(), name="deployment-detail"),
-    path("deployments/<int:deployment_id>/status/", ExamDeploymentStatusView.as_view(), name="deployment-status"),
+    path("deployments", ExamDeploymentListView.as_view(), name="deployment"),
+    path("deployments/<int:deployment_id>/check-code", ExamDeploymentCheckCodeView.as_view(), name="deployment-code"),
+    path("deployments/<int:deployment_id>", ExamDeploymentDetailView.as_view(), name="deployment-detail"),
+    path("deployments/<int:deployment_id>/status", ExamDeploymentStatusView.as_view(), name="deployment-status"),
 ]
