@@ -15,7 +15,7 @@ from apps.users.utils.pagination import RequestPagination
 
 
 class AdminEnrollmentRequestListView(APIView):
-    permission_classes = [IsAuthenticated, IsRoleAdminUser]
+    permission_classes = [IsRoleAdminUser]
 
     @extend_schema(
         tags=["admin_students"],
