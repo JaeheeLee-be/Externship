@@ -101,7 +101,7 @@ class TokenRefreshView(APIView):
         tags=["Account(로그인)"],
         summary="JWT 토큰 재발급 API",
         description="HttpOnly 쿠키의 refresh_token으로 새 access_token 발급. refresh_token도 갱신됨.",
-        request=None,
+        request=TokenRefreshSerializer,
         responses={
             200: OpenApiResponse(description="토큰 재발급 성공"),
             400: OpenApiResponse(description="refresh 쿠키 없음"),
