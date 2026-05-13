@@ -37,6 +37,7 @@ class AdminWithdrawalListView(APIView):
     serializer_class = WithdrawalListSerializer
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        # 명세서의 401/403 메시지를 맞추기 위해 DRF 기본 권한 에러를 구분해서 반환한다.
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise PermissionDenied("권한이 없습니다.")
@@ -79,6 +80,7 @@ class AdminWithdrawalDetailView(APIView):
     serializer_class = WithdrawalDetailSerializer
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        # 명세서의 401/403 메시지를 맞추기 위해 DRF 기본 권한 에러를 구분해서 반환한다.
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         raise PermissionDenied("권한이 없습니다.")

@@ -63,6 +63,7 @@ class CohortNestedSerializer(serializers.ModelSerializer[Cohort]):
         read_only_fields = fields
 
     def get_status(self, obj: Cohort) -> str:
+        # 모델의 기수 상태값과 API 명세서 응답값이 달라서 여기서 변환한다.
         if obj.status == StatusChoices.PREPARING:
             return "PENDING"
         if obj.status == StatusChoices.FINISHED:
@@ -77,7 +78,9 @@ class AssignedCourseSerializer(serializers.Serializer[Any]):
 
 class WithdrawalDetailUserSerializer(serializers.ModelSerializer[User]):
     gender = serializers.CharField(read_only=True, default="")
-    role = serializers.SerializerMethodField()
+    # role은 권한 값이고, TA/OM/LC 같은 직책은 position 필드로 분리해서 내려준다.
+    role = serializers.ChoiceField(read_only=True, choices=User.Role.choices)
+    position = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     profile_img_url = serializers.CharField(read_only=True, default="")
 
@@ -90,19 +93,18 @@ class WithdrawalDetailUserSerializer(serializers.ModelSerializer[User]):
             "name",
             "gender",
             "role",
+            "position",
             "status",
             "profile_img_url",
             "created_at",
         ]
         read_only_fields = fields
 
-    def get_role(self, obj: User) -> str:
-        position = _get_position(obj)
-        if position == "ENROLLED":
-            return User.Role.STUDENT
-        return position or obj.role
+    def get_position(self, obj: User) -> str | None:
+        return _get_position(obj)
 
     def get_status(self, obj: User) -> str:
+        # 탈퇴 기록이 있으면 is_active 값보다 탈퇴 상태를 우선해서 보여준다.
         try:
             obj.withdrawal
             return "WITHDREW"
@@ -143,6 +145,7 @@ class WithdrawalDetailSerializer(serializers.ModelSerializer[Withdrawal]):
         if obj.user is None:
             return []
 
+        # 수강생, TA, OM, LC 관계를 모두 확인해서 명세서의 assigned_courses 형태로 모은다.
         assigned_courses: list[dict[str, Any]] = []
         for cohort_student in obj.user.cohort_students.all():
             _append_assigned_course(assigned_courses, cohort_student.cohort)
@@ -180,6 +183,7 @@ def _has_related(manager: Any) -> bool:
 
 
 def _get_position(user: User) -> str | None:
+    # position은 User 모델 필드가 아니라 각 역할별 관계 테이블 존재 여부로 계산한다.
     if _has_related(user.training_assistants):
         return "TA"
     if _has_related(user.operation_managers):

@@ -203,6 +203,7 @@ class AdminWithdrawalDetailViewTest(APITestCase):
         self.assertEqual(data["user"]["name"], self.user.name)
         self.assertEqual(data["user"]["gender"], "M")
         self.assertEqual(data["user"]["role"], "STUDENT")
+        self.assertEqual(data["user"]["position"], "ENROLLED")
         self.assertEqual(data["user"]["status"], "WITHDREW")
         self.assertEqual(data["user"]["profile_img_url"], "https://example.com/images/profiles/image.png")
         self.assertIn("created_at", data["user"])
