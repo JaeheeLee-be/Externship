@@ -1,6 +1,7 @@
 from typing import Any
 
 from rest_framework import status
+from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,7 +32,12 @@ class PresignedUrlView(APIView):
     # post, put 메서드의 공용 함수
     def handle_request(self, request: Request) -> Response:
         request_serializer = PresignedUrlRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
+        if not request_serializer.is_valid():
+            first_errors: list[Any] = next(iter(request_serializer.errors.values()), [])
+            detail = str(first_errors[0]) if first_errors else "잘못된 요청입니다."
+            exc = APIException(detail=detail)
+            exc.status_code = status.HTTP_400_BAD_REQUEST
+            raise exc
 
         urls = PresignedUrlService.create_upload_urls(
             file_name=request_serializer.validated_data["file_name"],
