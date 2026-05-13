@@ -65,7 +65,7 @@ class SubjectListViewTest(SubjectTestBase):
             number_of_days=2,
             number_of_hours=4,
         )
-        cls.url = f"/api/v1/courses/{cls.course.id}/subjects/"
+        cls.url = f"/api/v1/courses/{cls.course.id}/subjects"
 
     def test_list_subjects_success(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -81,7 +81,7 @@ class SubjectListViewTest(SubjectTestBase):
         empty_course = Course.objects.create(name="빈 과정", tag="MT1")
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get(f"/api/v1/courses/{empty_course.id}/subjects/")
+        response = self.client.get(f"/api/v1/courses/{empty_course.id}/subjects")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
@@ -108,7 +108,7 @@ class SubjectListViewTest(SubjectTestBase):
 
 
 class SubjectCreateViewTest(SubjectTestBase):
-    url = "/api/v1/admin/subjects/"
+    url = "/api/v1/admin/subjects"
 
     def test_create_subject_success(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -215,7 +215,7 @@ class SubjectDetailViewGetTest(SubjectTestBase):
             number_of_hours=8,
             thumbnail_img_url="https://example.com/react.jpg",
         )
-        cls.url = f"/api/v1/admin/subjects/{cls.subject.id}/"
+        cls.url = f"/api/v1/admin/subjects/{cls.subject.id}"
 
     def test_get_subject_detail_success(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -235,7 +235,7 @@ class SubjectDetailViewGetTest(SubjectTestBase):
     def test_get_subject_detail_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.get("/api/v1/admin/subjects/99999/")
+        response = self.client.get("/api/v1/admin/subjects/99999")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -268,7 +268,7 @@ class SubjectDetailViewPatchTest(SubjectTestBase):
             number_of_days=3,
             number_of_hours=6,
         )
-        self.url = f"/api/v1/admin/subjects/{self.subject.id}/"
+        self.url = f"/api/v1/admin/subjects/{self.subject.id}"
 
     def test_patch_subject_title_success(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -308,7 +308,7 @@ class SubjectDetailViewPatchTest(SubjectTestBase):
     def test_patch_subject_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.patch("/api/v1/admin/subjects/99999/", {"title": "없는 과목"}, format="json")
+        response = self.client.patch("/api/v1/admin/subjects/99999", {"title": "없는 과목"}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -334,7 +334,7 @@ class SubjectDetailViewDeleteTest(SubjectTestBase):
             number_of_days=2,
             number_of_hours=4,
         )
-        self.url = f"/api/v1/admin/subjects/{self.subject.id}/"
+        self.url = f"/api/v1/admin/subjects/{self.subject.id}"
 
     def test_delete_subject_success(self) -> None:
         self.client.force_authenticate(user=self.admin)
@@ -347,7 +347,7 @@ class SubjectDetailViewDeleteTest(SubjectTestBase):
     def test_delete_subject_not_found(self) -> None:
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.delete("/api/v1/admin/subjects/99999/")
+        response = self.client.delete("/api/v1/admin/subjects/99999")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
