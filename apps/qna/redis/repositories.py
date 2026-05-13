@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from django.conf import settings
 from django.core.cache import cache
 from django_redis import get_redis_connection  # type: ignore
 
@@ -49,9 +50,21 @@ class CacheRepository:
         return cached if isinstance(cached, int) else None
 
     @staticmethod
-    def get_qna_keys(user_id: int) -> list[bytes]:
+    def get_qna_keys(user_id: int) -> list[str]:
         redis_client = get_redis_connection("default")
-        return list(redis_client.scan_iter(match=f":1:qna_chat:{user_id}:*"))
+        prefix = CacheRepository._key_prefix()
+        pattern = f"{prefix}qna_chat:{user_id}:*"
+        return [
+            k.decode("utf-8").removeprefix(prefix)
+            for k in redis_client.scan_iter(match=pattern)
+        ]
+
+    @staticmethod
+    def _key_prefix() -> str:
+        conf = settings.CACHES["default"]
+        prefix = conf.get("KEY_PREFIX", "")
+        version = conf.get("VERSION", 1)
+        return f"{prefix}:{version}:" if prefix else f":{version}:"
 
     @staticmethod
     def get_many(keys: list[str]) -> dict[str, Any]:

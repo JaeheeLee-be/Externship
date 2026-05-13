@@ -127,6 +127,23 @@ class TestCacheRepositoryQnaList(FixedPrefixRedisTestClient):
         result = CacheRepository.get_many(keys)
         self.assertEqual(len(result), 2)
 
+    def test_get_qna_keys_returns_str(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        self.assertIsInstance(result[0], str)
+
+    def test_get_qna_keys_strips_prefix(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        expected = {
+            QNA_KEY.format(user_id=self.user_id, question_id=42),
+            QNA_KEY.format(user_id=self.user_id, question_id=55),
+        }
+        self.assertEqual(set(result), expected)
+
+    def test_get_qna_keys_result_is_usable_by_get_many(self) -> None:
+        keys = CacheRepository.get_qna_keys(self.user_id)
+        result = CacheRepository.get_many(keys)
+        self.assertEqual(len(result), 2)
+
     def test_get_many_excludes_missing_keys(self) -> None:
         result = CacheRepository.get_many(["nonexistent_key"])
         self.assertEqual(result, {})

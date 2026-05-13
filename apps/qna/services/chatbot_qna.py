@@ -47,8 +47,7 @@ class QNAChatbotService(ChatbotBaseService):
 
     @staticmethod
     def response_qna_list(user_id: int) -> list[LastQNAHistory]:
-        raw_keys = CacheRepository.get_qna_keys(user_id)
-        keys = [key.decode("utf-8").removeprefix(":1:") for key in raw_keys]
+        keys = CacheRepository.get_qna_keys(user_id)
         qna_list = []
         for key, value in CacheRepository.get_many(keys).items():
             qna_list.append(CacheFactory.create_last_qna(key, value))

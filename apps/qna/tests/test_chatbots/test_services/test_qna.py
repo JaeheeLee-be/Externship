@@ -224,14 +224,23 @@ class TestGetQnaList(FixedPrefixRedisTestClient):
         super().tearDown()
         cache.clear()
 
-    def test_response_qna_list_question_id_parsed(self) -> None:
+    def test_response_qna_list_returns_all_user_qnas(self) -> None:
         result = QNAChatbotService.response_qna_list(self.user_id)
         question_ids = {r.question_id for r in result}
-        self.assertIn(42, question_ids)
-        self.assertIn(55, question_ids)
+        self.assertEqual(question_ids, {42, 55})
 
     def test_response_qna_list_last_message_is_last_item(self) -> None:
         result = QNAChatbotService.response_qna_list(self.user_id)
         for item in result:
             self.assertEqual(item.last_message, "답변입니다.")
             self.assertEqual(item.role, "assistant")
+
+    def test_response_qna_list_returns_empty_when_no_keys(self) -> None:
+        result = QNAChatbotService.response_qna_list(user_id=999)
+        self.assertEqual(result, [])
+
+    def test_response_qna_list_excludes_other_users(self) -> None:
+        cache.set(f"qna_chat:999:1", self.value)
+        result = QNAChatbotService.response_qna_list(self.user_id)
+        question_ids = {r.question_id for r in result}
+        self.assertEqual(question_ids, {42, 55})
