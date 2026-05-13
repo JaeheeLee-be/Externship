@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.users.serializers.admin_withdrawal_serializer import (
     ErrorDetailSerializer,
+    ValidationErrorDetailSerializer,
     WithdrawalCancelResponseSerializer,
     WithdrawalDetailSerializer,
     WithdrawalListQuerySerializer,
@@ -49,6 +50,10 @@ class AdminWithdrawalListView(APIView):
         parameters=[WithdrawalListQuerySerializer],
         responses={
             200: WithdrawalListResponseSerializer,
+            400: OpenApiResponse(
+                description="잘못된 쿼리 파라미터",
+                response=ValidationErrorDetailSerializer,
+            ),
             401: OpenApiResponse(
                 description="인증 실패",
                 response=ErrorDetailSerializer,
@@ -61,7 +66,8 @@ class AdminWithdrawalListView(APIView):
     )
     def get(self, request: Request) -> Response:
         query_serializer = WithdrawalListQuerySerializer(data=request.query_params)
-        query_serializer.is_valid()
+        if not query_serializer.is_valid():
+            return Response({"error_detail": query_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         queryset = get_withdrawal_list(
             search=query_serializer.validated_data.get("search"),

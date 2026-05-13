@@ -2,11 +2,28 @@ from __future__ import annotations
 
 from typing import Any
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.courses.models.cohort import Cohort, StatusChoices
+from apps.courses.models.cohort import Cohort
 from apps.posts.models.course import Course
 from apps.users.models import User, Withdrawal
+
+POSITION_CHOICES = ("TA", "OM", "LC", "ENROLLED")
+
+
+class UserPositionMixin:
+    def _get_position(self, user: User) -> str | None:
+        for manager, position in (
+            (user.training_assistants, "TA"),
+            (user.operation_managers, "OM"),
+            (user.learning_coachs, "LC"),
+        ):
+            if bool(manager.all()):
+                return position
+        if bool(user.cohort_students.all()) or user.role == User.Role.STUDENT:
+            return "ENROLLED"
+        return None
 
 
 class WithdrawalListQuerySerializer(serializers.Serializer[Any]):
@@ -14,12 +31,11 @@ class WithdrawalListQuerySerializer(serializers.Serializer[Any]):
     page_size = serializers.IntegerField(required=False, default=10, min_value=1, max_value=100)
     search = serializers.CharField(required=False, allow_blank=True)
     role = serializers.ChoiceField(required=False, choices=User.Role.choices)
-    position = serializers.ChoiceField(required=False, choices=("TA", "OM", "LC", "ENROLLED"))
+    position = serializers.ChoiceField(required=False, choices=POSITION_CHOICES)
     sort = serializers.ChoiceField(required=False, choices=("latest", "oldest"))
 
 
-class WithdrawalListUserSerializer(serializers.ModelSerializer[User]):
-    role = serializers.ChoiceField(read_only=True, choices=User.Role.choices)
+class WithdrawalListUserSerializer(UserPositionMixin, serializers.ModelSerializer[User]):
     position = serializers.SerializerMethodField()
 
     class Meta:
@@ -27,24 +43,20 @@ class WithdrawalListUserSerializer(serializers.ModelSerializer[User]):
         fields = ["id", "email", "name", "role", "position", "birthday"]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.ChoiceField(choices=POSITION_CHOICES, allow_null=True))
     def get_position(self, obj: User) -> str | None:
-        return _get_position(obj)
+        return self._get_position(obj)
 
 
 class WithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
     user = WithdrawalListUserSerializer(read_only=True)
-    reason_display = serializers.SerializerMethodField()
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
     withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
 
     class Meta:
         model = Withdrawal
         fields = ["id", "user", "reason", "reason_display", "withdrawn_at"]
         read_only_fields = fields
-
-    def get_reason_display(self, obj: Withdrawal) -> str:
-        if obj.reason == Withdrawal.Reason.NO_LONGER_NEEDED:
-            return "더 이상 필요하지 않음"
-        return obj.get_reason_display()
 
 
 class CourseNestedSerializer(serializers.ModelSerializer[Course]):
@@ -55,20 +67,10 @@ class CourseNestedSerializer(serializers.ModelSerializer[Course]):
 
 
 class CohortNestedSerializer(serializers.ModelSerializer[Cohort]):
-    status = serializers.SerializerMethodField()
-
     class Meta:
         model = Cohort
         fields = ["id", "number", "status", "start_date", "end_date"]
         read_only_fields = fields
-
-    def get_status(self, obj: Cohort) -> str:
-        # 모델의 기수 상태값과 API 명세서 응답값이 달라서 여기서 변환한다.
-        if obj.status == StatusChoices.PREPARING:
-            return "PENDING"
-        if obj.status == StatusChoices.FINISHED:
-            return "COMPLETED"
-        return obj.status
 
 
 class AssignedCourseSerializer(serializers.Serializer[Any]):
@@ -76,13 +78,9 @@ class AssignedCourseSerializer(serializers.Serializer[Any]):
     cohort = CohortNestedSerializer(read_only=True)
 
 
-class WithdrawalDetailUserSerializer(serializers.ModelSerializer[User]):
-    gender = serializers.CharField(read_only=True, default="")
-    # role은 권한 값이고, TA/OM/LC 같은 직책은 position 필드로 분리해서 내려준다.
-    role = serializers.ChoiceField(read_only=True, choices=User.Role.choices)
+class WithdrawalDetailUserSerializer(UserPositionMixin, serializers.ModelSerializer[User]):
     position = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
-    profile_img_url = serializers.CharField(read_only=True, default="")
 
     class Meta:
         model = User
@@ -100,11 +98,11 @@ class WithdrawalDetailUserSerializer(serializers.ModelSerializer[User]):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.ChoiceField(choices=POSITION_CHOICES, allow_null=True))
     def get_position(self, obj: User) -> str | None:
-        return _get_position(obj)
+        return self._get_position(obj)
 
     def get_status(self, obj: User) -> str:
-        # 탈퇴 기록이 있으면 is_active 값보다 탈퇴 상태를 우선해서 보여준다.
         try:
             obj.withdrawal
             return "WITHDREW"
@@ -124,7 +122,7 @@ class WithdrawalDetailUserSerializer(serializers.ModelSerializer[User]):
 class WithdrawalDetailSerializer(serializers.ModelSerializer[Withdrawal]):
     user = WithdrawalDetailUserSerializer(read_only=True)
     assigned_courses = serializers.SerializerMethodField()
-    reason_display = serializers.SerializerMethodField()
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
     withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
 
     class Meta:
@@ -141,26 +139,36 @@ class WithdrawalDetailSerializer(serializers.ModelSerializer[Withdrawal]):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(AssignedCourseSerializer(many=True))
     def get_assigned_courses(self, obj: Withdrawal) -> list[dict[str, Any]]:
         if obj.user is None:
             return []
 
-        # 수강생, TA, OM, LC 관계를 모두 확인해서 명세서의 assigned_courses 형태로 모은다.
         assigned_courses: list[dict[str, Any]] = []
-        for cohort_student in obj.user.cohort_students.all():
-            _append_assigned_course(assigned_courses, cohort_student.cohort)
-        for training_assistant in obj.user.training_assistants.all():
-            _append_assigned_course(assigned_courses, training_assistant.cohort)
-        for operation_manager in obj.user.operation_managers.all():
-            _append_course_cohorts(assigned_courses, operation_manager.course)
-        for learning_coach in obj.user.learning_coachs.all():
-            _append_course_cohorts(assigned_courses, learning_coach.course)
+        self._append_cohort_relations(assigned_courses, obj.user.cohort_students)
+        self._append_cohort_relations(assigned_courses, obj.user.training_assistants)
+        self._append_course_relations(assigned_courses, obj.user.operation_managers)
+        self._append_course_relations(assigned_courses, obj.user.learning_coachs)
         return assigned_courses
 
-    def get_reason_display(self, obj: Withdrawal) -> str:
-        if obj.reason == Withdrawal.Reason.NO_LONGER_NEEDED:
-            return "더 이상 필요하지 않음"
-        return obj.get_reason_display()
+    def _append_cohort_relations(self, result: list[dict[str, Any]], manager: Any) -> None:
+        for relation in manager.all():
+            self._append_assigned_course(result, relation.cohort)
+
+    def _append_course_relations(self, result: list[dict[str, Any]], manager: Any) -> None:
+        for relation in manager.all():
+            self._append_course_cohorts(result, relation.course)
+
+    def _append_assigned_course(self, result: list[dict[str, Any]], cohort: Cohort | None) -> None:
+        if cohort is None:
+            return
+        result.append(AssignedCourseSerializer({"course": cohort.course, "cohort": cohort}).data)
+
+    def _append_course_cohorts(self, result: list[dict[str, Any]], course: Course | None) -> None:
+        if course is None:
+            return
+        for cohort in course.cohorts.all():
+            self._append_assigned_course(result, cohort)
 
 
 class WithdrawalListResponseSerializer(serializers.Serializer[Any]):
@@ -174,35 +182,9 @@ class WithdrawalCancelResponseSerializer(serializers.Serializer[Any]):
     detail = serializers.CharField(read_only=True)
 
 
+class ValidationErrorDetailSerializer(serializers.Serializer[Any]):
+    error_detail = serializers.DictField(child=serializers.ListField(child=serializers.CharField()), read_only=True)
+
+
 class ErrorDetailSerializer(serializers.Serializer[Any]):
     error_detail = serializers.CharField(read_only=True)
-
-
-def _has_related(manager: Any) -> bool:
-    return bool(manager.all())
-
-
-def _get_position(user: User) -> str | None:
-    # position은 User 모델 필드가 아니라 각 역할별 관계 테이블 존재 여부로 계산한다.
-    if _has_related(user.training_assistants):
-        return "TA"
-    if _has_related(user.operation_managers):
-        return "OM"
-    if _has_related(user.learning_coachs):
-        return "LC"
-    if _has_related(user.cohort_students) or user.role == User.Role.STUDENT:
-        return "ENROLLED"
-    return None
-
-
-def _append_assigned_course(result: list[dict[str, Any]], cohort: Cohort | None) -> None:
-    if cohort is None:
-        return
-    result.append(AssignedCourseSerializer({"course": cohort.course, "cohort": cohort}).data)
-
-
-def _append_course_cohorts(result: list[dict[str, Any]], course: Course | None) -> None:
-    if course is None:
-        return
-    for cohort in course.cohorts.all():
-        _append_assigned_course(result, cohort)

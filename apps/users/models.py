@@ -72,7 +72,7 @@ class Withdrawal(TimeStampModel):
     class Reason(models.TextChoices):
         GRADUATION = "GRADUATION", "졸업"
         TRANSFER = "TRANSFER", "다른 플랫폼 이동"
-        NO_LONGER_NEEDED = "NO_LONGER_NEEDED", "더 이상 필요없음"
+        NO_LONGER_NEEDED = "NO_LONGER_NEEDED", "더 이상 필요하지 않음"
         LACK_OF_INTEREST = "LACK_OF_INTEREST", "흥미 떨어짐"
         TOO_DIFFICULT = "TOO_DIFFICULT", "너무 어려움"
         FOUND_BETTER_SERVICE = "FOUND_BETTER_SERVICE", "더 좋은 서비스 찾음"

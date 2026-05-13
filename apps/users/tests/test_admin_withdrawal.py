@@ -147,6 +147,11 @@ class AdminWithdrawalListViewGetTest(APITestCase):
         self.assertEqual(data["count"], 2)
         self.assertEqual(len(data["results"]), 1)
 
+    def test_returns_400_for_invalid_query_params(self) -> None:
+        response = self.client.get(self.url, {"page": 0}, **self.auth)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("page", response.json()["error_detail"])
+
     def test_excludes_withdrawal_without_user(self) -> None:
         Withdrawal.objects.create(
             user=None,
