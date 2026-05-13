@@ -57,7 +57,7 @@ class ExamDeploymentListView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["user-exams"],
         summary="쪽지시험 목록 조회",
         responses={200: ExamDeploymentListSerializer},
     )
@@ -88,7 +88,7 @@ class ExamDeploymentCheckCodeView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["user-exams"],
         summary="쪽지시험 참가 코드 검증",
         request=ExamDeploymentCheckSerializer,
         responses={204: OpenApiResponse(description="응시 코드 확인 성공")},
@@ -132,7 +132,7 @@ class ExamDeploymentDetailView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["user-exams"],
         summary="쪽지시험 응시 문제풀이",
         responses={200: ExamDeploymentDetailSerializer},
     )
@@ -165,7 +165,7 @@ class ExamDeploymentStatusView(APIView):
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["user-exams"],
         summary="쪽지시험 상태 확인",
         responses={200: ExamDeploymentStatusSerializer},
     )
