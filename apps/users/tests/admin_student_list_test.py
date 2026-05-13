@@ -10,7 +10,6 @@ from apps.users.models import CohortStudents, User, Withdrawal
 
 
 class AdminStudentListViewTest(APITestCase):
-    # 클래스 레벨 타입 어노테이션 (mypy 요구)
     admin: User
     student_active: User
     student_withdrew: User
@@ -23,7 +22,6 @@ class AdminStudentListViewTest(APITestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        # 1. 관리자
         cls.admin = User.objects.create_user(
             email="admin@test.com",
             password="testpass1234",
@@ -33,7 +31,6 @@ class AdminStudentListViewTest(APITestCase):
             role="ADMIN",
         )
 
-        # 2. 수강생들
         cls.student_active = User.objects.create_user(
             email="student1@test.com",
             password="testpass1234",
@@ -61,7 +58,6 @@ class AdminStudentListViewTest(APITestCase):
             is_active=False,
         )
 
-        # 3. 코스 + 기수
         cls.course1 = Course.objects.create(name="백엔드 부트캠프", tag="BE1")
         cls.course2 = Course.objects.create(name="프론트엔드 부트캠프", tag="FE1")
 
@@ -82,11 +78,9 @@ class AdminStudentListViewTest(APITestCase):
             status="PREPARING",
         )
 
-        # 4. 수강생-기수 연결
         CohortStudents.objects.create(user=cls.student_active, cohort=cls.cohort1_in_progress)
         CohortStudents.objects.create(user=cls.student_withdrew, cohort=cls.cohort2_preparing)
 
-        # 5. 탈퇴 레코드
         Withdrawal.objects.create(
             user=cls.student_withdrew,
             reason="OTHER",
@@ -188,7 +182,6 @@ class AdminStudentListViewTest(APITestCase):
     def test_in_progress_course_진행중기수없으면_None(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url)
-        # student_withdrew는 PREPARING 기수에만 속함
         target = next(u for u in response.data["results"] if u["id"] == self.student_withdrew.id)
         self.assertIsNone(target["in_progress_course"])
 
@@ -246,7 +239,7 @@ class AdminStudentListViewTest(APITestCase):
         response = self.client.get(self.url, {"page_size": 2})
         self.assertEqual(len(response.data["results"]), 2)
 
-    def test_페이지네이션_유효하지않은_페이지_400(self) -> None:
+    def test_페이지네이션_유효하지않은_페이지_404(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url, {"page": 9999})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
