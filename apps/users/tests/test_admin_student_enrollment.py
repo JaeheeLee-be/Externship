@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.courses.models.cohort import Cohort  # 예시 경로
-from apps.posts.models.course import Course  # 예시 경로
+from apps.courses.models.course import Course  # 예시 경로
 from apps.users.models import StudentEnrollmentRequests, User
 
 
@@ -70,7 +70,7 @@ class AdminEnrollmentListAPITestCase(APITestCase):
 
     def test_enrollment_list_success(self) -> None:
         """정상적인 어드민 요청 시 200 상태코드 및 페이징 구조 반환"""
-        response = self.client.get(self.url, {"page": 1, "size": 10})
+        response = self.client.get(self.url, {"page": 1, "page_size": 10})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in ["count", "next", "previous", "results"]:

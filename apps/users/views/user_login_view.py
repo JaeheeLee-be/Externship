@@ -77,7 +77,7 @@ class LogoutView(APIView):
     permission_classes: list[Any] = []
 
     @extend_schema(
-        tags=["Account(로그인)"],
+        tags=["accounts"],
         summary="로그아웃 API",
         request=None,
         responses={200: OpenApiResponse(description="로그아웃 성공")},
@@ -98,7 +98,7 @@ class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Account(로그인)"],
+        tags=["accounts"],
         summary="JWT 토큰 재발급 API",
         description="HttpOnly 쿠키의 refresh_token으로 새 access_token 발급. refresh_token도 갱신됨.",
         request=TokenRefreshSerializer,
