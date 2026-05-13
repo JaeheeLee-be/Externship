@@ -123,7 +123,7 @@ class AdminCourseDetailView(AdminBaseView):
     def get(self, request: Request, course_id: int) -> Response:
         try:
             course = coursecrud_service.get_course_detail(course_id)
-        except CourseNotFoundError as e:
+        except CourseNotFoundError:
             return Response(
                 {"error_detail": "해당 과정을 찾을 수 없습니다."},
                 status=status.HTTP_404_NOT_FOUND,
