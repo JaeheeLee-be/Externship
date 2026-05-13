@@ -120,8 +120,6 @@ def get_deployment_status_for_user(user: Any, deployment_id: int) -> dict[str, A
         return {"exam_status": "closed", "force_submit": is_expired}
 
     submission = ExamSubmission.objects.filter(deployment=deployment, submitter=user).first()
-    force_submit = bool(
-        submission and (now - submission.started_at).total_seconds() >= deployment.duration_time * 60
-    )
+    force_submit = bool(submission and (now - submission.started_at).total_seconds() >= deployment.duration_time * 60)
 
     return {"exam_status": "activated", "force_submit": force_submit}
