@@ -27,7 +27,7 @@ class UserInfoSerializer(serializers.ModelSerializer[User]):
             "profile_img_url",
             "cohort_id",
             "role",
-            'position',
+            "position",
             "created_at",
         ]
         read_only_fields = fields
@@ -39,17 +39,16 @@ class UserInfoSerializer(serializers.ModelSerializer[User]):
             return None
         return cohort_student.cohort.id
 
-    def get_position(self, obj: User)-> str | None:
+    def get_position(self, obj: User) -> str | None:
         if obj.training_assistants.exists():
-            return 'TA'
+            return "TA"
         if obj.operation_managers.exists():
-            return 'OM'
+            return "OM"
         if obj.learning_coachs.exists():
-            return 'LC'
+            return "LC"
         if obj.cohort_students.exists():
-            return 'ENROLLED'
+            return "ENROLLED"
         return None
-
 
 
 # 내 정보 수정
