@@ -7,6 +7,7 @@ from drf_spectacular.utils import (
 from apps.qna.serializers.question_serializers import (
     QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
+    QuestionDetailSerializer,
     QuestionListItemSerializer,
 )
 
@@ -80,5 +81,29 @@ question_list_schema = extend_schema(
     responses={
         200: QuestionListItemSerializer(many=True),
         400: OpenApiResponse(description="유효하지 않은 목록 조회 요청입니다."),
+    },
+)
+
+# ── 질문 상세 조회 ──────────────────────────────────────────────────
+
+question_detail_schema = extend_schema(
+    tags=["Qna"],
+    summary="질문 상세 조회",
+    description="질문의 상세 정보를 조회합니다. 조회 시 조회수가 1 증가합니다.",
+    parameters=[
+        OpenApiParameter(
+            name="question_id",
+            type=int,
+            location=OpenApiParameter.PATH,
+            description="질문 ID",
+            required=True,
+        ),
+    ],
+    responses={
+        200: QuestionDetailSerializer,
+        400: OpenApiResponse(description="유효하지 않은 질문 상세 조회 요청입니다."),
+        401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+        403: OpenApiResponse(description="권한이 없습니다."),
+        404: OpenApiResponse(description="해당 질문을 찾을 수 없습니다."),
     },
 )
