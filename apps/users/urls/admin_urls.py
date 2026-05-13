@@ -19,7 +19,7 @@ urlpatterns = [
         "student-enrollments/accept", AdminStudentEnrollmentAcceptView.as_view(), name="admin-student-enrollment-accept"
     ),
     path("accounts/<int:account_id>/role", AdminPermissionView.as_view(), name="admin_permission"),
-    path("student-enrollments", AdminEnrollmentRequestListView.as_view(), name="student-enrollment-list"),
     path("withdrawals", AdminWithdrawalListView.as_view(), name="admin-withdrawal-list"),
+    path("student-enrollments", AdminEnrollmentRequestListView.as_view(), name="student-enrollment-list"),
     path("withdrawals/<int:withdrawal_id>", AdminWithdrawalDetailView.as_view(), name="admin-withdrawal-detail"),
 ]
