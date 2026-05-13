@@ -47,6 +47,10 @@ def get_exam_list(
         submit_count=Count("examdeployment__examsubmission", distinct=True),
     )
 
+    if order and not sort:
+        ordering = "created_at" if order == "asc" else "-created_at"
+        queryset = queryset.order_by(ordering)
+
     if sort and sort in ALLOWED_SORT_FIELDS:
         ordering = f"-{sort}" if order == "desc" else sort
         queryset = queryset.order_by(ordering)
