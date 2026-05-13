@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Never, cast, Any
+from typing import Any, Never, cast
 
 from drf_spectacular.openapi import AutoSchema as SpectacularAutoSchema
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
@@ -28,10 +28,10 @@ class WithdrawalAutoSchema(SpectacularAutoSchema):
     def _get_request_body(self, direction: Any = "request") -> Any:
         if self.method == "DELETE":
             self.method = "POST"
-            body = super()._get_request_body() # type: ignore[no-untyped-call]
+            body = super()._get_request_body()  # type: ignore[no-untyped-call]
             self.method = "DELETE"
             return body
-        return super()._get_request_body() # type: ignore[no-untyped-call]
+        return super()._get_request_body()  # type: ignore[no-untyped-call]
 
 
 class WithdrawalView(APIView):
