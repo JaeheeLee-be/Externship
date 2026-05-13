@@ -41,7 +41,7 @@ class User(AbstractBaseUser, TimeStampModel):
     phone_number = models.CharField(max_length=20, null=False, unique=True)
     gender = models.CharField(choices=Gender.choices, max_length=6, null=True)
     birthday = models.DateField(null=True)
-    profile_img_url = models.CharField(max_length=255, null=True, blank=True)
+    profile_img_url = models.URLField(max_length=1000, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     role = models.CharField(choices=Role.choices, default=Role.USER)
 
