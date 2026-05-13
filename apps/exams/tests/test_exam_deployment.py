@@ -566,11 +566,11 @@ class TestExamDeploymentCheckCode(ExamDeploymentBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(response.content)
 
-    def test_check_expired_correct_code_204(self) -> None:
-        """만료된 시험이라도 코드 일치 시 204 (close_at 체크 없음)"""
+    def test_check_expired_correct_code_423(self) -> None:
+        """만료된 시험 코드 입력 시 423"""
         self.client.force_authenticate(user=self.student)
         response = self.client.post(self.check_code_expired_url, {"code": "expiredco1"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_423_LOCKED)
 
 
 class TestExamDeploymentDetail(ExamDeploymentBaseTestCase):
@@ -779,19 +779,21 @@ class TestExamDeploymentStatus(ExamDeploymentBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data.get("error_detail"), "해당 시험 정보를 찾을 수 없습니다.")
 
-    def test_status_expired_410(self) -> None:
-        """종료된 시험(close_at 지남) → 410"""
+    def test_status_expired_200_closed(self) -> None:
+        """종료된 시험(close_at 지남) → 200 closed"""
         self.client.force_authenticate(user=self.student)
         response = self.client.get(self.status_expired_url)
-        self.assertEqual(response.status_code, status.HTTP_410_GONE)
-        self.assertEqual(response.data.get("error_detail"), "시험이 이미 종료되었습니다.")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("exam_status"), "closed")
+        self.assertTrue(response.data.get("force_submit"))
 
-    def test_status_off_410(self) -> None:
-        """비활성화(status=OFF) 시험 → 410"""
+    def test_status_off_200_closed(self) -> None:
+        """비활성화(status=OFF) 시험 → 200 closed"""
         self.client.force_authenticate(user=self.student)
         response = self.client.get(self.status_off_url)
-        self.assertEqual(response.status_code, status.HTTP_410_GONE)
-        self.assertEqual(response.data.get("error_detail"), "시험이 이미 종료되었습니다.")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("exam_status"), "closed")
+        self.assertTrue(response.data.get("force_submit"))
 
     # 기능 성공 테스트
     def test_status_response_fields(self) -> None:
