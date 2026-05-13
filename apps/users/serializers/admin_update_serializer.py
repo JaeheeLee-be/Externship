@@ -4,6 +4,7 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.users.models import User
+from apps.users.serializers.admin_detail_serializer import AdminAssignedCourseSerializer
 
 
 class AdminAccountUpdateSerializer(serializers.Serializer[Any]):
@@ -22,6 +23,8 @@ class AdminAccountUpdateSerializer(serializers.Serializer[Any]):
 
 
 class AdminAccountUpdateResponseSerializer(serializers.ModelSerializer[User]):
+    assigned_courses = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -34,5 +37,11 @@ class AdminAccountUpdateResponseSerializer(serializers.ModelSerializer[User]):
             "gender",
             "profile_img_url",
             "updated_at",
+            "assigned_courses",
         ]
         read_only_fields = fields
+
+    @staticmethod
+    def get_assigned_courses(obj: User) -> list[dict[str, Any]]:
+        cohort_students = obj.cohort_students.all()
+        return list(AdminAssignedCourseSerializer(cohort_students, many=True).data)
