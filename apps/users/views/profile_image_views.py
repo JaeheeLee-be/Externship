@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -13,7 +13,16 @@ from apps.users.services.profile_image_service import update_profile_image
 class ProfileImageView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=["accounts"], summary="프로필 이미지 URL 저장")
+    @extend_schema(
+        tags=["accounts"],
+        summary="프로필 이미지 URL 저장",
+        request=ProfileImageUpdateSerializer,
+        responses={
+            200: OpenApiResponse(description="프로필 이미지가 업데이트되었습니다."),
+            400: OpenApiResponse(description="잘못된 요청입니다."),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+        },
+    )
     def patch(self, request: Request) -> Response:
         serializer = ProfileImageUpdateSerializer(data=request.data)
         if not serializer.is_valid():

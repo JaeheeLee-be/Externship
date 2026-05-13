@@ -125,6 +125,7 @@ class AdminAccountUpdateSuccessTest(APITestCase):
             "gender",
             "profile_img_url",
             "updated_at",
+            "assigned_courses",
         }
         self.assertEqual(set(res.data.keys()), expected)
 
