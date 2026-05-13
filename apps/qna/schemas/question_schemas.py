@@ -120,6 +120,7 @@ question_update_schema = extend_schema(
         OpenApiParameter(
             name="question_id",
             type=int,
+            location=OpenApiParameter.QUERY,
             description="질문 ID",
             required=True,
         ),

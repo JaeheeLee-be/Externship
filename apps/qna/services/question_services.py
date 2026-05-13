@@ -32,6 +32,7 @@ class QuestionService:
         return question
 
     @staticmethod
+    @transaction.atomic
     def update_question(
         *,
         question: Question,
@@ -74,13 +75,9 @@ class QuestionService:
         if question.author_id != user.id:
             raise PermissionDeniedException("본인이 작성한 질문만 수정할 수 있습니다.")
 
-        # 카테고리 조회
-        try:
-            category = QuestionCategory.objects.get(id=category_id)
-        except QuestionCategory.DoesNotExist:
-            raise NotFoundException("존재하지 않는 카테고리입니다.")
-
+        # 카테고리는 Serializer에서 이미 검증됨 (존재 여부 + 소분류 여부)
         # 질문 수정
+        category = QuestionCategory.objects.get(id=category_id)
         return QuestionService.update_question(
             question=question,
             title=title,

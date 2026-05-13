@@ -1,7 +1,6 @@
 import math
 from typing import Any, NoReturn, cast
 
-from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
@@ -187,7 +186,6 @@ class QuestionDetailAPIView(APIView):
 
     # ── PUT /api/v1/qna/questions/{question_id} ───────────────────────
     @question_update_schema
-    @transaction.atomic
     def put(self, request: Request, question_id: int, *args: Any, **kwargs: Any) -> Response:
         """질문 수정"""
         # question_id 유효성 검사
