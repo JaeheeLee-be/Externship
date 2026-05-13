@@ -185,6 +185,7 @@ class TestExamAPI(ExamBaseTestCase):
         response = self.client.get(reverse("exam-list"), {"subject_id": "text"})
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청입니다.")
 
     # 쪽지시험 목록 조회: 검색
     def test_get_exam_list_with_search_title(self) -> None:
@@ -388,6 +389,7 @@ class TestExamAPI(ExamBaseTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_exam_create_title_max_length(self) -> None:
@@ -403,6 +405,7 @@ class TestExamAPI(ExamBaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 시험 생성 요청입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
 
@@ -559,6 +562,7 @@ class TestExamDetail(ExamBaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     def test_detail_put_title_max_langth(self) -> None:
@@ -573,6 +577,7 @@ class TestExamDetail(ExamBaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
         self.assertEqual(Exam.objects.count(), 2)
 
     # 쪽지시험 삭제: 권한
