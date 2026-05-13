@@ -1,11 +1,17 @@
 from django.db.models import Q, QuerySet
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
 from apps.users.models import User
-from apps.users.utils.pagination import RequestPagination
 
 
-def get_student_list(request: Request) -> tuple[list[User], RequestPagination]:
+class Pagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+def get_student_list(request: Request) -> tuple[list[User], None, Pagination]:
     queryset = User.objects.prefetch_related("cohort_students__cohort__course", "withdrawal").order_by("id")
 
     # 검색 기능(이메일, 이름, 닉네임, 휴대폰번호)
@@ -38,6 +44,6 @@ def get_student_list(request: Request) -> tuple[list[User], RequestPagination]:
         queryset = queryset.filter(withdrawal__isnull=False)
 
     # 페이지네이션
-    paginator = RequestPagination()
+    paginator = Pagination()
     page = paginator.paginate_queryset(queryset, request)
     return page, paginator

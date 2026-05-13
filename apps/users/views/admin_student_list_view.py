@@ -11,7 +11,7 @@ from apps.core.utils.permissions import IsRoleAdminUser
 from apps.users.serializers.admin_student_list_serializer import (
     AdminStudentListSerializer,
 )
-from apps.users.services.admin_atudent_list_service import get_student_list
+from apps.users.services.admin_student_list_service import get_student_list
 
 
 class AdminStudentListView(APIView):
