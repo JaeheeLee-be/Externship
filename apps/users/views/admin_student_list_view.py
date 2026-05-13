@@ -1,7 +1,6 @@
 from typing import Never
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -39,10 +38,6 @@ class AdminStudentListView(APIView):
         },
     )
     def get(self, request: Request) -> Response:
-        try:
-            page, paginator = get_student_list(request)
-        except Exception:
-            return Response({"error_detail": "유효하지 않은 페이지입니다."}, status=status.HTTP_400_BAD_REQUEST)
-
+        page, paginator = get_student_list(request)
         serializer = AdminStudentListSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)

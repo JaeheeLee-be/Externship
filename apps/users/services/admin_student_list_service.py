@@ -1,4 +1,4 @@
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
@@ -11,7 +11,7 @@ class Pagination(PageNumberPagination):
     max_page_size = 100
 
 
-def get_student_list(request: Request) -> tuple[list[User], None, Pagination]:
+def get_student_list(request: Request) -> tuple[list[User] | None, Pagination]:
     queryset = User.objects.prefetch_related("cohort_students__cohort__course", "withdrawal").order_by("id")
 
     # 검색 기능(이메일, 이름, 닉네임, 휴대폰번호)
