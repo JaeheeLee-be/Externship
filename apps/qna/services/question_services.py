@@ -1,6 +1,8 @@
 from django.db import transaction
-from django.db.models import Count, OuterRef, Prefetch, QuerySet, Subquery
+from django.db.models import Count, F, OuterRef, Prefetch, QuerySet, Subquery
 
+from apps.qna.exceptions import NotFoundException
+from apps.qna.models.answer_models import Answer, AnswerComment
 from apps.qna.models.question_models import Question, QuestionCategory, QuestionImage
 from apps.users.models import CohortStudents, User
 
@@ -154,4 +156,121 @@ class QuestionListService:
             "view_count": question.view_count,
             "created_at": question.created_at,
             "thumbnail_img_url": question.thumbnail_img_url,  # type: ignore[attr-defined]
+        }
+
+
+class QuestionDetailService:
+    """질문 상세 조회 서비스"""
+
+    @staticmethod
+    def get_question_detail(question_id: int) -> dict[str, object]:
+        """질문 상세 조회 및 조회수 증가"""
+        try:
+            from apps.users.models import CohortStudents
+
+            # 댓글 prefetch
+            answer_comments_prefetch = Prefetch(
+                "answercomment_set",
+                queryset=AnswerComment.objects.select_related("author").prefetch_related(
+                    Prefetch(
+                        "author__cohort_students",
+                        queryset=CohortStudents.objects.select_related("cohort__course"),
+                    )
+                ),
+            )
+
+            question = (
+                Question.objects.select_related(
+                    "author",
+                    "category__parent__parent",
+                )
+                .prefetch_related(
+                    "questionimage_set",
+                    Prefetch(
+                        "answer_set",
+                        queryset=Answer.objects.select_related("author")
+                        .prefetch_related(answer_comments_prefetch)
+                        .order_by("-is_adopted", "created_at"),
+                    ),
+                )
+                .get(pk=question_id)
+            )
+        except Question.DoesNotExist:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+
+        # 조회수 증가
+        Question.objects.filter(pk=question_id).update(view_count=F("view_count") + 1)
+        question.refresh_from_db()
+
+        # 응답 데이터 구성
+        return QuestionDetailService._build_response(question)
+
+    @staticmethod
+    def _build_response(question: Question) -> dict[str, object]:
+        """질문 상세 응답 데이터 구성"""
+        author = question.author
+        category = question.category
+
+        # 이미지 목록
+        images = [{"id": img.id, "img_url": img.img_url} for img in question.questionimage_set.all()]
+
+        # 답변 목록
+        answers = []
+        for answer in question.answer_set.all():
+            answer_author = answer.author
+
+            # 댓글 목록
+            comments = []
+            for comment in answer.answercomment_set.all():
+                comment_author = comment.author
+
+                # course_name, cohort_number 조회 (prefetch된 데이터 사용)
+                cohort_student = comment_author.cohort_students.first()
+                course_name = cohort_student.cohort.course.name if cohort_student and cohort_student.cohort else None
+                cohort_number = cohort_student.cohort.number if cohort_student and cohort_student.cohort else None
+
+                comments.append(
+                    {
+                        "id": comment.id,
+                        "content": comment.content,
+                        "created_at": comment.created_at,
+                        "author": {
+                            "id": comment_author.id,
+                            "nickname": comment_author.nickname,
+                            "profile_img_url": getattr(comment_author, "profile_img_url", None),
+                            "course_name": course_name,
+                            "cohort_number": cohort_number,
+                        },
+                    }
+                )
+
+            answers.append(
+                {
+                    "id": answer.id,
+                    "content": answer.content,
+                    "created_at": answer.created_at,
+                    "is_adopted": answer.is_adopted,
+                    "author": {
+                        "id": answer_author.id,
+                        "nickname": answer_author.nickname,
+                        "profile_img_url": getattr(answer_author, "profile_img_url", None),
+                    },
+                    "comments": comments,
+                }
+            )
+
+        return {
+            "id": question.id,
+            "title": question.title,
+            "content": question.content,
+            "category": _get_category_info(category),
+            "images": images,
+            "view_count": question.view_count,
+            "created_at": question.created_at,
+            "author": {
+                "id": author.id,
+                "nickname": author.nickname,
+                "profile_img_url": getattr(author, "profile_img_url", None),
+            },
+            "answers": answers,
         }
