@@ -11,3 +11,18 @@ class SubjectNotFound(Exception):
 class ExamDeleteConflict(Exception):
     def __init__(self, message: str = "쪽지시험 삭제 중 충돌이 발생했습니다."):
         super().__init__(message)
+
+
+class CreateBadRequest(Exception):
+    def __init__(self, message: str = "유효하지 않은 시험 생성 요청입니다."):
+        super().__init__(message)
+
+
+class ExamBadRequest(Exception):
+    def __init__(self, message: str = "유효하지 않은 요청입니다."):
+        super().__init__(message)
+
+
+class ExamDataBadRequest(Exception):
+    def __init__(self, message: str = "유효하지 않은 요청 데이터입니다."):
+        super().__init__(message)
