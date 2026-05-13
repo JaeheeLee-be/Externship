@@ -12,6 +12,7 @@ from apps.users.utils.user_exceptions import DuplicateNicknameError
 class UserInfoSerializer(serializers.ModelSerializer[User]):
     # 수강생인 경우 보여줄 추가 필드
     cohort_id = serializers.SerializerMethodField()
+    position = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -26,6 +27,7 @@ class UserInfoSerializer(serializers.ModelSerializer[User]):
             "profile_img_url",
             "cohort_id",
             "role",
+            'position',
             "created_at",
         ]
         read_only_fields = fields
@@ -36,6 +38,18 @@ class UserInfoSerializer(serializers.ModelSerializer[User]):
         if cohort_student is None or cohort_student.cohort is None:
             return None
         return cohort_student.cohort.id
+
+    def get_position(self, obj: User)-> str | None:
+        if obj.training_assistants.exists():
+            return 'TA'
+        if obj.operation_managers.exists():
+            return 'OM'
+        if obj.learning_coachs.exists():
+            return 'LC'
+        if obj.cohort_students.exists():
+            return 'ENROLLED'
+        return None
+
 
 
 # 내 정보 수정
