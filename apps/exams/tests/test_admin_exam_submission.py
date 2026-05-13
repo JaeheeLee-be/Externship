@@ -4,9 +4,9 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.courses.models import Cohort
+from apps.courses.models.course import Course
 from apps.exams.models import Exam, ExamDeployment, ExamSubmission
 from apps.posts.models import Subject
-from apps.courses.models.course import Course
 from apps.users.models import User
 
 
