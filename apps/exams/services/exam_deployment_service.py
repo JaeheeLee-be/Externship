@@ -66,7 +66,7 @@ def check_deployment_code(user: Any, deployment_id: int, code: str) -> None:
 
     now = timezone.now()
     if deployment.close_at < now or deployment.status == ExamDeployment.ExamStatus.OFF:
-        raise ExamDeploymentNotYetOpenError()
+        raise ExamDeploymentExpiredError()
     if deployment.open_at > now:
         raise ExamDeploymentNotYetOpenError()
 

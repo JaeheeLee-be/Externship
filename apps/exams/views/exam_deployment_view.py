@@ -114,6 +114,8 @@ class ExamDeploymentCheckCodeView(APIView):
             )
         except ExamDeploymentNotFoundError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except ExamDeploymentExpiredError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_423_LOCKED)
         except ExamDeploymentCodeMismatchError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except ExamDeploymentNotYetOpenError as e:

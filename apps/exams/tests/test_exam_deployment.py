@@ -571,6 +571,7 @@ class TestExamDeploymentCheckCode(ExamDeploymentBaseTestCase):
         self.client.force_authenticate(user=self.student)
         response = self.client.post(self.check_code_expired_url, {"code": "expiredco1"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_423_LOCKED)
+        self.assertEqual(response.data.get("error_detail"), "시험이 종료되었습니다.")
 
 
 class TestExamDeploymentDetail(ExamDeploymentBaseTestCase):
