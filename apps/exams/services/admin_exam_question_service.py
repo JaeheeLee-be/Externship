@@ -31,6 +31,8 @@ SERIALIZER_MAP = {
     "ox": OXAndShortRequestSerializer,
 }
 
+ALLOWED_UPDATE_FIELD = ["type", "answer", "question", "prompt", "blank_count", "options_json", "point", "explanation"]
+
 
 def get_serializer_class(question_type: str) -> type[serializers.ModelSerializer[Any]]:
     serializer = SERIALIZER_MAP.get(question_type, BlankRequestSerializer)
@@ -123,9 +125,14 @@ def update_question(question_id: int, data: Dict[str, Any], method: str) -> Exam
 
     if "options" in data:
         data["options_json"] = json.dumps(data.pop("options"))
+    if "correct_answer" in data:
+        data["answer"] = data.pop("correct_answer")
 
-    for key, value in data.items():
-        setattr(target_question, key, value)
+    for field in ALLOWED_UPDATE_FIELD:
+        if field in data:
+            setattr(target_question, field, data[field])
+        else:
+            setattr(target_question, field, None)
     target_question.save()
 
     return target_question
@@ -139,12 +146,12 @@ def delete_question(question_id: int, method: str) -> Dict[str, int]:
 
     if len_of_question == 1:
         raise ExamQuestionDeleteConflict()
-
+    result_id = target_question.id
     target_question.delete()
 
     data = {
         "exam_id": target_question.exam_id,
-        "question_id": target_question.id,
+        "question_id": result_id,
     }
 
     return data
