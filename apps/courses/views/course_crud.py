@@ -39,7 +39,7 @@ class AdminBaseView(APIView):
         if not request.user.is_authenticated:
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
         # 403: 권한 없음
-        raise PermissionDenied("권한이 없습니다.")
+        raise PermissionDenied("관리자 권한이 필요합니다.")
 
 
 class CourseListView(AdminBaseView):
@@ -103,8 +103,12 @@ class AdminCourseDetailView(AdminBaseView):
         code: Any = None,
     ) -> NoReturn:
         if not request.user.is_authenticated:
+            if request.method == "GET":
+                raise NotAuthenticated("로그인이 필요합니다.")
             raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
-        raise PermissionDenied("관리자 권한이 필요합니다.")
+        if request.method == "GET":
+            raise PermissionDenied("관리자 권한이 필요합니다.")
+        raise PermissionDenied("권한이 없습니다.")
 
     @extend_schema(
         tags=["admin-courses"],
@@ -121,7 +125,7 @@ class AdminCourseDetailView(AdminBaseView):
             course = coursecrud_service.get_course_detail(course_id)
         except CourseNotFoundError as e:
             return Response(
-                {"error_detail": str(e)},
+                {"error_detail": "해당 과정을 찾을 수 없습니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
