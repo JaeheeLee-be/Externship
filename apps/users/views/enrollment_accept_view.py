@@ -54,3 +54,4 @@ class AdminStudentEnrollmentAcceptView(APIView):
             {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."},
             status=status.HTTP_200_OK,
         )
+
