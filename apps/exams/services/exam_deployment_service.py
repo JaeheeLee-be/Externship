@@ -9,7 +9,6 @@ from apps.exams.exceptions.exam_deployment_exception import (
     ExamDeploymentNotFoundError,
     ExamDeploymentNotYetOpenError,
     ExamDeploymentUserNotFoundError,
-    ExamDeploymentYetExpiredError,
 )
 from apps.exams.models import ExamDeployment, ExamSubmission
 from apps.users.models import CohortStudents
@@ -115,13 +114,14 @@ def get_deployment_status_for_user(user: Any, deployment_id: int) -> dict[str, A
         raise ExamDeploymentInfoNotFoundError()
 
     now = timezone.now()
-    if deployment.close_at < now or deployment.status == ExamDeployment.ExamStatus.OFF:
-        raise ExamDeploymentYetExpiredError()
+    is_expired = deployment.close_at < now or deployment.status == ExamDeployment.ExamStatus.OFF
+
+    if is_expired:
+        return {"exam_status": "closed", "force_submit": is_expired}
 
     submission = ExamSubmission.objects.filter(deployment=deployment, submitter=user).first()
-    if submission and (now - submission.started_at).total_seconds() >= deployment.duration_time * 60:
-        force_submit = True
-    else:
-        force_submit = False
+    force_submit = bool(
+        submission and (now - submission.started_at).total_seconds() >= deployment.duration_time * 60
+    )
 
     return {"exam_status": "activated", "force_submit": force_submit}

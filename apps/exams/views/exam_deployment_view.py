@@ -17,7 +17,6 @@ from apps.exams.exceptions.exam_deployment_exception import (
     ExamDeploymentNotFoundError,
     ExamDeploymentNotYetOpenError,
     ExamDeploymentUserNotFoundError,
-    ExamDeploymentYetExpiredError,
 )
 from apps.exams.serializers.exam_deployment_serializer import (
     ExamDeploymentCheckSerializer,
@@ -181,12 +180,8 @@ class ExamDeploymentStatusView(APIView):
                 request.user,
                 path_serializer.validated_data["deployment_id"],
             )
-        # TODO : 명세서 응답 예시에는 만료/비활성화 시 200 {"exam_status": "closed", "force_submit": true} 반환으로 되어있으나
-        # 에러코드에 410이 존재하여 현재는 410으로 처리. 410명확한 케이스 정해지면 피드백 후 수정 예정.
         except ExamDeploymentInfoNotFoundError as e:
             return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except ExamDeploymentYetExpiredError as e:
-            return Response({"error_detail": str(e)}, status=status.HTTP_410_GONE)
 
         serializer = ExamDeploymentStatusSerializer(result)
         return Response(serializer.data, status=status.HTTP_200_OK)
