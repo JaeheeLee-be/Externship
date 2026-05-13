@@ -51,3 +51,18 @@ class DeploymentDeleteNotFoundError(Exception):
 class DeploymentDeleteConflictError(Exception):
     def __init__(self, message: str = "배포 삭제 처리 중 충돌이 발생했습니다."):
         super().__init__(message)
+
+
+class DeploymentStatusInvalidRequestError(Exception):
+    def __init__(self, message: str = "유효하지 않은 배포 상태 요청입니다."):
+        super().__init__(message)
+
+
+class DeploymentStatusNotFoundError(Exception):
+    def __init__(self, message: str = "해당 배포 정보를 찾을 수 없습니다."):
+        super().__init__(message)
+
+
+class DeploymentStatusConflictError(Exception):
+    def __init__(self, message: str = "배포 상태 변경 중 충돌이 발생했습니다."):
+        super().__init__(message)
