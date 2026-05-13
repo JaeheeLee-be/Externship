@@ -11,4 +11,3 @@ class Course(TimeStampModel):
 
     class Meta:
         db_table = "courses"
-        app_label = "courses"
