@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
-import apps.core.presigned_url.s3_handler as s3_module
 from botocore.exceptions import HTTPClientError
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
 from moto import mock_aws
 
+import apps.core.presigned_url.s3_handler as s3_module
 from apps.core.presigned_url.s3_handler import get_s3_handler
 from apps.core.presigned_url.services import PresignedUrlService
 

@@ -1,6 +1,6 @@
-import apps.core.presigned_url.s3_handler as s3_module
 from django.test import TestCase, override_settings
 
+import apps.core.presigned_url.s3_handler as s3_module
 from apps.core.presigned_url.s3_handler import get_s3_handler
 
 FAKE_S3 = dict(
