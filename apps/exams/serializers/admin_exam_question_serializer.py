@@ -6,9 +6,17 @@ from rest_framework import serializers
 from apps.exams.models.exam_question_model import ExamQuestion
 
 
+class QuestionValidateMixin:
+    def validate_correct_answer(self, correct_answer: Dict[str, Any]) -> Dict[str, Any]:
+        if not correct_answer:
+            raise serializers.ValidationError()
+        return correct_answer
+
+
 class ExamQuestionSwaggerSerializer(serializers.ModelSerializer[ExamQuestion]):
     options = serializers.JSONField(source="options_json")
     correct_answer = serializers.JSONField(source="answer")
+    explanation = serializers.CharField(required=False, default="")
 
     class Meta:
         model = ExamQuestion
@@ -24,8 +32,9 @@ class ExamQuestionSwaggerSerializer(serializers.ModelSerializer[ExamQuestion]):
         ]
 
 
-class BlankRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
-    correct_answer = serializers.JSONField(source="answer")
+class BlankRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
+    correct_answer = serializers.JSONField(source="answer", required=True, allow_null=False)
+    explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
     class Meta:
         model = ExamQuestion
@@ -39,44 +48,59 @@ class BlankRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
             "explanation",
         ]
         extra_kwargs = {
-            "question": {"required": True},
-            "prompt": {"required": True},
-            "blank_count": {"required": True},
-            "point": {"required": True},
-            "type": {"required": True},
+            "question": {"required": True, "allow_blank": False},
+            "prompt": {"required": True, "allow_blank": False},
+            "blank_count": {"required": True, "allow_null": False},
+            "point": {"required": True, "allow_null": False},
+            "type": {"required": True, "allow_blank": False, "allow_null": False},
         }
 
 
-class OrderRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField()
-    correct_answer = serializers.JSONField(source="answer")
+class OrderRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.JSONField(required=True, allow_null=False)
+    correct_answer = serializers.JSONField(source="answer", required=True, allow_null=False)
+    explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
     class Meta:
         model = ExamQuestion
         fields = ["question", "options", "correct_answer", "point", "type", "explanation"]
-        extra_kwargs = {"question": {"required": True}, "point": {"required": True}, "type": {"required": True}}
+        extra_kwargs = {
+            "question": {"required": True, "allow_blank": False},
+            "point": {"required": True, "allow_null": False},
+            "type": {"required": True, "allow_blank": False, "allow_null": False},
+        }
 
 
-class MulAndSingleRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(required=True)
-    correct_answer = serializers.JSONField(required=True)
+class MulAndSingleRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
+    options = serializers.JSONField(required=True, allow_null=False)
+    correct_answer = serializers.JSONField(required=True, allow_null=False)
+    explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
     class Meta:
         model = ExamQuestion
         fields = ["question", "options", "correct_answer", "point", "type", "explanation"]
-        extra_kwargs = {"question": {"required": True}, "point": {"required": True}, "type": {"required": True}}
+        extra_kwargs = {
+            "question": {"required": True, "allow_blank": False},
+            "point": {"required": True, "allow_null": False},
+            "type": {"required": True, "allow_blank": False, "allow_null": False},
+        }
 
 
-class OXAndShortRequestSerializer(serializers.ModelSerializer[ExamQuestion]):
+class OXAndShortRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
     correct_answer = serializers.JSONField(required=True)
+    explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
     class Meta:
         model = ExamQuestion
         fields = ["question", "correct_answer", "point", "type", "explanation"]
-        extra_kwargs = {"question": {"required": True}, "point": {"required": True}, "type": {"required": True}}
+        extra_kwargs = {
+            "question": {"required": True, "allow_blank": False},
+            "point": {"required": True, "allow_null": False},
+            "type": {"required": True, "allow_blank": False, "allow_null": False},
+        }
 
 
-class QuestionUpdateSerializer(serializers.ModelSerializer[ExamQuestion]):
+class QuestionUpdateSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
     options = serializers.JSONField(required=False)
     correct_answer = serializers.JSONField(source="answer", required=False)
 
