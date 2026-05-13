@@ -3,11 +3,11 @@ from typing import Any, NoReturn
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
-from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.utils.permissions import IsRoleAdminUser
 from apps.courses.serializers.course_crud import (
     CourseCreateRequestSerializer,
     CourseCreateResponseSerializer,
@@ -27,7 +27,7 @@ from apps.courses.utils.exceptions import (
 
 
 class AdminBaseView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsRoleAdminUser]
 
     def permission_denied(
         self,

@@ -15,6 +15,9 @@ class CourseCreateRequestSerializer(serializers.ModelSerializer[Course]):
     class Meta:
         model = Course
         fields = ["name", "tag", "description", "thumbnail_img_url"]
+        extra_kwargs = {
+            "name": {"validators": []},  # unique validator 끔 (service에서 처리)
+        }
 
 
 class CourseCreateResponseSerializer(serializers.Serializer[Any]):
