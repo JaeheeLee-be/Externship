@@ -3,14 +3,12 @@ from django.urls import path
 from apps.users.views.admin_account_view import AdminAccountListView
 from apps.users.views.admin_detail_view import AdminAccountView
 from apps.users.views.admin_permission_view import AdminPermissionView
-from apps.users.views.admin_student_enrollment_view import AdminEnrollmentRequestListView
+from apps.users.views.admin_student_enrollment_view import (
+    AdminEnrollmentRequestListView,
+)
 from apps.users.views.admin_withdrawal_view import (
     AdminWithdrawalDetailView,
     AdminWithdrawalListView,
-)
-from apps.users.views.admin_update_view import AdminAccountUpdateView
-from apps.users.views.admin_student_enrollment_view import (
-    AdminEnrollmentRequestListView,
 )
 from apps.users.views.enrollment_accept_view import AdminStudentEnrollmentAcceptView
 
