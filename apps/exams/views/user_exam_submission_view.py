@@ -63,7 +63,7 @@ class UserExamSubmissionCreateView(APIView):
         raise PermissionDenied("권한이 없습니다.")
 
     @extend_schema(
-        tags=["exams"],
+        tags=["user-exams"],
         summary="쪽지시험 응시 제출 API",
         request=UserExamSubmissionCreateSerializer,
         responses={
