@@ -202,22 +202,35 @@ class AdminQuestionDetailService:
             answer_course_generation = None
             answer_role_title = None
 
+            # course_generation 계산 (cohort_student가 있는 경우만)
             if answer_cohort_student and answer_cohort_student.cohort:
                 course_name = answer_cohort_student.cohort.course.name
                 cohort_number = answer_cohort_student.cohort.number
                 answer_course_generation = f"{course_name} {cohort_number}기" if course_name and cohort_number else None
 
-                if answer_author.role == "ADMIN":
-                    # ADMIN은 기수 정보와 함께 표시
-                    if answer_course_generation:
-                        answer_role_title = f"{answer_course_generation} 관리자"
-                    else:
-                        answer_role_title = "관리자"
+            # 1. 조교 체크 (기수별)
+            if hasattr(answer_author, "training_assistants") and answer_author.training_assistants.exists():
+                if answer_course_generation:
+                    answer_role_title = f"{answer_course_generation} 조교"
+                else:
+                    answer_role_title = "조교"
 
-                elif answer_author.role == "STUDENT":
-                    # STUDENT는 기수 정보와 함께 표시
-                    if answer_course_generation:
-                        answer_role_title = f"{answer_course_generation} 수강생"
+            # 2. 운영매니저 체크 (과정별)
+            elif hasattr(answer_author, "operation_managers") and answer_author.operation_managers.exists():
+                answer_role_title = "교육 운영 매니저"
+
+            # 3. 러닝코치 체크 (과정별)
+            elif hasattr(answer_author, "learning_coachs") and answer_author.learning_coachs.exists():
+                answer_role_title = "러닝 코치"
+
+            # 4. 기본 User.role 기반
+            elif answer_author.role == "ADMIN":
+                answer_role_title = "관리자"
+
+            elif answer_author.role == "STUDENT":
+                # 일반 수강생: role_title 없음 (course_generation만 표시)
+                answer_role_title = None
+
             answers.append(
                 {
                     "answer_id": answer.id,
