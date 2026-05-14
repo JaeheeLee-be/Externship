@@ -1,10 +1,11 @@
 from django.test import TestCase
 
-from apps.qna.dtos import Message
+from apps.qna.dtos import LastQNAHistory, Message
 from apps.qna.serializers.chatbot_serializers import (
+    ChatbotRequestSerializer,
+    HistoryResponseSerializer,
     InitialAIAnswerSerializer,
-    QNAChatbotRequestSerializer,
-    QNAHistoryResponseSerializer,
+    QNAChatbotListResponseSerializer,
 )
 
 
@@ -26,23 +27,33 @@ class TestInitialAIAnswerSerializer(TestCase):
 
 class TestQNAChatbotRequestSerializer(TestCase):
     def test_valid_message(self) -> None:
-        serializer = QNAChatbotRequestSerializer(data={"message": "hello"})
+        serializer = ChatbotRequestSerializer(data={"message": "hello"})
         self.assertTrue(serializer.is_valid())
 
     def test_empty_message_is_invalid(self) -> None:
-        serializer = QNAChatbotRequestSerializer(data={"message": ""})
+        serializer = ChatbotRequestSerializer(data={"message": ""})
         self.assertFalse(serializer.is_valid())
 
     def test_message_over_max_length_is_invalid(self) -> None:
-        serializer = QNAChatbotRequestSerializer(data={"message": "a" * 1001})
+        serializer = ChatbotRequestSerializer(data={"message": "a" * 1001})
         self.assertFalse(serializer.is_valid())
 
     def test_whitespace_only_message_is_invalid(self) -> None:
-        serializer = QNAChatbotRequestSerializer(data={"message": "   "})
+        serializer = ChatbotRequestSerializer(data={"message": "   "})
         self.assertFalse(serializer.is_valid())
 
     def test_message_is_trimmed(self) -> None:
-        serializer = QNAChatbotRequestSerializer(data={"message": "  hello  "})
+        serializer = ChatbotRequestSerializer(data={"message": "  hello  "})
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data["message"], "hello")
+
+    def test_message_removes_client_question_tags(self) -> None:
+        serializer = ChatbotRequestSerializer(data={"message": "<client_question>hello</client_question>"})
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data["message"], "hello")
+
+    def test_message_removes_partial_client_question_tag(self) -> None:
+        serializer = ChatbotRequestSerializer(data={"message": "<client_question>hello"})
         self.assertTrue(serializer.is_valid())
         self.assertEqual(serializer.validated_data["message"], "hello")
 
@@ -51,13 +62,13 @@ class TestQNAHistoryResponseSerializer(TestCase):
 
     def test_serializes_user_message(self) -> None:
         message = Message(role="user", content="질문입니다.")
-        serializer = QNAHistoryResponseSerializer(message)
+        serializer = HistoryResponseSerializer(message)
         self.assertEqual(serializer.data["role"], "user")
         self.assertEqual(serializer.data["message"], "질문입니다.")
 
     def test_serializes_assistant_message(self) -> None:
         message = Message(role="assistant", content="답변입니다.")
-        serializer = QNAHistoryResponseSerializer(message)
+        serializer = HistoryResponseSerializer(message)
         self.assertEqual(serializer.data["role"], "assistant")
         self.assertEqual(serializer.data["message"], "답변입니다.")
 
@@ -66,13 +77,40 @@ class TestQNAHistoryResponseSerializer(TestCase):
             Message(role="user", content="질문입니다."),
             Message(role="assistant", content="답변입니다."),
         ]
-        serializer = QNAHistoryResponseSerializer(messages, many=True)
+        serializer = HistoryResponseSerializer(messages, many=True)
         self.assertEqual(len(serializer.data), 2)
         self.assertEqual(serializer.data[0]["role"], "user")
         self.assertEqual(serializer.data[1]["role"], "assistant")
 
     def test_invalid_role_raises_error(self) -> None:
         data = {"role": "admin", "content": "질문입니다."}
-        serializer = QNAHistoryResponseSerializer(data=data)
+        serializer = HistoryResponseSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("role", serializer.errors)
+
+
+class TestQNAChatbotListResponseSerializer(TestCase):
+    def setUp(self) -> None:
+        self.instance = LastQNAHistory(
+            question_id=1,
+            last_message="test",
+            role="assistant",
+            created_at="2026-05-07T14:30:05",
+        )
+
+    def test_serializer(self) -> None:
+        serializer = QNAChatbotListResponseSerializer(self.instance)
+        self.assertEqual(serializer.data["question_id"], 1)
+        self.assertEqual(serializer.data["last_message"], "test")
+        self.assertEqual(serializer.data["role"], "assistant")
+        self.assertIn("created_at", serializer.data)
+
+    def test_many_serialized(self) -> None:
+        instances = [
+            self.instance,
+            LastQNAHistory(question_id=2, last_message="test", role="assistant", created_at="2026-04-23T14:30:06"),
+        ]
+        serializer = QNAChatbotListResponseSerializer(instances, many=True)
+        self.assertEqual(len(serializer.data), 2)
+        self.assertEqual(serializer.data[0]["question_id"], 1)
+        self.assertEqual(serializer.data[1]["question_id"], 2)

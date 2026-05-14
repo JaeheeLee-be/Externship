@@ -3,9 +3,13 @@ from time import sleep
 
 from django.core.cache import cache
 
-from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
-from apps.core.utils.redis_repository import CacheRepository
+from apps.core.utils.isolated_cache_testcase import (
+    FixedPrefixRedisTestClient,
+    IsolatedRedisTestClient,
+)
 from apps.qna.dtos import InitialQNA, Message
+from apps.qna.redis import CacheRepository
+from apps.qna.redis.keys import QNA_KEY
 
 
 class TestCacheRepository(IsolatedRedisTestClient):
@@ -85,3 +89,61 @@ class TestCacheRepository(IsolatedRedisTestClient):
         result = CacheRepository.get_session("session_key")
         self.assertEqual(result, 42)
         self.assertIsInstance(result, int)
+
+
+class TestCacheRepositoryQnaList(FixedPrefixRedisTestClient):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.user_id = 1
+        self.value = [
+            {"role": "user", "content": "질문입니다.", "created_at": None},
+            {"role": "assistant", "content": "답변입니다.", "created_at": "2026-04-23T14:30:05"},
+        ]
+        cache.set(f"qna_chat:{self.user_id}:42", self.value)
+        cache.set(f"qna_chat:{self.user_id}:55", self.value)
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        cache.clear()
+
+    def test_get_qna_keys_returns_keys(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        self.assertEqual(len(result), 2)
+
+    def test_get_qna_keys_returns_bytes(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        self.assertIsInstance(result[0], bytes)
+
+    def test_get_qna_keys_empty_when_no_keys(self) -> None:
+        result = CacheRepository.get_qna_keys(user_id=999)
+        self.assertEqual(result, [])
+
+    def test_get_many_returns_values(self) -> None:
+        keys = [
+            QNA_KEY.format(user_id=self.user_id, question_id=42),
+            QNA_KEY.format(user_id=self.user_id, question_id=55),
+        ]
+        result = CacheRepository.get_many(keys)
+        self.assertEqual(len(result), 2)
+
+    def test_get_qna_keys_returns_str(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        self.assertIsInstance(result[0], str)
+
+    def test_get_qna_keys_strips_prefix(self) -> None:
+        result = CacheRepository.get_qna_keys(self.user_id)
+        expected = {
+            QNA_KEY.format(user_id=self.user_id, question_id=42),
+            QNA_KEY.format(user_id=self.user_id, question_id=55),
+        }
+        self.assertEqual(set(result), expected)
+
+    def test_get_qna_keys_result_is_usable_by_get_many(self) -> None:
+        keys = CacheRepository.get_qna_keys(self.user_id)
+        result = CacheRepository.get_many(keys)
+        self.assertEqual(len(result), 2)
+
+    def test_get_many_excludes_missing_keys(self) -> None:
+        result = CacheRepository.get_many(["nonexistent_key"])
+        self.assertEqual(result, {})

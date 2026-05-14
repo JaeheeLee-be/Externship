@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Any
 
-from apps.qna.dtos import InitialQNA
+from apps.qna.dtos import InitialQNA, LastQNAHistory
 
 
 class CacheFactory:
@@ -23,4 +24,13 @@ class CacheFactory:
             question_id=question_id,
             using_model=using_model,
             created_at=created_at,
+        )
+
+    @staticmethod
+    def create_last_qna(key: str, value: Any) -> LastQNAHistory:
+        return LastQNAHistory(
+            question_id=int(key.split(":")[-1]),
+            last_message=value[-1]["content"],
+            role=value[-1]["role"],
+            created_at=value[-1]["created_at"],
         )

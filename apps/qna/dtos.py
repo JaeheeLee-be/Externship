@@ -6,7 +6,7 @@ from typing import Any
 class Message:
     role: str
     content: str
-    timestamp: str | None = None
+    created_at: str | None = None
 
     def api_dict(self) -> dict[str, str]:
         return {"role": self.role, "content": self.content}
@@ -37,3 +37,18 @@ class InitialQNA:
     question_id: int
     using_model: str
     created_at: str
+
+
+@dataclass
+class LastQNAHistory:
+    question_id: int
+    last_message: str
+    role: str
+    created_at: str
+
+
+@dataclass
+class QNAChatbotContext:
+    initial: InitialQNA
+    history: list[Message] | None
+    key: str

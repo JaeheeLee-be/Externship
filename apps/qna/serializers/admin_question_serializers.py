@@ -41,3 +41,49 @@ class AdminQuestionDeleteResponseSerializer(serializers.Serializer[Any]):
     question_id = serializers.IntegerField()
     deleted_answer_count = serializers.IntegerField()
     deleted_comment_count = serializers.IntegerField()
+
+
+# ── 어드민 질문 상세 조회 ────────────────────────────────────────────
+
+
+class AdminQuestionDetailAuthorSerializer(serializers.Serializer[Any]):
+    """어드민 질문 상세 - 작성자 정보"""
+
+    profile_img_url = serializers.CharField(allow_null=True)
+    nickname = serializers.CharField()
+    course_generation = serializers.CharField(allow_null=True)
+
+
+class AdminQuestionDetailAnswerAuthorSerializer(serializers.Serializer[Any]):
+    """어드민 질문 상세 - 답변 작성자 정보"""
+
+    profile_img_url = serializers.CharField(allow_null=True)
+    nickname = serializers.CharField()
+    role_title = serializers.CharField(allow_null=True)
+    course_generation = serializers.CharField(allow_null=True)
+
+
+class AdminQuestionDetailAnswerSerializer(serializers.Serializer[Any]):
+    """어드민 질문 상세 - 답변"""
+
+    answer_id = serializers.IntegerField()
+    author = AdminQuestionDetailAnswerAuthorSerializer()
+    content = serializers.CharField()
+    is_adopted = serializers.BooleanField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+
+class AdminQuestionDetailSerializer(serializers.Serializer[Any]):
+    """어드민 질문 상세 조회 응답"""
+
+    question_id = serializers.IntegerField()
+    title = serializers.CharField()
+    content = serializers.CharField()
+    images = serializers.ListField(child=serializers.CharField())
+    author = AdminQuestionDetailAuthorSerializer()
+    view_count = serializers.IntegerField()
+    has_answer = serializers.BooleanField()
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    answers = AdminQuestionDetailAnswerSerializer(many=True)
