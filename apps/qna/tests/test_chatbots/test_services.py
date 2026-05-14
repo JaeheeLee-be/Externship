@@ -1,8 +1,6 @@
 from dataclasses import asdict
 from unittest.mock import MagicMock, patch
 
-from django.core.cache import cache
-
 from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.core.utils.redis_repository import CacheRepository
 from apps.core.utils.test_factories import MockedAIResponse as Res
@@ -39,7 +37,6 @@ class TestInitialService(IsolatedRedisTestClient):
 
     def tearDown(self) -> None:
         super().tearDown()
-        cache.clear()
 
     def test_returns_full_category_path(self) -> None:
         self.assertEqual(self.category, "top > middle > bottom")
@@ -153,7 +150,6 @@ class TestChatbotService(IsolatedRedisTestClient):
 
     def tearDown(self) -> None:
         super().tearDown()
-        cache.clear()
 
     def test_response_qna_history_raises_404_when_initial_not_found(self) -> None:
         with self.assertRaises(NotFoundException):
