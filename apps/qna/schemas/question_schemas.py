@@ -9,6 +9,8 @@ from apps.qna.serializers.question_serializers import (
     QuestionCreateSerializer,
     QuestionDetailSerializer,
     QuestionListItemSerializer,
+    QuestionUpdateResponseSerializer,
+    QuestionUpdateSerializer,
 )
 
 # ── 질문 등록 ──────────────────────────────────────────────────────
@@ -104,6 +106,31 @@ question_detail_schema = extend_schema(
         400: OpenApiResponse(description="유효하지 않은 질문 상세 조회 요청입니다."),
         401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
         403: OpenApiResponse(description="권한이 없습니다."),
+        404: OpenApiResponse(description="해당 질문을 찾을 수 없습니다."),
+    },
+)
+
+# ── 질문 수정 ──────────────────────────────────────────────────────
+
+question_update_schema = extend_schema(
+    tags=["Qna"],
+    summary="질문 수정",
+    description="본인이 작성한 질문을 수정합니다. 소분류 카테고리만 선택 가능합니다.",
+    parameters=[
+        OpenApiParameter(
+            name="question_id",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="질문 ID",
+            required=True,
+        ),
+    ],
+    request=QuestionUpdateSerializer,
+    responses={
+        200: QuestionUpdateResponseSerializer,
+        400: OpenApiResponse(description="유효하지 않은 질문 수정 요청입니다."),
+        401: OpenApiResponse(description="로그인한 사용자만 질문을 수정할 수 있습니다."),
+        403: OpenApiResponse(description="본인이 작성한 질문만 수정할 수 있습니다."),
         404: OpenApiResponse(description="해당 질문을 찾을 수 없습니다."),
     },
 )

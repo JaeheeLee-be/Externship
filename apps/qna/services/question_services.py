@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.db.models import Count, F, OuterRef, Prefetch, QuerySet, Subquery
 
-from apps.qna.exceptions import NotFoundException
+from apps.qna.exceptions import NotFoundException, PermissionDeniedException
 from apps.qna.models.answer_models import Answer, AnswerComment
 from apps.qna.models.question_models import Question, QuestionCategory, QuestionImage
 from apps.users.models import CohortStudents, User
@@ -30,6 +30,61 @@ class QuestionService:
             QuestionImage.objects.bulk_create([QuestionImage(question=question, img_url=url) for url in img_urls])
 
         return question
+
+    @staticmethod
+    @transaction.atomic
+    def update_question(
+        *,
+        question: Question,
+        title: str,
+        content: str,
+        category: QuestionCategory,
+        img_urls: list[str],
+    ) -> Question:
+        """질문 수정"""
+        question.title = title
+        question.content = content
+        question.category = category
+        question.save(update_fields=["title", "content", "category", "updated_at"])
+
+        # 기존 이미지 삭제 후 새로 추가
+        question.questionimage_set.all().delete()
+        if img_urls:
+            QuestionImage.objects.bulk_create([QuestionImage(question=question, img_url=url) for url in img_urls])
+
+        return question
+
+    @staticmethod
+    def update_question_by_user(
+        *,
+        user: User,
+        question_id: int,
+        title: str,
+        content: str,
+        category_id: int,
+        img_urls: list[str],
+    ) -> Question:
+        """사용자가 질문 수정 (권한 체크 포함)"""
+        # 질문 조회
+        try:
+            question = Question.objects.get(pk=question_id)
+        except Question.DoesNotExist:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+
+        # 권한 확인 (본인만 수정 가능)
+        if question.author_id != user.id:
+            raise PermissionDeniedException("본인이 작성한 질문만 수정할 수 있습니다.")
+
+        # 카테고리는 Serializer에서 이미 검증됨 (존재 여부 + 소분류 여부)
+        # 질문 수정
+        category = QuestionCategory.objects.get(id=category_id)
+        return QuestionService.update_question(
+            question=question,
+            title=title,
+            content=content,
+            category=category,
+            img_urls=img_urls,
+        )
 
 
 def _get_category_info(category: QuestionCategory) -> dict[str, object]:

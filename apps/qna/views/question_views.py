@@ -14,12 +14,14 @@ from apps.qna.schemas.question_schemas import (
     question_create_schema,
     question_detail_schema,
     question_list_schema,
+    question_update_schema,
 )
 from apps.qna.serializers.question_serializers import (
-    QuestionCreateResponseSerializer,
     QuestionCreateSerializer,
     QuestionDetailSerializer,
     QuestionListItemSerializer,
+    QuestionUpdateResponseSerializer,
+    QuestionUpdateSerializer,
 )
 from apps.qna.services.question_services import (
     QuestionDetailService,
@@ -149,6 +151,18 @@ class QuestionDetailAPIView(APIView):
 
     permission_classes = [IsStudentUser]
 
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated(detail="로그인이 필요합니다.")
+
+        # HTTP 메서드에 따라 메시지 구분
+        if request.method == "GET":
+            raise PermissionDenied(detail="질문 상세 조회 권한이 없습니다.")
+        elif request.method == "PUT":
+            raise PermissionDenied(detail="질문 수정 권한이 없습니다.")
+        else:
+            raise PermissionDenied(detail="권한이 없습니다.")
+
     # ── GET /api/v1/qna/questions/{question_id} ──────────────────────
     @question_detail_schema
     def get(self, request: Request, question_id: int) -> Response:
@@ -164,6 +178,52 @@ class QuestionDetailAPIView(APIView):
             result = QuestionDetailService.get_question_detail(question_id)
             serializer = QuestionDetailSerializer(result)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except BaseCustomException as e:
+            return Response(
+                {"error_detail": e.message},
+                status=e.status_code,
+            )
+
+    # ── PUT /api/v1/qna/questions/{question_id} ───────────────────────
+    @question_update_schema
+    def put(self, request: Request, question_id: int, *args: Any, **kwargs: Any) -> Response:
+        """질문 수정"""
+        # question_id 유효성 검사
+        if not isinstance(question_id, int) or question_id < 1:
+            return Response(
+                {"error_detail": "유효하지 않은 질문 수정 요청입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 요청 데이터 검증
+        serializer = QuestionUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            first_error = next(iter(serializer.errors.values()))
+            error_message = first_error[0] if isinstance(first_error, list) else str(first_error)
+            return Response(
+                {"error_detail": error_message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Service에 위임 (비즈니스 로직 제거)
+            user = cast(User, request.user)
+            updated_question = QuestionService.update_question_by_user(
+                user=user,
+                question_id=question_id,
+                **serializer.validated_data,
+            )
+
+            # 응답
+            response_data = QuestionUpdateResponseSerializer(
+                {
+                    "question_id": updated_question.id,
+                    "updated_at": updated_question.updated_at,
+                }
+            ).data
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
         except BaseCustomException as e:
             return Response(
                 {"error_detail": e.message},
