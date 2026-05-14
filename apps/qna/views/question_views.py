@@ -153,19 +153,18 @@ class QuestionAPIView(APIView):
 class QuestionDetailAPIView(APIView):
     """질문 상세 조회/수정 API"""
 
-    permission_classes = [AllowAny]
+    def get_permissions(self) -> list[BasePermission]:
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsStudentUser()]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:
             raise NotAuthenticated(detail="로그인이 필요합니다.")
 
-        # HTTP 메서드에 따라 메시지 구분
-        if request.method == "GET":
-            raise PermissionDenied(detail="질문 상세 조회 권한이 없습니다.")
-        elif request.method == "PUT":
+        if request.method == "PUT":
             raise PermissionDenied(detail="질문 수정 권한이 없습니다.")
-        else:
-            raise PermissionDenied(detail="권한이 없습니다.")
+        raise PermissionDenied(detail="권한이 없습니다.")
 
     # ── GET /api/v1/qna/questions/{question_id} ──────────────────────
     @question_detail_schema
