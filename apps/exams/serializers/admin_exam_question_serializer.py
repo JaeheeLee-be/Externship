@@ -14,7 +14,7 @@ class QuestionValidateMixin:
 
 
 class ExamQuestionSwaggerSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(source="options_json")
+    options = serializers.ListField(child=serializers.CharField(), source="options_json")
     correct_answer = serializers.JSONField(source="answer")
     explanation = serializers.CharField(required=False, default="")
 
@@ -57,7 +57,7 @@ class BlankRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[
 
 
 class OrderRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(required=True, allow_null=False)
+    options = serializers.ListField(child=serializers.CharField(required=True, allow_null=False))
     correct_answer = serializers.JSONField(source="answer", required=True, allow_null=False)
     explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
@@ -72,7 +72,7 @@ class OrderRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[
 
 
 class MulAndSingleRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(required=True, allow_null=False)
+    options = serializers.ListField(child=serializers.CharField(required=True, allow_null=False))
     correct_answer = serializers.JSONField(required=True, allow_null=False)
     explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
@@ -101,7 +101,7 @@ class OXAndShortRequestSerializer(QuestionValidateMixin, serializers.ModelSerial
 
 
 class QuestionUpdateSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(required=False)
+    options = serializers.ListField(child=serializers.CharField(required=False))
     correct_answer = serializers.JSONField(source="answer", required=False)
 
     class Meta:
