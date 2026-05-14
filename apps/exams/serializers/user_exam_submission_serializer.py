@@ -1,5 +1,5 @@
 from typing import Any
-
+import json
 from rest_framework import serializers
 
 from apps.exams.models import Exam, ExamQuestion, ExamSubmission
@@ -13,9 +13,12 @@ class ExamNestedSerializer(serializers.ModelSerializer[Exam]):
 
 
 class QuestionsNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.JSONField(required=False, source="options_json")
+    options = serializers.SerializerMethodField()
     is_correct = serializers.SerializerMethodField()
     submitted_answer = serializers.SerializerMethodField()
+
+    def get_options(self, obj: ExamQuestion) -> list[str] | None:
+        return json.loads(obj.options_json) if obj.options_json else None
 
     def get_is_correct(self, obj: ExamQuestion) -> bool:
         answer_json: dict[str, list[str]] = self.context.get("answer_json", {})
