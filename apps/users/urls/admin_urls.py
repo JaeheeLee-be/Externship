@@ -6,12 +6,12 @@ from apps.users.views.admin_permission_view import AdminPermissionView
 from apps.users.views.admin_student_enrollment_view import (
     AdminEnrollmentRequestListView,
 )
+from apps.users.views.admin_student_list_view import AdminStudentListView
 from apps.users.views.admin_withdrawal_view import (
     AdminWithdrawalDetailView,
     AdminWithdrawalListView,
 )
 from apps.users.views.enrollment_accept_view import AdminStudentEnrollmentAcceptView
-from apps.users.views.admin_student_list_view import AdminStudentListView
 
 urlpatterns = [
     path("accounts", AdminAccountListView.as_view(), name="admin-account-list"),
@@ -24,5 +24,4 @@ urlpatterns = [
     path("student-enrollments", AdminEnrollmentRequestListView.as_view(), name="student-enrollment-list"),
     path("withdrawals/<int:withdrawal_id>", AdminWithdrawalDetailView.as_view(), name="admin-withdrawal-detail"),
     path("students", AdminStudentListView.as_view(), name="admin-students-list"),
-
 ]
