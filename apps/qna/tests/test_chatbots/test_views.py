@@ -5,7 +5,10 @@ from django.core.cache import cache
 from django.http import StreamingHttpResponse
 from django.urls import reverse
 
-from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
+from apps.core.utils.isolated_cache_testcase import (
+    FixedPrefixRedisTestClient,
+    IsolatedRedisTestClient,
+)
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import (
     create_test_category_and_question,
@@ -318,7 +321,7 @@ class TestQNAChatbotListAPIView(IsolatedRedisTestClient):
         self.assertEqual(response.data["results"], [])
 
 
-class TestCSChatbotAPIViewGetMethod(IsolatedRedisTestClient):
+class TestCSChatbotAPIViewGetMethod(FixedPrefixRedisTestClient):
     user: User
     url: str
 

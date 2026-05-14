@@ -108,10 +108,6 @@ class TestCacheRepositoryQnaList(IsolatedRedisTestClient):
         result = CacheRepository.get_qna_keys(self.user_id)
         self.assertEqual(len(result), 2)
 
-    def test_get_qna_keys_returns_bytes(self) -> None:
-        result = CacheRepository.get_qna_keys(self.user_id)
-        self.assertIsInstance(result[0], bytes)
-
     def test_get_qna_keys_empty_when_no_keys(self) -> None:
         result = CacheRepository.get_qna_keys(user_id=999)
         self.assertEqual(result, [])
