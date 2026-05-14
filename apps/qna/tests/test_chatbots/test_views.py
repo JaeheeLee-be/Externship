@@ -1,4 +1,4 @@
-from typing import Iterator, cast
+from typing import Any, Iterator, cast
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
@@ -282,12 +282,12 @@ class TestQNAChatbotListAPIView(IsolatedRedisTestClient):
 
     def setUp(self) -> None:
         super().setUp()
-        self.value = [
+        self.value: list[dict[str, Any]] = [
             {"role": "user", "content": "질문입니다.", "created_at": None},
             {"role": "assistant", "content": "답변입니다.", "created_at": "2026-04-23T14:30:05"},
         ]
-        cache.set(f"qna_chat:{self.user.id}:42", self.value)
-        cache.set(f"qna_chat:{self.user.id}:55", self.value)
+        CacheRepository.save_history(f"qna_chat:{self.user.id}:42", self.value, ttl=1800)
+        CacheRepository.save_history(f"qna_chat:{self.user.id}:55", self.value, ttl=1800)
 
     def tearDown(self) -> None:
         super().tearDown()
