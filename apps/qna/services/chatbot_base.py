@@ -26,7 +26,7 @@ class ChatbotBaseService:
     def _build_messages(message: str, answer: str) -> list[Message]:
         return [
             Message(role="user", content=message),
-            Message(role="assistant", content=answer, timestamp=datetime.now().isoformat()),
+            Message(role="assistant", content=answer, created_at=datetime.now().isoformat()),
         ]
 
     @staticmethod
