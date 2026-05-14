@@ -7,10 +7,13 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.exams.views.admin_exam_view import ExamListCreateView
+
 urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/posts/", include("apps.posts.urls")),
     path("api/v1/qna/", include("apps.qna.urls.urls")),
     path("api/v1/admin/qna/", include("apps.qna.urls.admin_urls")),
+    path("api/v1/admin/exams", ExamListCreateView.as_view(), name="exam-list"),
     path("api/v1/admin/exams/", include("apps.exams.admin_urls")),
     path("api/v1/accounts/", include("apps.users.urls", namespace="users")),
     path("api/v1/exams/", include("apps.exams.urls")),
