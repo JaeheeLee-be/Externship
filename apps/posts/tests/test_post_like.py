@@ -53,7 +53,8 @@ class PostLikeCreateTest(PostLikeBaseTestCase):
         response = self.client.post(self.create_url)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data, {"detail": "좋아요가 등록되었습니다."})
+        self.assertEqual(response.data["is_liked"], True)
+        self.assertEqual(response.data["like_count"], 1)
         like = Like.objects.get(user=self.liker, post=self.post)
         self.assertTrue(like.is_liked)
 
@@ -72,7 +73,8 @@ class PostLikeCreateTest(PostLikeBaseTestCase):
         response = self.client.post(self.create_url)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data, {"detail": "좋아요가 등록되었습니다."})
+        self.assertEqual(response.data["is_liked"], True)
+        self.assertEqual(response.data["like_count"], 1)
         like.refresh_from_db()
         self.assertTrue(like.is_liked)
         self.assertEqual(Like.objects.filter(user=self.liker, post=self.post).count(), 1)
@@ -108,7 +110,8 @@ class PostLikeCancelTest(PostLikeBaseTestCase):
         response = self.client.delete(self.cancel_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"detail": "좋아요가 취소되었습니다."})
+        self.assertEqual(response.data["is_liked"], False)
+        self.assertEqual(response.data["like_count"], 0)
         like.refresh_from_db()
         self.assertFalse(like.is_liked)
 
