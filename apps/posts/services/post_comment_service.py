@@ -10,6 +10,7 @@ from apps.posts.exceptions import (
 )
 from apps.posts.models.comment import PostComment, PostCommentTag
 from apps.posts.models.post import Post
+from apps.posts.services import notification_service
 from apps.users.models import User
 
 
@@ -39,15 +40,19 @@ def get_comments(post_id: int, page: int, page_size: int, base_url: str) -> dict
 
 @transaction.atomic
 def create_comment(user: User, post_id: int, content: str, tagged_user_ids: list[int]) -> PostComment:
-    if not Post.objects.filter(id=post_id).exists():
+    try:
+        post = Post.objects.get(id=post_id)  # ← filter→get으로 변경 (post 객체 필요)
+    except Post.DoesNotExist:
         raise PostNotFoundError("해당 게시글을 찾을 수 없습니다.")
 
-    comment = PostComment.objects.create(author=user, post_id=post_id, content=content)
+    comment = PostComment.objects.create(author=user, post=post, content=content)
 
     if tagged_user_ids:
         PostCommentTag.objects.bulk_create(
             [PostCommentTag(comment=comment, tagged_user_id=uid) for uid in tagged_user_ids], ignore_conflicts=True
         )
+
+    notification_service.create_notification(sender=user, post=post, comment=comment)  # ← 추가
 
     return PostComment.objects.select_related("author").prefetch_related("tags__tagged_user").get(id=comment.id)
 
