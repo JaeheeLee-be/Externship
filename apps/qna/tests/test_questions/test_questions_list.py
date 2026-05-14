@@ -371,17 +371,17 @@ class QuestionListAPIViewTest(APITestCase):
 
     # ── 인증/권한 에러 케이스 ────────────────────────────────────────
 
-    def test_비로그인_목록_조회_401(self) -> None:
+    def test_비로그인_목록_조회_200(self) -> None:
         response = self.client.get(URL)
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_general_권한_목록_조회_403(self) -> None:
+    def test_general_권한_목록_조회_200(self) -> None:
         self._force_login(self.general_user)
 
         response = self.client.get(URL)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     # ── Query Param 유효성 ───────────────────────────────────────────
 
