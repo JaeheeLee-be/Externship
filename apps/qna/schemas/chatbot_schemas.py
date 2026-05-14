@@ -1,6 +1,7 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from apps.qna.serializers.chatbot_serializers import (
+    ChatbotRequestSerializer,
     HistoryResponseSerializer,
     InitialAIAnswerSerializer,
     QNAChatbotListResponseSerializer,
@@ -40,6 +41,7 @@ qna_chatbot_post_schema = extend_schema(
     tags=["chatbot"],
     summary="qna 챗봇 대화",
     description="활성화된 채팅창에서 qna 챗봇과 질의응답을 합니다.",
+    request=ChatbotRequestSerializer,
     responses={
         200: OpenApiResponse(description="SSE 스트림 (text/event-stream)"),
         401: OpenApiResponse(description="로그인한 사용자만 이용할 수 있습니다."),
@@ -89,6 +91,7 @@ cs_chatbot_post_schema = extend_schema(
     tags=["chatbot"],
     summary="cs 챗봇 대화",
     description="활성화된 채팅창에서 cs 챗봇에게 고객지원을 받습니다.",
+    request=ChatbotRequestSerializer,
     responses={
         200: OpenApiResponse(description="SSE 스트림 (text/event-stream)"),
     },
