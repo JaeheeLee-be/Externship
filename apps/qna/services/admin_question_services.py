@@ -1,7 +1,9 @@
-from django.db.models import Count, QuerySet
+from django.db.models import Count, Exists, OuterRef, Prefetch, QuerySet, Subquery
 
 from apps.qna.exceptions import NotFoundException
+from apps.qna.models import Answer
 from apps.qna.models.question_models import Question, QuestionCategory
+from apps.users.models import CohortStudents, User
 
 
 def _get_category_path(category: QuestionCategory) -> str:
@@ -118,4 +120,146 @@ class AdminQuestionDeleteService:
             "question_id": question_id,
             "deleted_answer_count": deleted_answer_count,
             "deleted_comment_count": deleted_comment_count,
+        }
+
+
+class AdminQuestionDetailService:
+    """어드민 질문 상세 조회 서비스"""
+
+    @staticmethod
+    def get_admin_question_detail(question_id: int) -> dict[str, object]:
+        """어드민 질문 상세 조회"""
+        try:
+            # cohort_students prefetch (User 모델용)
+            cohort_students_prefetch = Prefetch(
+                "cohort_students",
+                queryset=CohortStudents.objects.select_related("cohort__course"),
+            )
+
+            # 질문 작성자의 cohort_students prefetch
+            author_prefetch = Prefetch(
+                "author",
+                queryset=User.objects.prefetch_related(cohort_students_prefetch),
+            )
+
+            # 답변 prefetch
+            answers_prefetch = Prefetch(
+                "answer_set",
+                queryset=Answer.objects.select_related("author")
+                .prefetch_related(
+                    Prefetch(
+                        "author__cohort_students",
+                        queryset=CohortStudents.objects.select_related("cohort__course"),
+                    )
+                )
+                .order_by("-is_adopted", "created_at"),
+            )
+
+            # has_answer 계산 (답변 존재 여부)
+            has_answer_subquery = Answer.objects.filter(question=OuterRef("pk"))
+
+            question = (
+                Question.objects.prefetch_related(
+                    "questionimage_set",
+                    author_prefetch,
+                    answers_prefetch,
+                )
+                .annotate(has_answer=Exists(has_answer_subquery))
+                .get(pk=question_id)
+            )
+        except Question.DoesNotExist:
+            raise NotFoundException("해당 질문을 찾을 수 없습니다.")
+
+        # 응답 데이터 구성
+        return AdminQuestionDetailService._build_response(question)
+
+    @staticmethod
+    def _build_response(question: Question) -> dict[str, object]:
+        """어드민 질문 상세 응답 데이터 구성"""
+        author = question.author
+
+        # 이미지 URL만 리스트로
+        images = [img.img_url for img in question.questionimage_set.all()]
+
+        # 작성자 course_generation
+        cohort_student = author.cohort_students.first() if hasattr(author, "cohort_students") else None
+        author_course_generation = None
+        if cohort_student and cohort_student.cohort:
+            course_name = cohort_student.cohort.course.name
+            cohort_number = cohort_student.cohort.number
+            author_course_generation = f"{course_name} {cohort_number}기" if course_name and cohort_number else None
+
+        # 답변 목록
+        answers = []
+        for answer in question.answer_set.all():
+            answer_author = answer.author
+
+            # 답변 작성자 정보
+            answer_cohort_student = (
+                answer_author.cohort_students.first() if hasattr(answer_author, "cohort_students") else None
+            )
+
+            answer_course_generation = None
+            answer_role_title = None
+
+            # course_generation 계산 (cohort_student가 있는 경우만)
+            if answer_cohort_student and answer_cohort_student.cohort:
+                course_name = answer_cohort_student.cohort.course.name
+                cohort_number = answer_cohort_student.cohort.number
+                answer_course_generation = f"{course_name} {cohort_number}기" if course_name and cohort_number else None
+
+            # 1. 조교 체크 (기수별)
+            if hasattr(answer_author, "training_assistants") and answer_author.training_assistants.exists():
+                if answer_course_generation:
+                    answer_role_title = f"{answer_course_generation} 조교"
+                else:
+                    answer_role_title = "조교"
+
+            # 2. 운영매니저 체크 (과정별)
+            elif hasattr(answer_author, "operation_managers") and answer_author.operation_managers.exists():
+                answer_role_title = "교육 운영 매니저"
+
+            # 3. 러닝코치 체크 (과정별)
+            elif hasattr(answer_author, "learning_coachs") and answer_author.learning_coachs.exists():
+                answer_role_title = "러닝 코치"
+
+            # 4. 기본 User.role 기반
+            elif answer_author.role == "ADMIN":
+                answer_role_title = "관리자"
+
+            elif answer_author.role == "STUDENT":
+                # 일반 수강생: role_title 없음 (course_generation만 표시)
+                answer_role_title = None
+
+            answers.append(
+                {
+                    "answer_id": answer.id,
+                    "author": {
+                        "profile_img_url": getattr(answer_author, "profile_img_url", None),
+                        "nickname": answer_author.nickname,
+                        "role_title": answer_role_title,
+                        "course_generation": answer_course_generation,
+                    },
+                    "content": answer.content,
+                    "is_adopted": answer.is_adopted,
+                    "created_at": answer.created_at,
+                    "updated_at": answer.updated_at,
+                }
+            )
+
+        return {
+            "question_id": question.id,
+            "title": question.title,
+            "content": question.content,
+            "images": images,
+            "author": {
+                "profile_img_url": getattr(author, "profile_img_url", None),
+                "nickname": author.nickname,
+                "course_generation": author_course_generation,
+            },
+            "view_count": question.view_count,
+            "has_answer": question.has_answer,  # type: ignore[attr-defined]
+            "created_at": question.created_at,
+            "updated_at": question.updated_at,
+            "answers": answers,
         }
