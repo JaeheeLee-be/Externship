@@ -3,6 +3,7 @@ from typing import Any, NoReturn, cast
 
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.permissions import AllowAny, BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,7 +33,10 @@ from apps.users.models import User
 
 
 class QuestionAPIView(APIView):
-    permission_classes = [IsStudentUser]
+    def get_permissions(self) -> list[BasePermission]:
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsStudentUser()]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:
@@ -149,7 +153,7 @@ class QuestionAPIView(APIView):
 class QuestionDetailAPIView(APIView):
     """질문 상세 조회/수정 API"""
 
-    permission_classes = [IsStudentUser]
+    permission_classes = [AllowAny]
 
     def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
         if not request.user.is_authenticated:

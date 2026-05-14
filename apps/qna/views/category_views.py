@@ -1,24 +1,18 @@
-from typing import Any, NoReturn
+from typing import Any
 
 from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.utils.permissions import IsStudentUser
 from apps.qna.schemas.category_schemas import category_list_schema
 from apps.qna.serializers.category_serializers import CategoryTreeSerializer
 from apps.qna.services.category_services import CategoryService
 
 
 class CategoryListAPIView(APIView):
-    permission_classes = [IsStudentUser]
-
-    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
-        if not request.user.is_authenticated:
-            raise NotAuthenticated(detail="로그인이 필요합니다.")
-        raise PermissionDenied(detail="카테고리 조회 권한이 없습니다.")
+    permission_classes = [AllowAny]
 
     @category_list_schema
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:

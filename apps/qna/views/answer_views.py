@@ -1,5 +1,6 @@
 from typing import Any, NoReturn
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import (
     NotAuthenticated,
@@ -10,6 +11,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.presigned_url.serializers import (
+    PresignedUrlRequestSerializer,
+    PresignedUrlResponseSerializer,
+)
 from apps.core.utils.permissions import IsStudentUser
 from apps.core.utils.s3 import PresignedUrlView
 from apps.core.utils.types import AuthenticatedRequest
@@ -36,6 +41,12 @@ from apps.qna.services.answer_services import (
 )
 
 
+@extend_schema(
+    tags=["Qna"],
+    summary="답변 이미지 presigned URL 발급",
+    request=PresignedUrlRequestSerializer,
+    responses={200: PresignedUrlResponseSerializer},
+)
 class AnswerPresignedUrlView(PresignedUrlView):
     """presignedurl view"""
 
