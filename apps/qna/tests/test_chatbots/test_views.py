@@ -5,10 +5,7 @@ from django.core.cache import cache
 from django.http import StreamingHttpResponse
 from django.urls import reverse
 
-from apps.core.utils.isolated_cache_testcase import (
-    FixedPrefixRedisTestClient,
-    IsolatedRedisTestClient,
-)
+from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.core.utils.test_factories import (
     create_test_category_and_question,
@@ -271,7 +268,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         self.assertEqual(history[1].role, "assistant")
 
 
-class TestQNAChatbotListAPIView(FixedPrefixRedisTestClient):
+class TestQNAChatbotListAPIView(IsolatedRedisTestClient):
     user: User
     url: str
 
@@ -321,7 +318,7 @@ class TestQNAChatbotListAPIView(FixedPrefixRedisTestClient):
         self.assertEqual(response.data["results"], [])
 
 
-class TestCSChatbotAPIViewGetMethod(FixedPrefixRedisTestClient):
+class TestCSChatbotAPIViewGetMethod(IsolatedRedisTestClient):
     user: User
     url: str
 
@@ -354,7 +351,7 @@ class TestCSChatbotAPIViewGetMethod(FixedPrefixRedisTestClient):
         self.assertEqual(response.data["results"][0]["message"], "안녕하세요")
 
 
-class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
+class TestCSChatbotAPIViewPostMethod(IsolatedRedisTestClient):
     """
     CSChatbotAPIView.post 테스트.
     뷰는 response_cs_chat(user_id, message)를 호출해 첫 청크를 미리 소비하여
