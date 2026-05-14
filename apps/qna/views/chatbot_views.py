@@ -10,27 +10,27 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.utils.types import AuthenticatedRequest
+from apps.qna.dtos import InitialQNA, Message
 from apps.qna.exceptions import BaseCustomException
+from apps.qna.redis import CacheRepository
 from apps.qna.schemas.chatbot_schemas import (
     ai_answer_get_schema,
     ai_answer_post_schema,
+    cs_chatbot_get_schema,
+    cs_chatbot_post_schema,
     qna_chatbot_get_schema,
+    qna_chatbot_list_schema,
     qna_chatbot_post_schema,
 )
 from apps.qna.serializers.chatbot_serializers import (
+    ChatbotRequestSerializer,
+    HistoryResponseSerializer,
     InitialAIAnswerSerializer,
-    QNAChatbotRequestSerializer,
-    QNAHistoryResponseSerializer,
+    QNAChatbotListResponseSerializer,
 )
-from apps.qna.services.chatbot_services import ChatbotService, InitialService
-
-StreamFn = Callable[[int, int, str], Iterator[str]]
-
-
-def build_event_stream(user_id: int, question_id: int, message: str, func: StreamFn) -> Iterator[str]:
-    for chunk in func(user_id, question_id, message):
-        yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
-    yield "data: [DONE]\n\n"
+from apps.qna.services.chatbot_cs import CSChatbotService
+from apps.qna.services.chatbot_initial_qna import InitialService
+from apps.qna.services.chatbot_qna import QNAChatbotService
 
 
 class InitialAiAnswerAPIView(APIView):
@@ -75,26 +75,86 @@ class QNAChatbotAPIView(APIView):
     @qna_chatbot_get_schema
     def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
         try:
-            history = ChatbotService.response_qna_history(request.user.id, kwargs["question_id"])
-            serializer = QNAHistoryResponseSerializer(history, many=True)
+            history = QNAChatbotService.response_qna_history(request.user.id, kwargs["question_id"])
+            serializer = HistoryResponseSerializer(history, many=True)
             return Response({"results": serializer.data}, status=status.HTTP_200_OK)
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
 
     @qna_chatbot_post_schema
     def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
-        serializer = QNAChatbotRequestSerializer(data=request.data)
+        serializer = ChatbotRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            ChatbotService.validate_qna_chat(request.user.id, kwargs["question_id"])
+            ctx = QNAChatbotService.make_qna_context(request.user.id, kwargs["question_id"])
             return StreamingHttpResponse(
-                build_event_stream(
-                    request.user.id,
-                    kwargs["question_id"],
-                    serializer.validated_data["message"],
-                    ChatbotService.response_qna_chat,
+                self._build_qna_stream(
+                    initial=ctx.initial, history=ctx.history, key=ctx.key, message=serializer.validated_data["message"]
                 ),
                 content_type="text/event-stream",
             )
         except BaseCustomException as e:
             return Response({"error_detail": str(e)}, status=e.status_code)
+
+    @staticmethod
+    def _build_qna_stream(initial: InitialQNA, history: list[Message] | None, key: str, message: str) -> Iterator[str]:
+        for chunk in QNAChatbotService.response_qna_chat(initial, history, key, message):
+            yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
+        yield "data: [DONE]\n\n"
+
+
+class QNAChatbotListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
+        raise PermissionDenied(message)
+
+    @qna_chatbot_list_schema
+    def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
+        instance = QNAChatbotService.response_qna_list(request.user.pk)
+        serializer = QNAChatbotListResponseSerializer(instance, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+
+class CSChatbotAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> NoReturn:
+        if not request.user.is_authenticated:
+            raise NotAuthenticated("로그인한 사용자만 요청할 수 있습니다.")
+        raise PermissionDenied(message)
+
+    @cs_chatbot_get_schema
+    def get(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response:
+        history = CSChatbotService.response_cs_history(request.user.id)
+        serializer = HistoryResponseSerializer(history, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
+    @cs_chatbot_post_schema
+    def post(self, request: AuthenticatedRequest, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
+        serializer = ChatbotRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        generator = CSChatbotService.response_cs_chat(
+            user_id=request.user.id, message=serializer.validated_data["message"]
+        )
+        try:
+            first = next(generator)
+        except BaseCustomException as e:
+            return Response({"error_detail": str(e)}, status=e.status_code)
+
+        return StreamingHttpResponse(
+            self._build_cs_stream(
+                generator=generator,
+                first=first,
+            ),
+            content_type="text/event-stream",
+        )
+
+    @staticmethod
+    def _build_cs_stream(generator: Iterator[str], first: str) -> Iterator[str]:
+        yield f'data: {json.dumps({"message": first}, ensure_ascii=False)}\n\n'
+        for chunk in generator:
+            yield f'data: {json.dumps({"message": chunk}, ensure_ascii=False)}\n\n'
+        yield "data: [DONE]\n\n"

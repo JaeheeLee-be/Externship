@@ -1,9 +1,12 @@
 import json
 from typing import Any
 
+from django.conf import settings
 from django.core.cache import cache
+from django_redis import get_redis_connection  # type: ignore
 
-from apps.qna.dtos import InitialQNA, Message
+from apps.qna.dtos import InitialQNA, LastQNAHistory, Message
+from apps.qna.redis import CacheFactory
 
 
 class CacheRepository:
@@ -45,3 +48,21 @@ class CacheRepository:
     def get_session(key: str) -> None | int:
         cached = cache.get(key)
         return cached if isinstance(cached, int) else None
+
+    @staticmethod
+    def get_qna_keys(user_id: int) -> list[str]:
+        redis_client = get_redis_connection("default")
+        prefix = CacheRepository._key_prefix()
+        pattern = f"{prefix}qna_chat:{user_id}:*"
+        return [k.decode("utf-8").removeprefix(prefix) for k in redis_client.scan_iter(match=pattern)]
+
+    @staticmethod
+    def _key_prefix() -> str:
+        conf = settings.CACHES["default"]
+        prefix = conf.get("KEY_PREFIX", "")
+        version = conf.get("VERSION", 1)
+        return f"{prefix}:{version}:" if prefix else f":{version}:"
+
+    @staticmethod
+    def get_many(keys: list[str]) -> dict[str, Any]:
+        return cache.get_many(keys)
