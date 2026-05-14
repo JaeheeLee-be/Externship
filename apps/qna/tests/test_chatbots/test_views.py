@@ -271,7 +271,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         self.assertEqual(history[1].role, "assistant")
 
 
-class TestQNAChatbotListAPIView(FixedPrefixRedisTestClient):
+class TestQNAChatbotListAPIView(IsolatedRedisTestClient):
     user: User
     url: str
 
@@ -354,7 +354,7 @@ class TestCSChatbotAPIViewGetMethod(FixedPrefixRedisTestClient):
         self.assertEqual(response.data["results"][0]["message"], "안녕하세요")
 
 
-class TestCSChatbotAPIViewPostMethod(FixedPrefixRedisTestClient):
+class TestCSChatbotAPIViewPostMethod(IsolatedRedisTestClient):
     """
     CSChatbotAPIView.post 테스트.
     뷰는 response_cs_chat(user_id, message)를 호출해 첫 청크를 미리 소비하여

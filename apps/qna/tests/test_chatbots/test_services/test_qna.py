@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
 
-from apps.core.utils.isolated_cache_testcase import FixedPrefixRedisTestClient
+from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.core.utils.test_factories import MockedAIResponse as Res
 from apps.qna.chatbot.exceptions import GroqAPIError, GroqTimeoutError
 from apps.qna.dtos import InitialQNA, Message, QNAChatbotContext
@@ -19,7 +19,7 @@ from apps.qna.redis.keys import INITIAL_KEY, QNA_KEY, SESSION_KEY
 from apps.qna.services.chatbot_qna import QNAChatbotService
 
 
-class TestQNAChatbotService(FixedPrefixRedisTestClient):
+class TestQNAChatbotService(IsolatedRedisTestClient):
     user_id: int = 1
     question_id: int = 100
     lines: list[str]
@@ -212,7 +212,7 @@ class TestQNAChatbotService(FixedPrefixRedisTestClient):
             )
 
 
-class TestGetQnaList(FixedPrefixRedisTestClient):
+class TestGetQnaList(IsolatedRedisTestClient):
 
     def setUp(self) -> None:
         super().setUp()

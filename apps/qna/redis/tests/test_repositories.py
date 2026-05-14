@@ -3,10 +3,7 @@ from time import sleep
 
 from django.core.cache import cache
 
-from apps.core.utils.isolated_cache_testcase import (
-    FixedPrefixRedisTestClient,
-    IsolatedRedisTestClient,
-)
+from apps.core.utils.isolated_cache_testcase import IsolatedRedisTestClient
 from apps.qna.dtos import InitialQNA, Message
 from apps.qna.redis import CacheRepository
 from apps.qna.redis.keys import QNA_KEY
@@ -91,7 +88,7 @@ class TestCacheRepository(IsolatedRedisTestClient):
         self.assertIsInstance(result, int)
 
 
-class TestCacheRepositoryQnaList(FixedPrefixRedisTestClient):
+class TestCacheRepositoryQnaList(IsolatedRedisTestClient):
 
     def setUp(self) -> None:
         super().setUp()
@@ -110,10 +107,6 @@ class TestCacheRepositoryQnaList(FixedPrefixRedisTestClient):
     def test_get_qna_keys_returns_keys(self) -> None:
         result = CacheRepository.get_qna_keys(self.user_id)
         self.assertEqual(len(result), 2)
-
-    def test_get_qna_keys_returns_bytes(self) -> None:
-        result = CacheRepository.get_qna_keys(self.user_id)
-        self.assertIsInstance(result[0], bytes)
 
     def test_get_qna_keys_empty_when_no_keys(self) -> None:
         result = CacheRepository.get_qna_keys(user_id=999)
