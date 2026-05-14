@@ -1,5 +1,6 @@
-from typing import Any
 import json
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.exams.models import Exam, ExamQuestion, ExamSubmission
