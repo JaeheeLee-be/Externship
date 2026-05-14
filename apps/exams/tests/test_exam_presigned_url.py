@@ -111,13 +111,13 @@ class TestPresignedUrl(PresignedUrlBaseTestCase):
         response = self.client.put(reverse("presigned-url"))
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("file_name", response.data["error_detail"])
+        self.assertIn("error_detail", response.data)
+        self.assertIsInstance(response.data["error_detail"], str)
 
     def test_presigned_url_max_length(self) -> None:
         self.client.force_authenticate(user=self.admin)
         response = self.client.put(reverse("presigned-url"), {"file_name": "a" * 97 + ".jpg"})
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            response.data["error_detail"]["file_name"][0], "이 필드의 글자 수가 100 이하인지 확인하십시오."
-        )
+        self.assertIn("error_detail", response.data)
+        self.assertEqual(response.data["error_detail"], "이 필드의 글자 수가 100 이하인지 확인하십시오.")

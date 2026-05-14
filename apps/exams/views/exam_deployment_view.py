@@ -16,7 +16,6 @@ from apps.exams.exceptions.exam_deployment_exception import (
     ExamDeploymentInvalidRequestError,
     ExamDeploymentNotFoundError,
     ExamDeploymentNotYetOpenError,
-    ExamDeploymentUserNotFoundError,
 )
 from apps.exams.serializers.exam_deployment_serializer import (
     ExamDeploymentCheckSerializer,
@@ -67,10 +66,7 @@ class ExamDeploymentListView(APIView):
             e = ExamDeploymentInvalidRequestError()
             return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            exam_list = get_deployment_list_for_user(request.user, query_serializer.validated_data["status"])
-        except ExamDeploymentUserNotFoundError as e:
-            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        exam_list = get_deployment_list_for_user(request.user, query_serializer.validated_data["status"])
 
         paginator = ExamDeploymentPagination()
         page: list[Any] | None = paginator.paginate_queryset(exam_list, request)  # type: ignore[arg-type]

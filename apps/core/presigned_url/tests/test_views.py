@@ -92,6 +92,19 @@ class TestPresignedUrlView(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {"error_detail": "지원하지 않는 파일 형식입니다."})
 
+    # 요청 바디가 비어있는 경우 400을 반환하는지
+    def test_missing_file_name_returns_400(self) -> None:
+        request = self.factory.put(
+            path="test/",
+            data={},
+            format="json",
+        )
+        response = self.view(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error_detail", response.data)
+        self.assertIsInstance(response.data["error_detail"], str)
+
     # post 요청일 때도 잘 작동하는지
     def test_post_request(self) -> None:
         request = self.factory.post(

@@ -8,15 +8,14 @@ from apps.exams.exceptions.exam_deployment_exception import (
     ExamDeploymentInfoNotFoundError,
     ExamDeploymentNotFoundError,
     ExamDeploymentNotYetOpenError,
-    ExamDeploymentUserNotFoundError,
 )
 from apps.exams.models import ExamDeployment, ExamSubmission
 from apps.users.models import CohortStudents
 
 
 def get_deployment_list_for_user(user: Any, status_filter: str) -> list[ExamDeployment]:
-    if not CohortStudents.objects.filter(user=user).exists():
-        raise ExamDeploymentUserNotFoundError()
+    if user.role != "ADMIN" and not CohortStudents.objects.filter(user=user).exists():
+        return []
 
     deployment = ExamDeployment.objects.filter(
         cohort__cohortstudents__user=user, status=ExamDeployment.ExamStatus.ON

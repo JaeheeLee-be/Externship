@@ -327,12 +327,12 @@ class TestExamDeploymentList(ExamDeploymentBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data.get("error_detail"), "권한이 없습니다.")
 
-    def test_admin_list_not_in_cohort_404(self) -> None:
-        """어드민은 권한 통과하지만 기수 미등록 → 404"""
+    def test_admin_list_not_in_cohort_200(self) -> None:
+        """어드민은 기수 미등록이어도 빈 목록 200 반환"""
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data.get("error_detail"), "사용자 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("results"), [])
 
     def test_unauth_list_unauthorized(self) -> None:
         """비로그인 401"""
@@ -341,12 +341,12 @@ class TestExamDeploymentList(ExamDeploymentBaseTestCase):
         self.assertEqual(response.data.get("error_detail"), "자격 인증 데이터가 제공되지 않았습니다.")
 
     # 기능 실패 테스트
-    def test_list_student_not_in_cohort_404(self) -> None:
-        """기수에 속하지 않은 학생 → 404"""
+    def test_list_student_not_in_cohort_200(self) -> None:
+        """기수에 속하지 않은 학생 → 빈 목록 200 반환"""
         self.client.force_authenticate(user=self.student_no_cohort)
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data.get("error_detail"), "사용자 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("results"), [])
 
     # 기능 성공 테스트
     def test_list_returns_only_on_status(self) -> None:
