@@ -13,6 +13,7 @@ from apps.posts.exceptions import (
     PostLikeNotRegisteredError,
     PostLikePostNotFoundError,
 )
+from apps.posts.serializers.post_like_serializer import PostLikeResponseSerializer
 from apps.posts.services.post_like_service import cancel_post_like, create_post_like
 from apps.users.models import User
 
@@ -75,24 +76,12 @@ class PostLikeCreateView(PostLikeAPIView):
     )
     def post(self, request: Request, post_id: int) -> Response:
         try:
-            create_post_like(
-                user=cast(User, request.user),
-                post_id=post_id,
-            )
+            result = create_post_like(user=cast(User, request.user), post_id=post_id)
         except PostLikePostNotFoundError as e:
-            return Response(
-                {"error_detail": str(e)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except PostAlreadyLikedError as e:
-            return Response(
-                {"error_detail": str(e)},
-                status=status.HTTP_409_CONFLICT,
-            )
-        return Response(
-            {"detail": "좋아요가 등록되었습니다."},
-            status=status.HTTP_201_CREATED,
-        )
+            return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
+        return Response(PostLikeResponseSerializer(result).data, status=status.HTTP_201_CREATED)
 
 
 class PostLikeCancelView(PostLikeAPIView):
@@ -136,16 +125,7 @@ class PostLikeCancelView(PostLikeAPIView):
     )
     def delete(self, request: Request, post_id: int) -> Response:
         try:
-            cancel_post_like(
-                user=cast(User, request.user),
-                post_id=post_id,
-            )
+            result = cancel_post_like(user=cast(User, request.user), post_id=post_id)
         except (PostLikePostNotFoundError, PostLikeNotRegisteredError) as e:
-            return Response(
-                {"error_detail": str(e)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(
-            {"detail": "좋아요가 취소되었습니다."},
-            status=status.HTTP_200_OK,
-        )
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(PostLikeResponseSerializer(result).data, status=status.HTTP_200_OK)

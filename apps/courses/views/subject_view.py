@@ -6,6 +6,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.presigned_url.serializers import (
+    PresignedUrlRequestSerializer,
+    PresignedUrlResponseSerializer,
+)
 from apps.core.utils.permissions import IsRoleAdminUser
 from apps.core.utils.s3 import PresignedUrlView
 from apps.courses.serializers.subject_serializer import (
@@ -143,6 +147,12 @@ class SubjectDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    tags=["Admin - Subject"],
+    summary="과목 이미지 presigned URL 발급",
+    request=PresignedUrlRequestSerializer,
+    responses={200: PresignedUrlResponseSerializer},
+)
 class SubjectPresignedUrlView(PresignedUrlView):
     permission_classes = [IsRoleAdminUser]
     path = "uploads/images/subjects/"

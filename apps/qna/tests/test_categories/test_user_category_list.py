@@ -97,10 +97,10 @@ class CategoryListAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["categories"], [])
 
-    # 비로그인 접근 실패
-    def test_fail_when_not_authenticated(self) -> None:
+    # 비로그인도 카테고리 목록 조회 가능
+    def test_unauthenticated_can_view_categories(self) -> None:
         self.client.force_authenticate(user=None)
 
         response = self.client.get(self.url)
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

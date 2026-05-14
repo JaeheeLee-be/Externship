@@ -266,22 +266,22 @@ class QuestionDetailAPIViewTest(APITestCase):
 
     # ── 권한 테스트 ──────────────────────────────────────────────────
 
-    def test_비로그인_사용자_접근_불가_401(self) -> None:
-        """로그인하지 않은 사용자는 접근 불가"""
+    def test_비로그인_사용자_질문_상세_조회_가능(self) -> None:
+        """비로그인 사용자도 질문 상세 조회 가능"""
         url = f"/api/v1/qna/questions/{self.question.id}"
 
         response = self.client.get(url)
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_GENERAL_권한_사용자_접근_불가_403(self) -> None:
-        """GENERAL 권한 사용자는 접근 불가"""
+    def test_GENERAL_권한_사용자_질문_상세_조회_가능(self) -> None:
+        """GENERAL 권한 사용자도 질문 상세 조회 가능"""
         self.client.force_authenticate(user=self.general_user)
         url = f"/api/v1/qna/questions/{self.question.id}"
 
         response = self.client.get(url)
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_ADMIN_권한_사용자_접근_가능(self) -> None:
         """ADMIN 권한 사용자는 접근 가능"""
