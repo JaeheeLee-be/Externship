@@ -64,6 +64,6 @@ class CacheRepository:
         return f"{prefix}:{version}:" if prefix else f":{version}:"
 
     @staticmethod
-    def get_many(keys: list[str]) -> dict[str, str]:
+    def get_many(keys: list[str]) -> dict[str, Any]:
         raw_dict = cache.get_many(keys)
         return {k: json.loads(v) for k, v in raw_dict.items() if v is not None}
