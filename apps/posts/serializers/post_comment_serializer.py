@@ -16,13 +16,27 @@ class TaggedUserSerializer(serializers.Serializer[Any]):
     nickname = serializers.CharField()
 
 
-class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
+class ReplySerializer(serializers.ModelSerializer[PostComment]):
     author = CommentAuthorSerializer(read_only=True)
     tagged_users = serializers.SerializerMethodField()
 
     class Meta:
         model = PostComment
         fields = ["id", "author", "tagged_users", "content", "created_at", "updated_at"]
+
+    def get_tagged_users(self, obj: PostComment) -> Any:
+        tags = obj.tags.all()
+        return TaggedUserSerializer([tag.tagged_user for tag in tags], many=True).data
+
+
+class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
+    author = CommentAuthorSerializer(read_only=True)
+    tagged_users = serializers.SerializerMethodField()
+    replies = ReplySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PostComment
+        fields = ["id", "author", "tagged_users", "content", "created_at", "updated_at", "replies"]
 
     def get_tagged_users(self, obj: PostComment) -> Any:
         tags = obj.tags.all()

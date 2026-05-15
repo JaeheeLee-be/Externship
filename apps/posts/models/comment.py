@@ -7,6 +7,7 @@ from apps.core.models import TimeStampModel
 class PostComment(TimeStampModel):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
     post = models.ForeignKey("posts.Post", on_delete=models.CASCADE, related_name="comments")
+    parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
     content = models.CharField(max_length=300)
 
     class Meta:

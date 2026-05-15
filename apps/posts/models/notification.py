@@ -7,12 +7,8 @@ from apps.posts.models.post import Post
 
 
 class Notification(TimeStampModel):
-    recipient = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
-    )
-    sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_notifications"
-    )
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_notifications")
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="notifications")
     comment = models.ForeignKey(PostComment, on_delete=models.CASCADE, related_name="notifications")
     is_read = models.BooleanField(default=False)

@@ -31,7 +31,7 @@ class NotificationBaseTest(APITestCase):
         return PostComment.objects.create(author=author, post=self.post, content=content)
 
     def _make_notification(
-            self, recipient: User, sender: User, comment: PostComment, *, is_read: bool = False
+        self, recipient: User, sender: User, comment: PostComment, *, is_read: bool = False
     ) -> Notification:
         return Notification.objects.create(
             recipient=recipient,
@@ -53,9 +53,7 @@ class CreateNotificationTest(NotificationBaseTest):
 
         create_notification(sender=self.commenter, post=self.post, comment=comment)
 
-        self.assertTrue(
-            Notification.objects.filter(recipient=self.author, sender=self.commenter).exists()
-        )
+        self.assertTrue(Notification.objects.filter(recipient=self.author, sender=self.commenter).exists())
 
     def test_author_self_comment_no_notification(self) -> None:
         comment = self._make_comment(self.author, content="내 글에 내가 댓글")
@@ -70,20 +68,14 @@ class CreateNotificationTest(NotificationBaseTest):
 
         create_notification(sender=self.commenter, post=self.post, comment=comment)
 
-        self.assertTrue(
-            Notification.objects.filter(
-                recipient=self.other_commenter, sender=self.commenter
-            ).exists()
-        )
+        self.assertTrue(Notification.objects.filter(recipient=self.other_commenter, sender=self.commenter).exists())
 
     def test_sender_does_not_receive_own_notification(self) -> None:
         comment = self._make_comment(self.commenter)
 
         create_notification(sender=self.commenter, post=self.post, comment=comment)
 
-        self.assertFalse(
-            Notification.objects.filter(recipient=self.commenter).exists()
-        )
+        self.assertFalse(Notification.objects.filter(recipient=self.commenter).exists())
 
     def test_duplicate_commenter_notified_once(self) -> None:
 
@@ -93,9 +85,7 @@ class CreateNotificationTest(NotificationBaseTest):
 
         create_notification(sender=self.commenter, post=self.post, comment=comment)
 
-        count = Notification.objects.filter(
-            recipient=self.other_commenter, sender=self.commenter
-        ).count()
+        count = Notification.objects.filter(recipient=self.other_commenter, sender=self.commenter).count()
         self.assertEqual(count, 1)
 
 

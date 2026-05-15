@@ -7,6 +7,7 @@ from apps.posts.exceptions import (
     CommentNotFoundError,
     CommentPermissionDeniedError,
     PostNotFoundError,
+    ReplyDepthError,
 )
 from apps.posts.models.comment import PostComment, PostCommentTag
 from apps.posts.models.post import Post
@@ -22,7 +23,9 @@ def get_comments(post_id: int, page: int, page_size: int, base_url: str) -> dict
     page_size = max(page_size, 1)
     offset = (page - 1) * page_size
 
-    qs = PostComment.objects.filter(post_id=post_id).select_related("author").prefetch_related("tags__tagged_user")
+    qs = PostComment.objects.filter(post_id=post_id, parent__isnull=True).prefetch_related(
+        "tags__tagged_user", "replies__author", "replies__tags__tagged_user"
+    )
 
     total_count = qs.count()
     comments = qs[offset : offset + page_size]
@@ -39,20 +42,31 @@ def get_comments(post_id: int, page: int, page_size: int, base_url: str) -> dict
 
 
 @transaction.atomic
-def create_comment(user: User, post_id: int, content: str, tagged_user_ids: list[int]) -> PostComment:
+def create_comment(
+    user: User, post_id: int, content: str, tagged_user_ids: list[int], parent_id: int | None = None
+) -> PostComment:
     try:
-        post = Post.objects.get(id=post_id)  # ← filter→get으로 변경 (post 객체 필요)
+        post = Post.objects.get(id=post_id)
     except Post.DoesNotExist:
         raise PostNotFoundError("해당 게시글을 찾을 수 없습니다.")
 
-    comment = PostComment.objects.create(author=user, post=post, content=content)
+    parent = None
+    if parent_id is not None:
+        try:
+            parent = PostComment.objects.get(id=parent_id, post=post)
+        except PostComment.DoesNotExist:
+            raise CommentNotFoundError("해당 댓글을 찾을 수 없습니다.")
+        if parent.parent_id is not None:
+            raise ReplyDepthError("대댓글에는 답글을 달 수 없습니다.")
+
+    comment = PostComment.objects.create(author=user, post=post, content=content, parent=parent)
 
     if tagged_user_ids:
         PostCommentTag.objects.bulk_create(
             [PostCommentTag(comment=comment, tagged_user_id=uid) for uid in tagged_user_ids], ignore_conflicts=True
         )
 
-    notification_service.create_notification(sender=user, post=post, comment=comment)  # ← 추가
+    notification_service.create_notification(sender=user, post=post, comment=comment, parent_comment=parent)
 
     return PostComment.objects.select_related("author").prefetch_related("tags__tagged_user").get(id=comment.id)
 
