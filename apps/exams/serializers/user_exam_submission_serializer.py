@@ -103,7 +103,7 @@ class AnswerItemSerializer(serializers.Serializer[Any]):
     type = serializers.ChoiceField(
         choices=["single_choice", "multiple_choice", "short_answer", "fill_blank", "ox", "ordering"]
     )
-    submitted_answer = serializers.JSONField(required=False)
+    submitted_answer = serializers.JSONField(required=False, default=list)
 
 
 class UserExamSubmissionCreateSerializer(serializers.Serializer[Any]):

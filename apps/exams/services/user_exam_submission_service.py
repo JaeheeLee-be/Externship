@@ -10,7 +10,7 @@ from apps.exams.models import ExamDeployment, ExamSubmission
 
 def get_submission_detail(submitter: int, submission_id: int) -> ExamSubmission:
     try:
-        return ExamSubmission.objects.select_related("deployment__exam__subject").get(
+        return ExamSubmission.objects.select_related("deployment__exam").get(
             submitter=submitter, id=submission_id
         )
     except ExamSubmission.DoesNotExist:
@@ -38,7 +38,7 @@ def create_submission(submitter_id: int, validated_data: dict[str, Any]) -> Exam
 
     for answer in answers:
         q_id = str(answer["question_id"])
-        submitted = answer["submitted_answer"]
+        submitted = answer.get("submitted_answer") or []
         submitted_list = [submitted] if isinstance(submitted, str) else list(submitted)
         answer_json[q_id] = submitted_list
 
