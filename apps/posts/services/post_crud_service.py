@@ -24,7 +24,7 @@ def list_posts(
     sort: str = "latest",
 ) -> QuerySet[Post]:
     queryset = Post.objects.annotate(
-        like_count=Count("likes", distinct=True),
+        like_count=Count("likes", filter=Q(likes__is_liked=True), distinct=True),
         comment_count=Count("comments", distinct=True),
     ).select_related("author", "category")
 
@@ -50,7 +50,9 @@ def create_post(author: User, validated_data: dict[str, Any]) -> Post:
 
 def get_post(post_id: int) -> Post:
     try:
-        return Post.objects.get(pk=post_id)
+        return Post.objects.annotate(
+            like_count=Count("likes", filter=Q(likes__is_liked=True), distinct=True),
+        ).get(pk=post_id)
     except Post.DoesNotExist:
         raise PostNotFoundError("해당 게시글을 찾을 수 없습니다.")
 
