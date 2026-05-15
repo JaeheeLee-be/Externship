@@ -55,7 +55,6 @@ class CourseListView(APIView):
     ) -> NoReturn:
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
-
     @extend_schema(
         tags=["courses"],
         summary="과정 리스트 조회",
