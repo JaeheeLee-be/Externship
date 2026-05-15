@@ -61,6 +61,7 @@ class TestPresignedUrlResponseSerializer(TestCase):
             "presigned_url": "https://test/uuid.jpg?Sign",
             "img_url": "https://test/uuid.jpg",
             "key": "test/uuid.jpg",
+            "content_type": "image/jpeg",
         }
 
     # valid한 인스턴스를 넣었을 때 의도한 값이 나오는지

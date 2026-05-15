@@ -47,3 +47,4 @@ class PresignedUrlResponseSerializer(serializers.Serializer[Any]):
     presigned_url = serializers.CharField()
     img_url = serializers.CharField(max_length=255)
     key = serializers.CharField()
+    content_type = serializers.CharField()

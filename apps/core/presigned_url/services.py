@@ -15,7 +15,7 @@ class PresignedUrlService:
         presigned_url = s3_handler.presigned_url_for_upload(key, content_type, expire)
         img_url = s3_handler.img_url(key)
 
-        return {"presigned_url": presigned_url, "img_url": img_url, "key": key}
+        return {"presigned_url": presigned_url, "img_url": img_url, "key": key, "content_type": content_type}
 
     # key: 파일명을 포함한 저장경로. ex) uploads/images/questions/uuid.png
     @classmethod

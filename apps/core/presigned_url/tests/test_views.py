@@ -78,7 +78,7 @@ class TestPresignedUrlView(TestCase):
         self.assertIn("presigned_url", response.data)
         self.assertIn("img_url", response.data)
         self.assertIn("key", response.data)
-        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key"})
+        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key", "content_type"})
 
     # request의 file_name이 올바르지 않은 경우 에러를 내는지
     def test_invalid_request(self) -> None:
@@ -118,4 +118,4 @@ class TestPresignedUrlView(TestCase):
         self.assertIn("presigned_url", response.data)
         self.assertIn("img_url", response.data)
         self.assertIn("key", response.data)
-        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key"})
+        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key", "content_type"})

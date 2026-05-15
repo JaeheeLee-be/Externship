@@ -86,7 +86,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         )
         cls.data = {
             "question": "test",
-            "correct_answer": [{"answer": 1}],
+            "correct_answer": ["답변"],
             "type": ExamQuestion.QuestionType.SHORT_ANSWER,
             "point": 5,
         }
@@ -101,13 +101,13 @@ class TestAdminExamQuestionCreateView(APITestCase):
         cls.create_fail_for_400 = {"question": "tete", "correct_answer": {"answer": 1}, "point": 5}
         cls.update_data = {
             "question": "mod_test",
-            "correct_answer": [{"answer": 5}],
+            "correct_answer": ["수정된답변"],
             "type": ExamQuestion.QuestionType.SHORT_ANSWER,
             "point": 5,
         }
         cls.update_fail_point_data = {
             "question": "mod_test",
-            "correct_answer": [{"answer": 5}],
+            "correct_answer": ["수정된답변"],
             "type": ExamQuestion.QuestionType.SHORT_ANSWER,
             "point": 9,
         }
