@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
@@ -68,6 +69,7 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
 
     def test_response_qna_history_prepends_initial_to_existing_history(self) -> None:
         history = [
+            Message(role="assistant", content=self.initial.answer),  # 이니셜이 첫번째로
             Message(role="user", content="질문입니다."),
             Message(role="assistant", content="답변입니다."),
         ]
@@ -78,7 +80,7 @@ class TestQNAChatbotService(IsolatedRedisTestClient):
         )
         result = QNAChatbotService.response_qna_history(self.user_id, self.question_id)
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0].content, self.initial.answer)  # initial이 맨 앞
+        self.assertEqual(result[0].content, self.initial.answer)
         self.assertEqual(result[1].content, "질문입니다.")
 
     def test_make_qna_context_raises_403_when_session_invalid(self) -> None:
@@ -217,12 +219,12 @@ class TestGetQnaList(IsolatedRedisTestClient):
     def setUp(self) -> None:
         super().setUp()
         self.user_id = 1
-        self.value = [
+        self.value: list[dict[str, Any]] = [
             {"role": "user", "content": "질문입니다.", "created_at": None},
             {"role": "assistant", "content": "답변입니다.", "created_at": "2026-04-23T14:30:05"},
         ]
-        cache.set(f"qna_chat:{self.user_id}:42", self.value)
-        cache.set(f"qna_chat:{self.user_id}:55", self.value)
+        CacheRepository.save_history(f"qna_chat:{self.user_id}:42", self.value, ttl=1800)
+        CacheRepository.save_history(f"qna_chat:{self.user_id}:55", self.value, ttl=1800)
 
     def tearDown(self) -> None:
         super().tearDown()

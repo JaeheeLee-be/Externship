@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from typing import Iterator
 
 from apps.qna.chatbot import GROQ_MODEL, QNA_PROMPT, GroqPayloadFactory
@@ -74,8 +75,13 @@ class QNAChatbotService(ChatbotBaseService):
     @staticmethod
     def _return_qna_history(user_id: int, question_id: int, initial: InitialQNA) -> list[Message]:
         QNAChatbotService._make_session(user_id, question_id)
-        history = CacheRepository.get_history(QNA_KEY.format(user_id=user_id, question_id=question_id))
-        return [Message(role="assistant", content=initial.answer), *(history or [])]
+        key = QNA_KEY.format(user_id=user_id, question_id=question_id)
+        history = CacheRepository.get_history(key)
+        if not history:
+            initial_message = Message(role="assistant", content=initial.answer, created_at=str(initial.created_at))
+            CacheRepository.save_history(key, [asdict(initial_message)], QNAChatbotService.QNA_TTL)
+            history = [initial_message]
+        return history
 
     @staticmethod
     def _make_session(user_id: int, question_id: int) -> None:

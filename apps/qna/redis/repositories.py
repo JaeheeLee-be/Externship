@@ -29,7 +29,7 @@ class CacheRepository:
         return [Message(**m) for m in json.loads(cached)]
 
     @staticmethod
-    def save_history(key: str, history: list[dict[str, str]], ttl: int) -> None:
+    def save_history(key: str, history: list[dict[str, Any]], ttl: int) -> None:
         cache.set(key, json.dumps(history), timeout=ttl)
 
     @staticmethod
@@ -65,4 +65,5 @@ class CacheRepository:
 
     @staticmethod
     def get_many(keys: list[str]) -> dict[str, Any]:
-        return cache.get_many(keys)
+        raw_dict = cache.get_many(keys)
+        return {k: json.loads(v) for k, v in raw_dict.items() if v is not None}
