@@ -45,4 +45,4 @@ class TestS3(TestCase):
         response = self.view(request)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key"})
+        self.assertEqual(set(response.data.keys()), {"presigned_url", "img_url", "key", "content_type"})

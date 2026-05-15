@@ -7,7 +7,7 @@ from apps.exams.models.exam_question_model import ExamQuestion
 
 
 class QuestionValidateMixin:
-    def validate_correct_answer(self, correct_answer: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_correct_answer(self, correct_answer: Any) -> Any:
         if not correct_answer:
             raise serializers.ValidationError()
         return correct_answer
@@ -73,7 +73,7 @@ class OrderRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[
 
 class MulAndSingleRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
     options = serializers.ListField(child=serializers.CharField(required=True, allow_null=False))
-    correct_answer = serializers.JSONField(required=True, allow_null=False)
+    correct_answer = serializers.ListField(child=serializers.CharField(), required=True, allow_null=False)
     explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
     class Meta:
@@ -87,7 +87,7 @@ class MulAndSingleRequestSerializer(QuestionValidateMixin, serializers.ModelSeri
 
 
 class OXAndShortRequestSerializer(QuestionValidateMixin, serializers.ModelSerializer[ExamQuestion]):
-    correct_answer = serializers.JSONField(required=True)
+    correct_answer = serializers.ListField(child=serializers.CharField(), required=True)
     explanation = serializers.CharField(required=False, allow_null=True, allow_blank=True, default="")
 
     class Meta:

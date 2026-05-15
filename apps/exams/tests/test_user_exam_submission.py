@@ -149,8 +149,28 @@ class BaseTestCase(APITestCase):
             open_at="2024-01-01T00:00:00Z",
             close_at="2024-12-31T23:59:59Z",
             questions_snapshot_json=[
-                {"id": cls.question1.id, "question": "HTML의 약자는?", "point": 5},
-                {"id": cls.question2.id, "question": "div 태그의 용도는?", "point": 5},
+                {
+                    "id": cls.question1.id,
+                    "question": "HTML의 약자는?",
+                    "prompt": None,
+                    "blank_count": None,
+                    "options_json": '["HyperText Markup Language", "High Tech ML", "Hyper Transfer ML"]',
+                    "type": "single_choice",
+                    "answer": ["HyperText Markup Language"],
+                    "point": 5,
+                    "explanation": "HTML은 HyperText Markup Language의 약자입니다.",
+                },
+                {
+                    "id": cls.question2.id,
+                    "question": "div 태그의 용도는?",
+                    "prompt": None,
+                    "blank_count": None,
+                    "options_json": None,
+                    "type": "short_answer",
+                    "answer": ["영역 나누기"],
+                    "point": 5,
+                    "explanation": "div는 블록 레벨 컨테이너입니다.",
+                },
             ],
         )
         cls.deployment2 = ExamDeployment.objects.create(
@@ -160,8 +180,28 @@ class BaseTestCase(APITestCase):
             open_at="2024-03-01T00:00:00Z",
             close_at="2025-02-28T23:59:59Z",
             questions_snapshot_json=[
-                {"id": cls.question3.id, "question": "파이썬의 자료형을 모두 고르시오", "point": 4},
-                {"id": cls.question4.id, "question": "___는 파이썬의 패키지 관리자이다", "point": 6},
+                {
+                    "id": cls.question3.id,
+                    "question": "파이썬의 자료형을 모두 고르시오",
+                    "prompt": None,
+                    "blank_count": None,
+                    "options_json": '["int", "str", "html", "list"]',
+                    "type": "multiple_choice",
+                    "answer": ["int", "str", "list"],
+                    "point": 4,
+                    "explanation": "html은 파이썬 자료형이 아닙니다.",
+                },
+                {
+                    "id": cls.question4.id,
+                    "question": "___는 파이썬의 패키지 관리자이다",
+                    "prompt": "___는 파이썬의 패키지 관리자이다",
+                    "blank_count": 1,
+                    "options_json": None,
+                    "type": "fill_blank",
+                    "answer": ["pip"],
+                    "point": 6,
+                    "explanation": "pip는 파이썬의 기본 패키지 관리자입니다.",
+                },
             ],
         )
 
