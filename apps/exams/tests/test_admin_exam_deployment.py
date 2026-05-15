@@ -82,7 +82,7 @@ class DeploymentBaseTestCase(APITestCase):
         ExamQuestion.objects.create(
             exam=cls.exam,
             question="테스트문제",
-            answer={"answer": 1},
+            answer=["정답"],
             type=ExamQuestion.QuestionType.SHORT_ANSWER,
             point=10,
         )

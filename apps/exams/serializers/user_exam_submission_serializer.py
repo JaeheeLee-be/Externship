@@ -3,7 +3,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.exams.models import Exam, ExamQuestion, ExamSubmission
+from apps.exams.models import Exam, ExamSubmission
 
 
 class ExamNestedSerializer(serializers.ModelSerializer[Exam]):
@@ -11,40 +11,6 @@ class ExamNestedSerializer(serializers.ModelSerializer[Exam]):
         model = Exam
         fields = ["id", "title", "thumbnail_img_url"]
         read_only_fields = ["id", "title", "thumbnail_img_url"]
-
-
-class QuestionsNestedSerializer(serializers.ModelSerializer[ExamQuestion]):
-    options = serializers.SerializerMethodField()
-    is_correct = serializers.SerializerMethodField()
-    submitted_answer = serializers.SerializerMethodField()
-
-    def get_options(self, obj: ExamQuestion) -> list[str] | None:
-        return json.loads(obj.options_json) if obj.options_json else None
-
-    def get_is_correct(self, obj: ExamQuestion) -> bool:
-        answer_json: dict[str, list[str]] = self.context.get("answer_json", {})
-        submitted: list[str] = answer_json.get(str(obj.id), [])
-        return bool(submitted == obj.answer)
-
-    def get_submitted_answer(self, obj: ExamQuestion) -> list[str]:
-        answer_json: dict[str, list[str]] = self.context.get("answer_json", {})
-        return answer_json.get(str(obj.id), [])
-
-    class Meta:
-        model = ExamQuestion
-        fields = [
-            "id",
-            "question",
-            "prompt",
-            "blank_count",
-            "options",
-            "type",
-            "answer",
-            "point",
-            "explanation",
-            "is_correct",
-            "submitted_answer",
-        ]
 
 
 class UserExamSubmissionGetSerializer(serializers.ModelSerializer[ExamSubmission]):
@@ -55,9 +21,28 @@ class UserExamSubmissionGetSerializer(serializers.ModelSerializer[ExamSubmission
     elapsed_time = serializers.SerializerMethodField()
 
     def get_questions(self, obj: ExamSubmission) -> list[dict[str, Any]]:
-        queryset = ExamQuestion.objects.filter(exam=obj.deployment.exam)
-        serializer = QuestionsNestedSerializer(queryset, many=True, context={"answer_json": obj.answer_json})
-        return list(serializer.data)
+        answer_json: dict[str, list[str]] = obj.answer_json
+        result = []
+        for q in obj.deployment.questions_snapshot_json:
+            q_id = str(q["id"])
+            submitted = answer_json.get(q_id, [])
+            options_json = q.get("options_json")
+            result.append(
+                {
+                    "id": q["id"],
+                    "question": q["question"],
+                    "prompt": q.get("prompt"),
+                    "blank_count": q.get("blank_count"),
+                    "options": json.loads(options_json) if options_json else None,
+                    "type": q.get("type"),
+                    "answer": q.get("answer"),
+                    "point": q["point"],
+                    "explanation": q.get("explanation", ""),
+                    "is_correct": submitted == q.get("answer", []),
+                    "submitted_answer": submitted,
+                }
+            )
+        return result
 
     def get_total_score(self, obj: ExamSubmission) -> int:
         questions = obj.deployment.questions_snapshot_json

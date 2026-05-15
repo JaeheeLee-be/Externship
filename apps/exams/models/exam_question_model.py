@@ -25,7 +25,7 @@ class ExamQuestion(TimeStampModel):
     options_json = models.TextField(null=True, blank=True)
     type = models.CharField(choices=QuestionType.choices, max_length=20)
     answer = models.JSONField(
-        default=dict,
+        default=list,
     )
     point = models.SmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], default=1)
     explanation = models.TextField(default="")
