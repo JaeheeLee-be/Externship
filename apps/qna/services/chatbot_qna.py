@@ -51,8 +51,7 @@ class QNAChatbotService(ChatbotBaseService):
         keys = CacheRepository.get_qna_keys(user_id)
         qna_list = []
         for key, value in CacheRepository.get_many(keys).items():
-            if value:
-                qna_list.append(CacheFactory.create_last_qna(key, value))
+            qna_list.append(CacheFactory.create_last_qna(key, value))
 
         return qna_list
 
