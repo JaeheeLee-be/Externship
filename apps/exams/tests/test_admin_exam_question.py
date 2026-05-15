@@ -93,7 +93,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         cls.question = ExamQuestion.objects.create(
             exam=cls.exam,
             question="tt",
-            answer={"answer": 1},
+            answer=["정답"],
             type=ExamQuestion.QuestionType.SHORT_ANSWER,
             point=1,
         )
@@ -169,7 +169,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
 
     def test_admin_check_limit_point(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
-        ExamQuestion.objects.create(exam=self.exam, question="test", answer={"answer": 1}, type="ox", point=99)
+        ExamQuestion.objects.create(exam=self.exam, question="test", answer=["정답"], type="ox", point=99)
         response = self.client.post(self.create_url, self.data, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.data.get("error_detail"), self.error_409_create)
@@ -177,10 +177,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
     def test_admin_check_limit_question_len(self) -> None:
         self.client.force_authenticate(user=self.admin_user)
         ExamQuestion.objects.bulk_create(
-            [
-                ExamQuestion(exam=self.exam, question=f"test{i}", answer={"answer": 1}, type="ox", point=1)
-                for i in range(20)
-            ]
+            [ExamQuestion(exam=self.exam, question=f"test{i}", answer=["정답"], type="ox", point=1) for i in range(20)]
         )
         response = self.client.post(self.create_url, self.data, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
@@ -220,7 +217,7 @@ class TestAdminExamQuestionCreateView(APITestCase):
         ExamQuestion.objects.create(
             exam=self.exam,
             question="te_2",
-            answer={"answer": 1},
+            answer=["정답"],
             type=ExamQuestion.QuestionType.SHORT_ANSWER,
             point=99,
         )

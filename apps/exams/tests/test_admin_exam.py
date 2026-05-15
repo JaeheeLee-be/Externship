@@ -70,14 +70,14 @@ class ExamBaseTestCase(APITestCase):
             exam=cls.exam1,
             question="test_question",
             type="single_choice",
-            answer={"answer": "test_answer1"},
+            answer=["test_answer1"],
             point=1,
         )
         cls.question2 = ExamQuestion.objects.create(
             exam=cls.exam1,
             question="test_question2",
             type="multiple_choice",
-            answer={"answer": ["test_answer1", "test_answer2"]},
+            answer=["test_answer1", "test_answer2"],
             point=2,
         )
         cls.question3 = ExamQuestion.objects.create(
@@ -87,7 +87,7 @@ class ExamBaseTestCase(APITestCase):
             prompt="___ ___ ___question",
             blank_count=3,
             options_json='["it", "is", "blank"]',
-            answer={"answer": ["it", "is", "blank"]},
+            answer=["it", "is", "blank"],
             point=3,
         )
         cls.cohort = Cohort.objects.create(
