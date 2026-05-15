@@ -3,6 +3,7 @@ from typing import Any, NoReturn
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -42,14 +43,24 @@ class AdminBaseView(APIView):
         raise PermissionDenied("관리자 권한이 필요합니다.")
 
 
-class CourseListView(AdminBaseView):
+class CourseListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(
+        self,
+        request: Request,
+        message: Any = None,
+        code: Any = None,
+    ) -> NoReturn:
+        raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
+
     @extend_schema(
         tags=["courses"],
         summary="과정 리스트 조회",
         responses={
             200: CourseListResponseSerializer(many=True),
             401: ErrorResponseSerializer,
-            403: ErrorResponseSerializer,
         },
     )
     def get(self, request: Request) -> Response:
