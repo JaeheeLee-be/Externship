@@ -18,7 +18,7 @@ from apps.posts.services.post_like_service import cancel_post_like, create_post_
 from apps.users.models import User
 
 
-class PostLikeAPIView(APIView):
+class PostLikeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def permission_denied(
@@ -29,8 +29,6 @@ class PostLikeAPIView(APIView):
     ) -> NoReturn:
         raise NotAuthenticated("자격 인증 데이터가 제공되지 않았습니다.")
 
-
-class PostLikeCreateView(PostLikeAPIView):
     @extend_schema(
         tags=["posts"],
         summary="게시글 좋아요 생성",
@@ -38,38 +36,24 @@ class PostLikeCreateView(PostLikeAPIView):
         responses={
             201: OpenApiResponse(
                 description="좋아요 등록 성공",
-                examples=[
-                    OpenApiExample(
-                        name="성공 응답",
-                        value={"detail": "좋아요가 등록되었습니다."},
-                    )
-                ],
+                examples=[OpenApiExample(name="성공 응답", value={"detail": "좋아요가 등록되었습니다."})],
             ),
             401: OpenApiResponse(
                 description="인증되지 않은 요청",
                 examples=[
-                    OpenApiExample(
-                        name="인증 실패",
-                        value={"error_detail": "자격 인증 데이터가 제공되지 않았습니다."},
-                    )
+                    OpenApiExample(name="인증 실패", value={"error_detail": "자격 인증 데이터가 제공되지 않았습니다."})
                 ],
             ),
             404: OpenApiResponse(
                 description="게시글 없음 또는 숨김 처리된 게시글",
                 examples=[
-                    OpenApiExample(
-                        name="게시글 없음",
-                        value={"error_detail": "해당 게시글을 찾을 수 없습니다."},
-                    )
+                    OpenApiExample(name="게시글 없음", value={"error_detail": "해당 게시글을 찾을 수 없습니다."})
                 ],
             ),
             409: OpenApiResponse(
                 description="이미 좋아요한 게시글",
                 examples=[
-                    OpenApiExample(
-                        name="중복 좋아요",
-                        value={"error_detail": "이미 좋아요를 누른 게시글입니다."},
-                    )
+                    OpenApiExample(name="중복 좋아요", value={"error_detail": "이미 좋아요를 누른 게시글입니다."})
                 ],
             ),
         },
@@ -83,8 +67,6 @@ class PostLikeCreateView(PostLikeAPIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_409_CONFLICT)
         return Response(PostLikeResponseSerializer(result).data, status=status.HTTP_201_CREATED)
 
-
-class PostLikeCancelView(PostLikeAPIView):
     @extend_schema(
         tags=["posts"],
         summary="게시글 좋아요 취소",
@@ -92,33 +74,19 @@ class PostLikeCancelView(PostLikeAPIView):
         responses={
             200: OpenApiResponse(
                 description="좋아요 취소 성공",
-                examples=[
-                    OpenApiExample(
-                        name="성공 응답",
-                        value={"detail": "좋아요가 취소되었습니다."},
-                    )
-                ],
+                examples=[OpenApiExample(name="성공 응답", value={"detail": "좋아요가 취소되었습니다."})],
             ),
             401: OpenApiResponse(
                 description="인증되지 않은 요청",
                 examples=[
-                    OpenApiExample(
-                        name="인증 실패",
-                        value={"error_detail": "자격 인증 데이터가 제공되지 않았습니다."},
-                    )
+                    OpenApiExample(name="인증 실패", value={"error_detail": "자격 인증 데이터가 제공되지 않았습니다."})
                 ],
             ),
             404: OpenApiResponse(
                 description="게시글 없음, 숨김 게시글, 또는 좋아요 기록 없음",
                 examples=[
-                    OpenApiExample(
-                        name="게시글 없음",
-                        value={"error_detail": "해당 게시글을 찾을 수 없습니다."},
-                    ),
-                    OpenApiExample(
-                        name="좋아요 기록 없음",
-                        value={"error_detail": "좋아요 기록을 찾을 수 없습니다."},
-                    ),
+                    OpenApiExample(name="게시글 없음", value={"error_detail": "해당 게시글을 찾을 수 없습니다."}),
+                    OpenApiExample(name="좋아요 기록 없음", value={"error_detail": "좋아요 기록을 찾을 수 없습니다."}),
                 ],
             ),
         },
