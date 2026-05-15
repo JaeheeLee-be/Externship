@@ -271,7 +271,7 @@ class TestQNAChatbotAPIViewPostMethod(IsolatedRedisTestClient):
         self.assertEqual(history[1].role, "assistant")
 
 
-class TestQNAChatbotListAPIView(IsolatedRedisTestClient):
+class TestQNAChatbotListAPIView(FixedPrefixRedisTestClient):
     user: User
     url: str
 

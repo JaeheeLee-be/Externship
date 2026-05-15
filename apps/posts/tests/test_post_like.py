@@ -20,8 +20,8 @@ class PostLikeBaseTestCase(APITestCase):
             content="post like test content",
         )
         kwargs = {"post_id": self.post.id}
-        self.create_url = reverse("post-like-create", kwargs=kwargs)
-        self.cancel_url = reverse("post-like-cancel", kwargs=kwargs)
+        self.create_url = reverse("post-like", kwargs=kwargs)
+        self.cancel_url = reverse("post-like", kwargs=kwargs)
 
 
 class PostLikeViewUnauthenticatedTest(PostLikeBaseTestCase):
@@ -80,7 +80,7 @@ class PostLikeCreateTest(PostLikeBaseTestCase):
         self.assertEqual(Like.objects.filter(user=self.liker, post=self.post).count(), 1)
 
     def test_create_like_post_not_found_returns_404(self) -> None:
-        url = reverse("post-like-create", kwargs={"post_id": 99999})
+        url = reverse("post-like", kwargs={"post_id": 99999})
 
         response = self.client.post(url)
 
@@ -133,7 +133,7 @@ class PostLikeCancelTest(PostLikeBaseTestCase):
         self.assertFalse(like.is_liked)
 
     def test_cancel_like_post_not_found_returns_404(self) -> None:
-        url = reverse("post-like-cancel", kwargs={"post_id": 99999})
+        url = reverse("post-like", kwargs={"post_id": 99999})
 
         response = self.client.delete(url)
 
