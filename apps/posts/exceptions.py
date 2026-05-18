@@ -24,3 +24,7 @@ class PostAlreadyLikedError(Exception):
 
 class PostLikeNotRegisteredError(Exception):
     pass
+
+
+class ReplyDepthError(Exception):
+    pass

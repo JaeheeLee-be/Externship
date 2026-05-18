@@ -11,6 +11,7 @@ from apps.posts.exceptions import (
     CommentNotFoundError,
     CommentPermissionDeniedError,
     PostNotFoundError,
+    ReplyDepthError,
 )
 from apps.posts.serializers.post_comment_serializer import (
     CommentCreateSerializer,
@@ -104,3 +105,39 @@ class CommentDetailView(APIView):
             return Response({"error_detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
         return Response({"detail": "댓글이 삭제되었습니다."}, status=status.HTTP_200_OK)
+
+
+class ReplyCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def permission_denied(self, request: Request, message: str | None = None, code: str | None = None) -> Never:
+        if not request.successful_authenticator:
+            raise exceptions.NotAuthenticated(detail="자격 인증 데이터가 제공되지 않았습니다.", code=code)
+        raise exceptions.PermissionDenied(detail="권한이 없습니다.", code=code)
+
+    @extend_schema(
+        tags=["posts"],
+        summary="대댓글 작성",
+        request=CommentCreateSerializer,
+        responses={201: None, 400: None, 401: None, 404: None},
+    )
+    def post(self, request: Request, post_id: int, comment_id: int) -> Response:
+        serializer = CommentCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"error_detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            comment_service.create_comment(
+                user=cast(User, request.user),
+                post_id=post_id,
+                content=serializer.validated_data["content"],
+                tagged_user_ids=serializer.validated_data.get("tagged_user_ids", []),
+                parent_id=comment_id,
+            )
+        except PostNotFoundError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except CommentNotFoundError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except ReplyDepthError as e:
+            return Response({"error_detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"detail": "대댓글이 등록되었습니다."}, status=status.HTTP_201_CREATED)
